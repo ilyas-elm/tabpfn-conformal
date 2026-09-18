@@ -136,7 +136,7 @@ Fine-tuning TabPFN · regression · multiclass · web UI · beating raw AUC · *
 
 ## 6. Library design
 
-### 6.1 Public API — **PROPOSED, needs your sign-off before implementation** (§13, Q1)
+### 6.1 Public API — **SIGNED OFF 19 Sept, implemented**
 
 ```python
 from tabpfn_conformal import ConformalClassifier
@@ -157,9 +157,21 @@ cc.fit(X, y)                     # split: partition internally per cal_size, fit
 cc.calibrate(X_cal, y_cal)       # prefit=True path; also the online/drift path
 sets = cc.predict_set(X, alpha=0.1)   # -> bool ndarray (n, 2): [:,0]=legit in set, [:,1]=fraud in set
 cc.predict(X); cc.predict_proba(X)    # passthrough, for sklearn compatibility
-cc.quantiles_                    # dict {class_label: threshold}; marginal -> {None: t}
+cc.quantiles(alpha)              # dict {class_index: threshold}; marginal -> {None: t}
 cc.n_calibration_                # dict {class_label: count} — honesty about tiny fraud n
+cc.predict_set_from_proba(p, alpha)   # sweep alpha on cached probabilities, zero extra API calls
 ```
+
+Two deviations from the original sketch, both adopted during implementation:
+
+- **`quantiles` is a method, not an attribute.** Calibration stores the *scores*;
+  thresholds are derived on demand. So `alpha` is a prediction-time argument and a
+  sweep over `alpha` costs nothing extra. Against a metered API that is the
+  difference between one billed pass and thirty.
+- **`predict_set_from_proba` added** for the same reason: experiments score a test
+  set once and then sweep offline.
+- **`metrics.py` added** (`coverage_by_class`, `marginal_coverage`, `average_set_size`,
+  `empty_set_rate`) so every experiment reports the same definition of coverage.
 
 Two design points worth stating explicitly:
 
@@ -293,8 +305,8 @@ Before any sweep: run a dry-run script that sums `estimate_cost()` over the whol
 
 | ID | Date | Gate |
 |---|---|---|
-| **M0** | **19 Sept** | Spikes S1–S3 done. Prior Labs account + hackathon credits requested. Repo public, Apache 2.0, CI green. API shape signed off. |
-| **M1** | 22 Sept | Library complete: scores, marginal, Mondrian, cross-conformal, wrapper. Full test suite green on CPU. **This is the local-only phase — no TabPFN needed.** |
+| **M0** ✅ | **19 Sept** | *Library, tests, CI, licence, cahier DONE (53 tests green, <1 s, exact MAPIE agreement). S1 script written, awaiting an API token.* Spikes S1–S3 done. Prior Labs account + hackathon credits requested. Repo public, Apache 2.0, CI green. API shape signed off. |
+| **M1** ✅ | 22 Sept | *Done early, 19 Sept.* Library complete: scores, marginal, Mondrian, cross-conformal, wrapper, metrics. 53 tests green on CPU. **This was the local-only phase — no TabPFN needed.** |
 | **M2** | 25 Sept | First real TabPFN numbers: E1 at small scale via API. Figure 1 v0 exists. |
 | **M3** | **28 Sept** | **E1 + E2 complete at full scale** (before the discount ends 29 Sept). **Go/no-go on the headline** per §7.1. |
 | **M4** | 1 Oct | ACI + decision layer done. E3 and E4 complete, including the Kaggle wall-clock table. |
@@ -370,9 +382,11 @@ tabpfn-conformal/
 
 ## 13. Open items
 
-**Q1 — sign off the public API in §6.1 before M1.** Expensive to reverse once experiments depend on it. Specifically: is `cal_size` as a constructor arg (rather than passing an explicit `X_cal`) the right shape, given it is also the E2 sweep variable?
+**Q1 — API shape. APPROVED 19 Sept**: `cal_size` in the constructor. Implemented.
 
-**Q2 — confirm the three-tier compute plan in §8.** In particular, that Kaggle is demoted to *only* the wall-clock cost table, and that the Prior Labs API carries the science because Thinking has no local weights.
+**Q2 — three-tier compute plan. APPROVED 19 Sept**: laptop for library and tests, Prior Labs API for the science, Kaggle for the wall-clock cost comparison.
+
+**New, discovered during implementation:** MAPIE 1.5 ships `CrossConformalClassifier` as well as `SplitConformalClassifier`, and crepes ships Mondrian classifiers. Cross-conformal is a standard method and we must not imply otherwise. The README now says this outright — the claim is about *economics* (K refits collapse to K forward passes on a training-free model), not about inventing a method. Prior Labs judges will know the conformal ecosystem; being first to say it is much stronger than being caught.
 
 ### Day-1 spikes
 
