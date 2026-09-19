@@ -129,9 +129,16 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true", help="price the grid, spend nothing")
     ap.add_argument("--pilot", action="store_true", help="1 seed, 2 budgets")
     ap.add_argument("--seeds", type=int, default=len(SEEDS))
+    ap.add_argument(
+        "--budgets",
+        type=int,
+        nargs="+",
+        default=None,
+        help="fraud-label budgets to sweep; default is the full grid",
+    )
     args = ap.parse_args()
 
-    budgets = (50, 200) if args.pilot else FRAUD_BUDGETS
+    budgets = (50, 200) if args.pilot else tuple(args.budgets or FRAUD_BUDGETS)
     seeds = SEEDS[:1] if args.pilot else SEEDS[: args.seeds]
     configs = grid(budgets, seeds)
 
