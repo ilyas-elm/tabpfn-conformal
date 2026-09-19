@@ -155,7 +155,8 @@ Point 3 is small. It is one good figure, not a paper. Sized honestly it is an as
 | `adaptive.py` | ACI — online per-class threshold update as labels arrive. |
 | `decision.py` | Prediction set + review budget K → approve / block / review. |
 | `wrapper.py` | `ConformalClassifier`, sklearn-compatible. |
-| `budget.py` | Helpers for the context/calibration allocation sweep. |
+| ~~`budget.py`~~ | **Dropped 19 Sept.** `cal_size` is already a constructor argument, so the E2 sweep is a plain loop over the public API — which was the point of putting it there. A module wrapping a `for` loop would be ceremony. |
+| `metrics.py` | Coverage by class, marginal coverage, set size, empty-set rate — shared so every experiment reports the same definition. |
 
 ### 4.2 In scope — experiments (`experiments/`, TabPFN + API)
 
