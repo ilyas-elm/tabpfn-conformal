@@ -1,25 +1,35 @@
-"""Spike S1 -- does the KV cache work together with Thinking on the managed API?
+"""Spike S1 -- settle the KV-cache/Thinking contradiction, and price the plan.
 
-The documentation contradicts itself. https://docs.priorlabs.ai/capabilities/kv-cache
-states that caching is incompatible with Thinking mode on the managed API, while
-other material says the client sets ``use_kv_cache=True`` automatically when
-thinking is enabled. The answer decides whether the cache story and the Thinking
-story can share a figure, so it is worth ten minutes and ~50k tokens to settle
-empirically.
+Two jobs, in order of cost:
 
-Also prints estimate_cost() for BAF-shaped workloads. Those calls send dimensions
-only -- no data upload, no quota consumed -- so the cost table below is free.
+1. FREE. ``estimate_cost`` accepts ``operation`` in {predict, cache_predict,
+   thinking_fit, thinking_predict} and sends dimensions only -- no upload, no
+   quota. That prices every planned experiment AND quantifies the KV-cache
+   discount before a single token is spent. Run this part alone with --quotes-only.
+
+2. CHEAP. The docs contradict themselves on whether the KV cache works with
+   Thinking on the managed API (https://docs.priorlabs.ai/capabilities/kv-cache
+   says incompatible; other material says the client forces the cache on when
+   thinking is enabled). Four tiny fits settle it empirically. Each billable
+   operation costs the 10,000-token minimum, so the whole probe is ~40k of a
+   5,000,000/day budget.
+
+Auth -- the token is never passed on the command line and never printed:
+    python -c "import tabpfn_client; tabpfn_client.init()"    # interactive, caches it
+or  export TABPFN_TOKEN=...                                   # in your own shell
+or  a TABPFN_TOKEN=... line in .env at the repo root          # gitignored
 
 Run:
-    export PRIORLABS_API_TOKEN=...        # or let the client prompt you once
-    python experiments/api/spike_s1_cache_thinking.py
+    python experiments/api/spike_s1_cache_thinking.py [--quotes-only]
 
 Writes results/spike_s1.json.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
+import os
 import pathlib
 import sys
 import time
@@ -30,108 +40,173 @@ import numpy as np
 REPO = pathlib.Path(__file__).resolve().parents[2]
 OUT = REPO / "results" / "spike_s1.json"
 
-# Deliberately tiny: each billable operation costs a 10,000-token minimum
-# anyway, so there is nothing to gain from larger probes.
 N_TRAIN, N_TEST, N_FEATURES = 200, 50, 8
-
-# Shapes we actually care about later, for the free cost quotes.
-BAF_SHAPES = [
-    ("E1 split conformal, 10k pool", 5_000, 5_000),
-    ("E1 cross-conformal, 10k pool, per fold", 8_000, 2_000),
-    ("E2 budget sweep, one cell", 4_000, 4_000),
-    ("E3 one month of drift", 20_000, 5_000),
-]
 BAF_FEATURES = 30
+
+# (label, n_context, n_scored, operation) for the experiments in the cahier.
+PLANNED = [
+    ("E1 split conformal, 10k pool", 5_000, 5_000, "predict"),
+    ("E1 cross-conformal, 10k pool, per fold", 8_000, 2_000, "predict"),
+    ("E1 cross-conformal, same fold, cached", 8_000, 2_000, "cache_predict"),
+    ("E2 budget sweep, one cell", 4_000, 4_000, "predict"),
+    ("E2 budget sweep, one cell, cached", 4_000, 4_000, "cache_predict"),
+    ("E3 one month of drift", 20_000, 5_000, "predict"),
+    ("E3 one month, Thinking fit", 20_000, None, "thinking_fit"),
+    ("E3 one month, Thinking predict", 20_000, 5_000, "thinking_predict"),
+]
+
+
+def _load_dotenv() -> None:
+    """Read TABPFN_TOKEN from .env if it is not already in the environment."""
+    if os.environ.get("TABPFN_TOKEN"):
+        return
+    env = REPO / ".env"
+    if not env.exists():
+        return
+    for line in env.read_text().splitlines():
+        line = line.strip()
+        if line.startswith("TABPFN_TOKEN=") and not line.startswith("#"):
+            os.environ["TABPFN_TOKEN"] = line.split("=", 1)[1].strip().strip("\"'")
+            print("Loaded TABPFN_TOKEN from .env")
+            return
 
 
 def _toy(seed: int = 0):
     rng = np.random.default_rng(seed)
     X = rng.normal(size=(N_TRAIN + N_TEST, N_FEATURES))
     y = (X[:, 0] + 0.5 * rng.normal(size=len(X)) > 1.8).astype(int)
-    if y[:N_TRAIN].sum() < 5:           # make sure both classes are present
-        y[:5] = 1
+    y[:5] = 1  # guarantee both classes are in the context
     return X[:N_TRAIN], y[:N_TRAIN], X[N_TRAIN:]
 
 
-def _try(label: str, build, X_tr, y_tr, X_te) -> dict:
-    """Run one configuration and record what happened, success or failure."""
-    record: dict = {"config": label}
+def quote_plan(estimate_cost) -> list[dict]:
+    """Price every planned experiment. Costs nothing."""
+    print("\nCost quotes -- dimensions only, no upload, no quota consumed:")
+    print(f"  {'workload':<44} {'operation':<18} {'tokens':>14}")
+    rows = []
+    for label, n_ctx, n_scored, op in PLANNED:
+        row = {"label": label, "n_context": n_ctx, "n_scored": n_scored, "operation": op}
+        try:
+            kwargs = {"operation": op}
+            if op.startswith("thinking"):
+                kwargs["thinking_effort"] = "medium"
+            q = estimate_cost(
+                np.zeros((n_ctx, BAF_FEATURES)),
+                None if n_scored is None else np.zeros((n_scored, BAF_FEATURES)),
+                **kwargs,
+            )
+            row["tokens"] = getattr(q, "estimated_cost", None)
+            print(f"  {label:<44} {op:<18} {row['tokens']:>14,}")
+        except Exception as exc:  # noqa: BLE001
+            row["error"] = f"{type(exc).__name__}: {exc}"[:300]
+            print(f"  {label:<44} {op:<18} {'!':>14}  {row['error']}")
+        rows.append(row)
+
+    # The headline number this spike exists to produce, for free.
+    paid = {r["label"]: r.get("tokens") for r in rows}
+    a = paid.get("E2 budget sweep, one cell")
+    b = paid.get("E2 budget sweep, one cell, cached")
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)) and a:
+        print(f"\n  KV-cache saving on a repeat prediction: {100 * (1 - b / a):.0f}%")
+    return rows
+
+
+def probe(label: str, build, X_tr, y_tr, X_te) -> dict:
+    """Run one configuration; record success or the exact failure."""
+    rec: dict = {"config": label}
     try:
         clf = build()
         t0 = time.perf_counter()
         clf.fit(X_tr, y_tr)
-        record["fit_seconds"] = round(time.perf_counter() - t0, 2)
+        rec["fit_seconds"] = round(time.perf_counter() - t0, 2)
 
         t1 = time.perf_counter()
         proba = clf.predict_proba(X_te)
-        record["predict_seconds"] = round(time.perf_counter() - t1, 2)
+        rec["predict_seconds"] = round(time.perf_counter() - t1, 2)
 
-        # A second predict against the same fit: this is where a cache pays off,
-        # and it is exactly the conformal workload (one context, many batches).
+        # The conformal workload: a second batch against the same context.
         t2 = time.perf_counter()
         clf.predict_proba(X_te)
-        record["second_predict_seconds"] = round(time.perf_counter() - t2, 2)
+        rec["second_predict_seconds"] = round(time.perf_counter() - t2, 2)
 
-        record["ok"] = True
-        record["proba_shape"] = list(np.shape(proba))
+        rec["ok"] = True
+        rec["proba_shape"] = list(np.shape(proba))
+        print(
+            f"  {label:<46} ok   fit {rec['fit_seconds']}s  "
+            f"predict {rec['predict_seconds']}s  repeat {rec['second_predict_seconds']}s"
+        )
     except Exception as exc:  # noqa: BLE001 -- recording the failure IS the result
-        record["ok"] = False
-        record["error_type"] = type(exc).__name__
-        record["error"] = str(exc)[:500]
-    print(f"  {label:<46} -> {'ok' if record.get('ok') else record.get('error_type')}")
-    return record
+        rec["ok"] = False
+        rec["error_type"] = type(exc).__name__
+        rec["error"] = str(exc)[:500]
+        print(f"  {label:<46} FAILED  {rec['error_type']}: {rec['error'][:110]}")
+    return rec
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "--quotes-only",
+        action="store_true",
+        help="print the free cost quotes and stop; spend nothing.",
+    )
+    args = ap.parse_args()
+
+    _load_dotenv()
+
     try:
-        from tabpfn_client import TabPFNClassifier, estimate_cost
+        from tabpfn_client import TabPFNClassifier, estimate_cost, get_api_usage
     except ImportError:
         print(
-            "tabpfn-client is not installed.\n"
-            '    pip install -e ".[experiments]"\n'
-            "Then set PRIORLABS_API_TOKEN, or run once interactively to log in.",
+            'tabpfn-client is not installed.\n    pip install -e ".[experiments]"',
             file=sys.stderr,
         )
         return 1
 
-    results: dict = {"shapes": {"n_train": N_TRAIN, "n_test": N_TEST, "n_features": N_FEATURES}}
+    if not os.environ.get("TABPFN_TOKEN"):
+        print(
+            "No TABPFN_TOKEN found. Either log in once interactively --\n"
+            '    python -c "import tabpfn_client; tabpfn_client.init()"\n'
+            "-- or put a TABPFN_TOKEN= line in .env (already gitignored), or export it.",
+            file=sys.stderr,
+        )
+        return 2
 
-    # ---- free: cost quotes for the real experiments -------------------------
-    print("\nCost quotes (no upload, no quota consumed):")
-    quotes = []
-    for label, n_tr, n_te in BAF_SHAPES:
-        entry = {"label": label, "n_train": n_tr, "n_test": n_te}
-        try:
-            q = estimate_cost(
-                np.zeros((n_tr, BAF_FEATURES)), np.zeros((n_te, BAF_FEATURES))
-            )
-            entry["estimated_cost"] = getattr(q, "estimated_cost", str(q))
-            print(f"  {label:<46} {entry['estimated_cost']}")
-        except Exception as exc:  # noqa: BLE001
-            entry["error"] = f"{type(exc).__name__}: {exc}"[:300]
-            print(f"  {label:<46} ! {entry['error']}")
-        quotes.append(entry)
-    results["cost_quotes"] = quotes
+    results: dict = {
+        "probe_shape": {"n_train": N_TRAIN, "n_test": N_TEST, "n_features": N_FEATURES},
+        "cost_quotes": quote_plan(estimate_cost),
+    }
 
-    # ---- billed, but trivially: the actual S1 question ----------------------
+    try:
+        results["api_usage_before"] = get_api_usage()
+        print(f"\nAPI usage before: {results['api_usage_before']}")
+    except Exception as exc:  # noqa: BLE001
+        results["api_usage_before"] = f"{type(exc).__name__}: {exc}"[:200]
+
+    if args.quotes_only:
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        OUT.write_text(json.dumps(results, indent=2))
+        print(f"\nQuotes only; nothing spent. Written to {OUT.relative_to(REPO)}")
+        return 0
+
     X_tr, y_tr, X_te = _toy()
-    print("\nConfigurations (each costs the 10,000-token minimum):")
+    print("\nProbes (each billable op costs the 10,000-token minimum):")
     results["configs"] = [
-        _try("baseline", lambda: TabPFNClassifier(), X_tr, y_tr, X_te),
-        _try(
+        probe("baseline", lambda: TabPFNClassifier(), X_tr, y_tr, X_te),
+        probe(
             "fit_with_cache",
             lambda: TabPFNClassifier(fit_mode="fit_with_cache"),
             X_tr, y_tr, X_te,
         ),
-        _try(
-            "thinking_effort=medium",
-            lambda: TabPFNClassifier(thinking_effort="medium"),
+        probe(
+            "thinking_mode",
+            lambda: TabPFNClassifier(thinking_mode=True, thinking_effort="medium"),
             X_tr, y_tr, X_te,
         ),
-        _try(
-            "fit_with_cache + thinking_effort=medium   <-- S1",
+        probe(
+            "fit_with_cache + thinking_mode   <-- S1",
             lambda: TabPFNClassifier(
-                fit_mode="fit_with_cache", thinking_effort="medium"
+                fit_mode="fit_with_cache", thinking_mode=True, thinking_effort="medium"
             ),
             X_tr, y_tr, X_te,
         ),
@@ -139,12 +214,20 @@ def main() -> int:
 
     combined = results["configs"][-1]
     results["s1_answer"] = (
-        "compatible" if combined.get("ok") else f"incompatible: {combined.get('error_type')}"
+        "compatible"
+        if combined.get("ok")
+        else f"incompatible ({combined.get('error_type')})"
     )
+
+    try:
+        results["api_usage_after"] = get_api_usage()
+    except Exception as exc:  # noqa: BLE001
+        results["api_usage_after"] = f"{type(exc).__name__}: {exc}"[:200]
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(results, indent=2))
     print(f"\nS1: KV cache + Thinking is {results['s1_answer']}")
+    print(f"API usage after: {results.get('api_usage_after')}")
     print(f"Written to {OUT.relative_to(REPO)}")
     return 0
 
