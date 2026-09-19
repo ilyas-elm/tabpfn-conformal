@@ -294,7 +294,7 @@ Write these down *now* so the results are honest either way. A submission that r
 | P1 | Cross-conformal has **lower seed-variance** of fraud coverage than split at F ≤ 200 | variance is equal or higher |
 | ~~P2~~ | ~~Cross-conformal costs **< 2× split** in API tokens~~ | **FALSIFIED 19 Sept. Measured: exactly K×** — 2.0× at K=2, 5.0× at K=5, 20.0× at K=20. The API prices a call by total rows touched, so each fold is a full pass over the pool and the folds add up linearly. Fits being unbilled is true and irrelevant: the *predicts* are what cost. See §7.2. |
 | P3 | Marginal CP under-covers fraud at α=0.05; Mondrian does not | marginal is fine (would contradict published work) |
-| P4 | Static Mondrian thresholds lose coverage by month 7; ACI holds it | static holds — then report that BAF drift is too mild and say so |
+| ~~P4~~ | ~~Static Mondrian thresholds lose coverage by month 7; ACI holds it~~ | **FALSIFIED 19 Sept.** Static loses only 2.3pt (0.978 → 0.955) and **ACI does not recover it at any γ**: γ ∈ {0.05, 0.2} are identical to frozen, γ ∈ {0.5, 1.0} are *worse*. The reason is §7.5. |
 | P5 | LightGBM cross-conformal costs ≫ TabPFN in wall-clock on identical hardware | comparable — then the headline weakens to "equally cheap", and we re-weight toward E2/E3 |
 
 **If P1 and P2 both fail, the headline changes to E2.** Decide by 28 Sept (milestone M3). **P2 has already failed, so P1 is now load-bearing on its own.**
@@ -349,6 +349,35 @@ data already paid for. E2 and E3 now persist the evaluation probabilities
 (`results/proba/`, ~80 KB per configuration) so α can be swept densely offline
 for free and the frontier computed after the fact. This should have been in E1
 from the start.
+
+### 7.5 Why ACI fails here — threshold quantization (19 Sept)
+
+E3's ACI arm does nothing, and the reason is the same scarcity the whole project
+is about. With `n` calibration positives the threshold is the `k`-th order
+statistic — **only `n` distinct thresholds exist**. α must move far enough to
+change `k` before the prediction sets change *at all*:
+
+| calibration positives | α must move by | to shift the threshold one step |
+|---:|---:|---|
+| 46 (split, this experiment) | **0.0139** | |
+| 92 (cross would give this) | 0.0038 | |
+| 200 | 0.0048 | |
+| 400 | 0.0024 | |
+
+ACI at γ=0.05 with monthly rounds moves α by ~0.0014 per month — about 0.007
+across the whole five-month walk, against the 0.0139 needed. So it is *exactly*
+equivalent to frozen. Raise γ enough to move and it jumps a whole order
+statistic, overshooting: γ=0.5 and γ=1.0 both score worse than doing nothing.
+
+**This is not a defect in ACI.** ACI assumes the threshold responds smoothly to
+the level, which holds when calibration data is plentiful and fails when you have
+46 positives. It ties straight back to the headline: cross-conformal doubles the
+calibration set, so it doubles the threshold resolution and is the precondition
+for online adaptation working at all.
+
+Report E3 as: the drift in BAF months 3–7 is mild (2.3pt), and adaptive
+calibration cannot help at this label budget for a structural reason worth
+stating. That is more useful than a tuned γ that happens to look good.
 
 ### 7.3 The feasibility boundary — sharper than P1, and deterministic
 

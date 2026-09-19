@@ -163,6 +163,14 @@ def main() -> int:
         X_cal, y_cal = split_xy(cal0, keep_time=args.thinking)
         cc.fit(X_cal, y_cal)
 
+        # Persist the calibration scores too, so experiments/replay_aci.py can
+        # re-run the whole walk at any gamma EXACTLY rather than recovering the
+        # thresholds from the first evaluation month.
+        cal_file = save_proba(
+            "e3", f"{tag}_{arm}_CALIBRATION_s{args.seed}",
+            cc.predict_proba(X_cal), y_cal,
+        )
+
         aci = ACI(alpha_target=ALPHA, gamma=args.gamma, n_classes=2)
         history = list(CALIBRATION_MONTHS)
 
@@ -200,6 +208,7 @@ def main() -> int:
             rec = {
                 "arm": arm, "model": tag, "month": int(m), "seed": args.seed,
                 "proba_file": save_proba("e3", f"{tag}_{arm}_m{m}_s{args.seed}", proba, y_ev),
+                "calibration_file": cal_file,
                 "gamma": args.gamma, "alpha_target": ALPHA,
                 "n_eval": int(len(y_ev)), "n_eval_fraud": int((y_ev == 1).sum()),
                 "fraud_rate": float((y_ev == 1).mean()),
