@@ -74,3 +74,19 @@ resuming: 4 configuration(s) already done
 /Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=50 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.01961). Returning a trivial (all-labels) threshold.
   k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
 [23/40] split F=100  s=1 cal_frauds=50   fraud_cov@0.1=0.928 width=1.374 (10.5s)
+[24/40] cross F=100  s=1 cal_frauds=100  fraud_cov@0.1=0.888 width=1.258 (44.9s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=50 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.01961). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[25/40] split F=100  s=2 cal_frauds=50   fraud_cov@0.1=0.943 width=1.354 (10.4s)
+[26/40] cross F=100  s=2 cal_frauds=100  fraud_cov@0.1=0.921 width=1.301 (121.1s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=50 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.01961). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[27/40] split F=100  s=3 cal_frauds=50   fraud_cov@0.1=0.912 width=1.283 (10.4s)
+[28/40] cross F=100  s=3 cal_frauds=100  fraud_cov@0.1=0.875 width=1.247 (52.1s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=50 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.01961). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[29/40] split F=100  s=4 cal_frauds=50   fraud_cov@0.1=0.927 width=1.280 (10.6s)
+[30/40] cross F=100  s=4 cal_frauds=100  fraud_cov@0.1=0.956 width=1.302 (44.4s)
+[33/40] split F=200  s=1 cal_frauds=100  fraud_cov@0.1=0.935 width=1.306 (91.1s)
+[34/40] cross F=200  s=1 cal_frauds=200  fraud_cov@0.1=0.933 width=1.304 (107.1s)
+[35/40] split F=200  s=2 cal_frauds=100  fraud_cov@0.1=0.926 width=1.258 (90.3s)
