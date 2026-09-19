@@ -132,6 +132,59 @@ python experiments/analyze_e1.py --alpha 0.1
 python experiments/analyze_e1.py --alpha 0.05
 ```
 
+### Against the baselines: TabPFN wins where it counts
+
+At an identical targeted level, TabPFN produces **narrower prediction sets than
+LightGBM in all four comparisons** — which is to say fewer cases land in a human
+analyst's queue for the same guarantee:
+
+| strategy | budget | targeted level | TabPFN | LightGBM | TabPFN narrower by |
+|---|---:|---:|---:|---:|---:|
+| split | 100 | 98.0% | **1.618** | 1.764 | 8.3% |
+| split | 200 | 96.0% | **1.574** | 1.649 | 4.6% |
+| cross | 100 | 96.0% | **1.471** | 1.680 | **12.4%** |
+| cross | 200 | 95.5% | **1.459** | 1.566 | 6.8% |
+
+Conformal prediction is what makes this measurable: it converts model quality
+into the unit a fraud desk actually budgets for.
+
+**Against TabPFN's own imbalance tooling**, which produces no guarantee at all:
+`balance_probabilities` with a tuned threshold — the approach
+[arXiv:2605.21742](https://arxiv.org/abs/2605.21742) found strongest for
+prior-data fitted networks — reaches 0.92 recall while flagging **41% of
+legitimate traffic**. Comparable recall, no promise it holds next month.
+
+### Drift: adaptive calibration cannot help at this label budget
+
+Across months 3–7 the fraud rate climbs 0.92% → 1.47% and frozen thresholds lose
+about 2 points of coverage. Adaptive conformal inference **does not recover it** —
+at γ ∈ {0.05, 0.2} it is *numerically identical* to doing nothing, and at
+γ ∈ {0.5, 1.0} it is worse.
+
+![Coverage by month under drift](figures/e3_drift_base.png)
+
+The reason is the same scarcity as everywhere else in this project. With `n`
+calibration positives only `n` distinct thresholds exist, so α must move far
+enough to change which order statistic is selected before anything changes at
+all. At the 46 positives available here that step is **0.0139**; ACI moves α by
+0.003 across the whole walk. Raise γ enough to move and it jumps a whole order
+statistic and overshoots.
+
+This is not a defect in ACI — and it points back at the headline, since
+cross-conformal doubles the calibration set and so doubles threshold resolution.
+
+### Where should a scarce label budget go? Mostly, nowhere
+
+The question this project set out to measure. Sweeping `cal_size` from 0.2 to
+0.8 at both budgets: at 100 frauds there is **no detectable optimum** (paired
+best-vs-worst difference +0.089 ± 0.042, t=2.1, n=5). At 200 there is a real
+effect, but it is `cal_size=0.8` being *bad* — starving the model — rather than a
+sharp interior optimum.
+
+**Cross-conformal beats every split setting, at both budgets and both alphas.**
+
+![Budget allocation sweep](figures/e2_budget_alpha005.png)
+
 ### What we predicted, and what happened
 
 Predictions were registered in [`docs/CAHIER-DES-CHARGES.md`](docs/CAHIER-DES-CHARGES.md)
@@ -139,12 +192,16 @@ before the experiments ran.
 
 | | prediction | outcome |
 |---|---|---|
-| **P1** | cross-conformal has lower seed-variance of fraud coverage | **falsified** — spread 0.107 vs 0.083 at F=25 (cross better) but 0.044 vs 0.081 at F=100 (cross worse). No consistent direction. |
+| **P1** | cross-conformal has lower seed-variance of fraud coverage | **falsified** — 0.107 vs 0.083 at F=25 (cross better) but 0.044 vs 0.081 at F=100 (cross worse). No consistent direction. |
 | **P2** | cross-conformal costs under 2× split in API tokens | **falsified** — measured exactly K×: 2.0× at K=2, 20.0× at K=20. The API prices a call by total rows touched, so each fold is a full pass over the pool. |
 | **P3** | marginal CP under-covers the fraud class; Mondrian does not | holds (and was already published) |
+| **P4** | static thresholds decay under drift; ACI holds coverage | **falsified** — ACI is identical to frozen at usable γ, for the quantization reason above. |
+| **P5** | LightGBM cross-conformal costs far more wall-clock | **falsified** — ~6s against TabPFN's ~51s. Confounded (local vs remote), but the intuition was wrong: LightGBM trains on 9,000 rows in under a second. |
 
-Both performance predictions failed. What survives is the two deterministic
-claims above, which is a sturdier place to stand.
+**Four of five failed.** What survives is sturdier for it: the feasibility
+ceiling and level fidelity are *deterministic* — checkable on paper, not
+falsifiable by more data — and the half-the-labels and baseline results are
+measured at matched level with no confound.
 
 ### Cost, measured rather than claimed
 
