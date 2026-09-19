@@ -310,6 +310,33 @@ What survives does not depend on a ratio, which is why it is stronger:
 
 Point 3 is the durable claim: it is about data efficiency, survives any cost measurement, and still needs a training-free model to be actionable.
 
+### 7.3 The feasibility boundary — sharper than P1, and deterministic
+
+Found in the E1 pilot, 19 Sept. Split conformal can only certify
+
+> **α ≥ 1 / (n_cal + 1)**
+
+because the threshold is the ⌈(n_cal+1)(1−α)⌉-th smallest calibration score and that index cannot exceed n_cal. Split spends half the positives on calibration, so with F confirmed frauds it reaches 2/(F+2); cross-conformal calibrates on all F and reaches 1/(F+1). **Cross-conformal exactly halves the tightest guarantee you can ask for.**
+
+| confirmed frauds | split can certify | cross can certify |
+|---:|---:|---:|
+| 50 | 96.2% | **98.0%** |
+| 100 | 98.0% | **99.0%** |
+| 200 | 99.0% | **99.5%** |
+| 400 | 99.5% | **99.75%** |
+
+Why this beats P1 as the headline:
+
+- **Deterministic, not statistical.** No seed averaging, no error bars, no "in expectation". A reader checks it on paper.
+- **Confirmed exactly by the pilot.** At F=50 both methods fail at α=0.01 as the boundary predicts (minima 0.0385 and 0.0196); at F=200 split sits right on the edge at 0.0099 and cross is comfortable at 0.0050.
+- **It is the question a regulated buyer actually asks** — "can you promise 99%?" — and for a hundred-fraud desk the honest answer under standard practice is *no, not at any price*.
+
+Not novel: `1/(n+1)` is textbook conformal arithmetic. What is ours is the demonstration at fraud scale on a tabular foundation model, and the observation that the alternative only becomes practical when there is no training run to repeat.
+
+**P1 (variance reduction) is demoted to supporting evidence.** It remains worth measuring — the full grid is running — but it is a √2 effect that needs seed averaging to see, and §7.3 does not.
+
+⚠ **Honest caveat that must appear beside this table:** cross-conformal's guarantee is *approximate* (Vovk 2015; CV+ worst case 1−2α), so the certifiable-α table states what each method can *nominally* certify. E1's measured coverage is the check on whether the nominal promise holds, and it is reported next to it, never instead of it.
+
 ---
 
 ## 8. Compute plan — answering "I need to use TabPFN's full potential"

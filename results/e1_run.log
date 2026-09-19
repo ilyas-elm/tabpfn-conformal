@@ -1,0 +1,54 @@
+40 configurations, 4 alphas swept offline (free)
+estimated cost: 1,600,000 tokens  (~8.0% of the monthly budget)
+pool months (0, 1, 2, 3, 4, 5): 794,989 rows, 8,151 frauds
+eval months (6, 7): 205,011 rows, 2,878 frauds
+resuming: 4 configuration(s) already done
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=13 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.07143). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=13 calibration points, which cannot certify alpha=0.05 (the smallest achievable alpha is 0.07143). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[1/40] split F=25   s=0 cal_frauds=13   fraud_cov@0.1=0.882 width=1.467 (6.7s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=25 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.03846). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[2/40] cross F=25   s=0 cal_frauds=25   fraud_cov@0.1=0.846 width=1.245 (35.0s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=13 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.07143). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=13 calibration points, which cannot certify alpha=0.05 (the smallest achievable alpha is 0.07143). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[3/40] split F=25   s=1 cal_frauds=13   fraud_cov@0.1=0.938 width=1.500 (8.4s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=25 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.03846). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[4/40] cross F=25   s=1 cal_frauds=25   fraud_cov@0.1=0.928 width=1.290 (34.8s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=13 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.07143). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=13 calibration points, which cannot certify alpha=0.05 (the smallest achievable alpha is 0.07143). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[5/40] split F=25   s=2 cal_frauds=13   fraud_cov@0.1=0.918 width=1.383 (8.7s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=25 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.03846). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[6/40] cross F=25   s=2 cal_frauds=25   fraud_cov@0.1=0.893 width=1.291 (32.7s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=13 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.07143). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=13 calibration points, which cannot certify alpha=0.05 (the smallest achievable alpha is 0.07143). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[7/40] split F=25   s=3 cal_frauds=13   fraud_cov@0.1=0.989 width=1.595 (8.4s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=25 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.03846). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[8/40] cross F=25   s=3 cal_frauds=25   fraud_cov@0.1=0.899 width=1.312 (32.5s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=13 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.07143). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=13 calibration points, which cannot certify alpha=0.05 (the smallest achievable alpha is 0.07143). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[9/40] split F=25   s=4 cal_frauds=13   fraud_cov@0.1=0.948 width=1.543 (8.5s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=25 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.03846). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[10/40] cross F=25   s=4 cal_frauds=25   fraud_cov@0.1=0.924 width=1.383 (36.8s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=25 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.03846). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[13/40] split F=50   s=1 cal_frauds=25   fraud_cov@0.1=0.965 width=1.475 (8.5s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=50 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.01961). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[14/40] cross F=50   s=1 cal_frauds=50   fraud_cov@0.1=0.913 width=1.275 (38.3s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=25 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.03846). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[15/40] split F=50   s=2 cal_frauds=25   fraud_cov@0.1=0.975 width=1.549 (8.4s)
