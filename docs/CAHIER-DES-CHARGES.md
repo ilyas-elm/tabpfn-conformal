@@ -2,7 +2,7 @@
 
 **Prior Labs TabPFN-3.5 Hackathon** · drafted 18 Sept 2026 · deadline **6 Oct 2026, 23:59 CEST** (22:59 Morocco) · **18 days**
 
-> Status: **v1 — locked on positioning, open on two items** (§13). This document is the contract. If a decision is not written here, it has not been made; if it is written here, do not relitigate it mid-build without editing this file first.
+> Status: **v2 (19 Sept) — positioning locked, API shape signed off, library and tests done. Blocked on an API token (M0b).** This document is the contract. If a decision is not written here, it has not been made; if it is written here, do not relitigate it mid-build without editing this file first.
 
 ---
 
@@ -13,17 +13,23 @@ Wrap TabPFN-3.5's probability outputs in a **distribution-free, finite-sample co
 **The one-line pitch (README first screen, video first 30 s):**
 
 > *Conformal prediction, priced for a model that never trains.*
-> Split conformal makes you throw away half of your ~100 labelled fraud cases to calibrate a guarantee. TabPFN-3.5 has no training step — so K-fold **cross-conformal** costs K forward passes instead of K retrainings, and every fraud label counts twice: once in the context, once in the calibration. On the Prior Labs API, fits are not even billed. This is not affordable with LightGBM. It is nearly free with TabPFN.
+> Split conformal makes you throw away half of your ~100 labelled fraud cases to calibrate a guarantee. TabPFN-3.5 has no training step — so K-fold **cross-conformal** costs K forward passes instead of K retrainings, and every fraud label counts twice: once in the context, once in the calibration. On the Prior Labs API, fits are not even billed — only predictions are, and each row is predicted once regardless of K. For LightGBM the same guarantee costs K full trainings.
+>
+> *Wording discipline: "cheap", never "free". Cross-conformal predicts against a larger context than split conformal, so tokens go up somewhat. P2 in §7.1 pins how much. Do not write a number we have not measured.*
 
 ---
 
 ## 2. Why this wins (mapping to the published rubric)
 
+**Read the arithmetic before optimising the wrong axis.** Originality is not a criterion on its own: it shares a 30% bucket with *practical value*. Call it 15% of the total. Meanwhile **70% of the score is "is TabPFN visibly central" (50%) plus "is this built well and reproducible" (20%)** — both execution, not inspiration. This project is strongest exactly there. Effort should follow the weights.
+
 | Criterion | Weight | How we score |
 |---|---|---|
-| **Showcase of TabPFN-3.5** | **50%** | The headline claim is *false for every other model*. It rests on three TabPFN-3.5-specific properties: (a) no training step → cross-conformal is inference-only; (b) `fit_mode="fit_with_cache"` KV cache — conformal calibration is literally the "one fixed context, thousands of points scored" workload it was built for; (c) API fits are **not token-charged**, so K folds ≈ the cost of one. Plus: TabPFN-3.5-**Thinking** used where Prior Labs claims it is strongest — *temporal and grouped data* — which is exactly our drift experiment. |
-| **Creativity / originality / practical value** | **30%** | Novel: the **label-budget allocation** question (context vs calibration) is only askable of a training-free model; cross-conformal-at-split-conformal-price; ACI under real monthly fraud drift. Practical: a fraud desk gets a per-class guarantee and a fixed review budget. |
-| **Technical quality / reproducibility** | **20%** | Zero-dependency core (numpy/pandas/scikit-learn), full pytest suite on CPU, numerical agreement test against MAPIE, `estimate_cost()` printed before every API run, and a headline figure reproducible **on a judge's laptop with a free account and no GPU**. Plus an open PR to `PriorLabs/tabpfn-extensions`. |
+| **Showcase of TabPFN-3.5** | **50%** | The headline claim is *false for every other model*. Three TabPFN-3.5-specific properties carry it: (a) no training step → cross-conformal is inference-only; (b) `fit_mode="fit_with_cache"` — conformal calibration is literally the "one fixed context, many points scored" workload the cache exists for; (c) API fits are **not token-charged**, so K folds cost far less than K×. Plus TabPFN-3.5-**Thinking** used where Prior Labs itself claims it is strongest — *temporal and grouped data* — which is our drift experiment. |
+| **Creativity / originality / practical value** | **30%** | Do **not** claim methodological novelty; see §3.6. Claim the two things that are true: one genuinely unmeasured number (the context-vs-calibration label split, §7 E2) and clear practical value — a fraud desk gets a per-class guarantee and a fixed review budget instead of an uncalibrated probability. |
+| **Technical quality / reproducibility** | **20%** | Tiny-dependency core, full pytest suite on CPU in under a second, **exact** numerical agreement with MAPIE, `estimate_cost()` printed before every API run, and a headline figure reproducible **on a judge's laptop with a free account and no GPU**. |
+
+**Why Prior Labs specifically should care.** They sell into regulated buyers: fraud is named as a use case on their own landing page, their published testimonial is from an insurer, and Plus/Thinking ship through SAP AI Core and SageMaker. Regulated risk functions do not block on accuracy — they block on "prove the error rate." This project is aimed at the thing standing between TabPFN and a production risk deployment. That argument belongs in the submission text, not just in our heads.
 
 **Tie-breaker we are explicitly playing for:** judges are Prior Labs personnel deciding "would we share this?" A live PR filling a verified gap in *their own* repo is the cheapest, loudest possible yes.
 
@@ -89,11 +95,32 @@ Confirmed modules: `interpretability`, `many_class`, `unsupervised`, `embedding`
 | arXiv 2605.21742 — correcting class imbalance in PFNs | Finds **thresholding** best, *because* PFNs are well-calibrated | **Perfect setup for us**: they tune a threshold, we derive one with a guarantee. Use as a named baseline. |
 | arXiv 2509.01840 — E-ICL+FCP, ICL model with CP-aware loss | Full CP via ICL | Different: they train a bespoke model. We use TabPFN off the shelf. Cite as related. |
 | Moudiki, nnetsauce — "Conformalized TabPFN" | TabPFN + split conformal | **Regression only.** Classification + imbalance is open. |
-| MAPIE, crepes | Mature Mondrian conformal classification | Addressed head-on: §6.4 positioning section + numerical agreement test. |
+| **MAPIE 1.5** | Ships **`SplitConformalClassifier` *and* `CrossConformalClassifier`**; crepes ships Mondrian classifiers | **Cross-conformal is a standard method and we did not invent it.** Say so first, in the README. The claim is economics, not method. Verified by agreement test. |
+| CFCP ([2605.24872](https://arxiv.org/abs/2605.24872)), SOCP ([2606.29403](https://arxiv.org/html/2606.29403v1)), SLCP ([2206.13092](https://arxiv.org/abs/2206.13092)) | Localized / embedding-clustered conformal for conditional coverage | Checked 19 Sept as a possible "bigger swing" using TabPFN embeddings. **Already done.** Do not pivot here. |
+| [2509.01840](https://arxiv.org/abs/2509.01840) | Full conformal in one forward pass via ICL + attention symmetry | Checked 19 Sept as the other possible big swing. **Already done.** Do not pivot here. |
 
 **Independently reported and useful to us:** TabPFN achieves the lowest ECE/Brier among tabular models, *but* becomes "increasingly majority-biased as data becomes imbalanced." That is the exact hook: TabPFN's best-in-class average calibration is not a per-class guarantee, and fraud lives entirely in the minority class.
 
 **Closest hackathon competitor found:** `IFoA-ADSWP/tabpfn-reserving` (actuarial loss reserving). Strong README, `docs/method.md`, `docs/readiness.md`, honest results, baseline comparison. **No tests, no video.** That is the bar and that is its gap.
+
+### 3.6 What we are explicitly NOT claiming
+
+Three separate searches for a novel conformal angle (18–19 Sept) returned prior art every time: on Mondrian-under-imbalance, on cross-conformal, on embedding-localized CP, and on full-conformal-via-ICL. Conformal prediction is a 25-year-old field with an active 2026 literature. **There is no new conformal method available inside this deadline, and pretending otherwise is the fastest way to lose credibility with judges who know the field.**
+
+Not claimed, anywhere in the repo, README, video or submission text:
+
+- that we invented conformal prediction, Mondrian calibration, cross-conformal, or ACI;
+- that Mondrian fixing minority-class coverage is our finding (it is published);
+- that cross-conformal is new (MAPIE ships it);
+- any speed, cost or coverage number that has not been measured and written to `results/`.
+
+Claimed, and defensible:
+
+1. **No conformal prediction exists for TabPFN classification**, in `tabpfn-extensions` or anywhere else we could find. We fill that gap with tested, installable code.
+2. **Cross-conformal's cost structure changes qualitatively for a training-free model**, and we measure by how much. Standard method, new economics.
+3. **Nobody has measured how to split a scarce label budget between a foundation model's in-context set and its calibration set.** That number is the one genuinely new result in the project (§7 E2).
+
+Point 3 is small. It is one good figure, not a paper. Sized honestly it is an asset; oversold it is a liability.
 
 ---
 
@@ -288,7 +315,7 @@ Before any sweep: run a dry-run script that sums `estimate_cost()` over the whol
 | D4 | `experiments/` — API scripts, seeded, cost-printing | 20% + 50% |
 | D5 | **README** — headline claim, Figure 1, repro in ≤10 min with no GPU, MAPIE/crepes positioning, licence note, prior-art citations | all three |
 | D6 | `docs/method.md` + `docs/limitations.md` (incl. the CV+ 2α caveat) | 20% |
-| D7 | **Demo video, 2–3 min** | 30% + the competitor's blind spot |
+| D7 | **Demo video, 2–3 min** — *optional under the official rules ("optional but encouraged"), but it is the main vehicle for the 50% showcase criterion and the nearest competitor has none* | 50% vehicle |
 | D8 | **PR to `PriorLabs/tabpfn-extensions`** | 50% |
 | D9 | Submission text on the hackathon platform | mandatory |
 
@@ -305,12 +332,13 @@ Before any sweep: run a dry-run script that sums `estimate_cost()` over the whol
 
 | ID | Date | Gate |
 |---|---|---|
-| **M0** ✅ | **19 Sept** | *Library, tests, CI, licence, cahier DONE (53 tests green, <1 s, exact MAPIE agreement). S1 script written, awaiting an API token.* Spikes S1–S3 done. Prior Labs account + hackathon credits requested. Repo public, Apache 2.0, CI green. API shape signed off. |
+| **M0** ✅ | 19 Sept | **Done:** repo at `~/project_hub/tabpfn-conformal`, Apache 2.0, CI workflow, cahier, API shape signed off. |
+| **M0b** ⬜ | **ASAP — blocks everything downstream** | **Prior Labs account created, hackathon credits requested, `PRIORLABS_API_TOKEN` set, spike S1 run.** Only Ilyas can do this. Every TabPFN milestone below is blocked until it is done. |
 | **M1** ✅ | 22 Sept | *Done early, 19 Sept.* Library complete: scores, marginal, Mondrian, cross-conformal, wrapper, metrics. 53 tests green on CPU. **This was the local-only phase — no TabPFN needed.** |
 | **M2** | 25 Sept | First real TabPFN numbers: E1 at small scale via API. Figure 1 v0 exists. |
 | **M3** | **28 Sept** | **E1 + E2 complete at full scale** (before the discount ends 29 Sept). **Go/no-go on the headline** per §7.1. |
 | **M4** | 1 Oct | ACI + decision layer done. E3 and E4 complete, including the Kaggle wall-clock table. |
-| **M5** | 3 Oct | README, docs, figures final. **Extensions PR opened.** |
+| **M5** | 3 Oct | README, docs, figures final. **Repo flipped to public** (deliberately local until now). **Extensions PR opened.** |
 | **M6** | 5 Oct | Video recorded. Full reproduction from a clean clone, timed. |
 | **M7** | **6 Oct, by 18:00 Morocco** | Submitted. **Five hours of slack before the 22:59 cutoff — not five minutes.** |
 
@@ -321,13 +349,13 @@ If time collapses, ship in this order and drop from the bottom:
 1. Library + tests + README + Apache 2.0 *(without this there is no entry)*
 2. E1 headline + Figure 1 + cost table *(without this it is a generic conformal library)*
 3. Extensions PR *(cheap, high signal)*
-4. Video
-5. E3 drift + ACI
-6. E2 full sweep
+4. **E2 budget sweep** *(promoted 19 Sept: per §3.6 this is the only genuinely unmeasured result in the project — it is the whole originality case, and it is cheap because TabPFN does not train)*
+5. Video
+6. E3 drift + ACI
 7. E4 full baseline matrix
 8. Decision layer
 
-Items 5–8 are the ones to sacrifice. **Never sacrifice 1–3.**
+Items 6–8 are the ones to sacrifice. **Never sacrifice 1–4.**
 
 ---
 
