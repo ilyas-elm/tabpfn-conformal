@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
+import math
 from collections import defaultdict
 
 import matplotlib
@@ -39,6 +40,22 @@ def load():
     return rows
 
 
+def effective_nominal(n_cal: int, alpha: float) -> float:
+    """The level a calibration set of size ``n_cal`` actually targets.
+
+    Conformal uses the ceil((n+1)(1-alpha))-th smallest score, and that index
+    rounds up. With 13 calibration positives at alpha=0.10 the index is 13 --
+    the maximum -- so the predictor targets 100% coverage, not 90%. Comparing
+    two methods' realised coverage without this is comparing them at different
+    levels: at any fraud budget split calibrates on half as many positives as
+    cross, so split is always the more conservative of the two.
+    """
+    if n_cal <= 0:
+        return float("nan")
+    k = math.ceil((n_cal + 1) * (1 - alpha))
+    return float("nan") if k > n_cal else k / n_cal
+
+
 def aggregate(rows, alpha: str):
     """{strategy: {n_frauds: {metric: [values across seeds]}}}"""
     out = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
@@ -50,6 +67,7 @@ def aggregate(rows, alpha: str):
         cell["coverage"].append(a["coverage_fraud"])
         cell["width"].append(a["set_size"])
         cell["n_cal"].append(r["n_cal_fraud"])
+        cell["effective"].append(effective_nominal(r["n_cal_fraud"], float(alpha)))
         cell["seconds"].append(r["seconds"])
     return out
 
@@ -117,6 +135,10 @@ def figure(agg, alpha: float, path: pathlib.Path):
                     solid_capstyle="round")
             ax.plot(x, mean, "o", color=colour, markersize=5.5,
                     markeredgecolor=SURFACE, markeredgewidth=2.0, zorder=4)
+        xe, eff, *_ = _series(agg, strategy, "effective")
+        ax_c.plot(xe, eff, color=colour, linewidth=1.2, linestyle=(0, (1, 2)),
+                  zorder=2, alpha=0.85)
+
         # Direct label at the right end, in ink -- identity is never colour alone.
         x, mean, *_ = _series(agg, strategy, "coverage")
         ax_c.annotate(
@@ -158,17 +180,21 @@ def figure(agg, alpha: float, path: pathlib.Path):
 
 def tables(agg, alpha: str):
     print(f"\n### Measured at alpha = {alpha}\n")
-    print("| frauds | strategy | calib. frauds | coverage (mean) | spread | set size | seeds |")
-    print("|---:|---|---:|---:|---:|---:|---:|")
+    print("| frauds | strategy | calib. frauds | level actually targeted | coverage (mean) | "
+          "vs its own target | spread | set size | seeds |")
+    print("|---:|---|---:|---:|---:|---:|---:|---:|---:|")
     for b in sorted({x for s in agg for x in agg[s]}):
         for s in ("split", "cross"):
             if b not in agg[s]:
                 continue
             c = agg[s][b]
             cov = np.array(c["coverage"])
+            eff = float(np.mean(c["effective"]))
+            eff_s = "infeasible" if np.isnan(eff) else f"{eff:.1%}"
+            gap = "—" if np.isnan(eff) else f"{cov.mean() - eff:+.3f}"
             print(
-                f"| {b} | {s} | {int(np.mean(c['n_cal'])):,} | {cov.mean():.3f} | "
-                f"{cov.max() - cov.min():.3f} | {np.mean(c['width']):.3f} | {len(cov)} |"
+                f"| {b} | {s} | {int(np.mean(c['n_cal'])):,} | {eff_s} | {cov.mean():.3f} | "
+                f"{gap} | {cov.max() - cov.min():.3f} | {np.mean(c['width']):.3f} | {len(cov)} |"
             )
 
     print("\n### Feasibility boundary (deterministic)\n")

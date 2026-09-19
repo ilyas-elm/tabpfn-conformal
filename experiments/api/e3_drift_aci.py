@@ -50,7 +50,7 @@ import pandas as pd
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 
-from _common import DATA, LABEL, REPO, TIME, load_token, split_xy  # noqa: E402
+from _common import DATA, LABEL, REPO, TIME, load_token, save_proba, split_xy  # noqa: E402
 
 OUT = REPO / "results" / "e3.jsonl"
 
@@ -194,6 +194,7 @@ def main() -> int:
 
             rec = {
                 "arm": arm, "model": tag, "month": int(m), "seed": args.seed,
+                "proba_file": save_proba("e3", f"{tag}_{arm}_m{m}_s{args.seed}", proba, y_ev),
                 "gamma": args.gamma, "alpha_target": ALPHA,
                 "n_eval": int(len(y_ev)), "n_eval_fraud": int((y_ev == 1).sum()),
                 "fraud_rate": float((y_ev == 1).mean()),
