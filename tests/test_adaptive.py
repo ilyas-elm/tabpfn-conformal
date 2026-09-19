@@ -106,3 +106,60 @@ def test_unknown_class_raises():
 def test_mismatched_batch_raises():
     with pytest.raises(ValueError, match="must align"):
         ACI(alpha_target=0.1).update_batch([0, 1], [True])
+
+
+def test_update_round_is_one_step_regardless_of_batch_size():
+    """A round is a round: 1,400 rows must not mean 1,400 steps."""
+    a = ACI(alpha_target=0.05, gamma=0.02, n_classes=2)
+    before = a.alpha(1)
+    a.update_round(1, error_rate=1.0)
+    assert a.alpha(1) == pytest.approx(before + 0.02 * (0.05 - 1.0))
+    assert a.n_updates_[1] == 1
+
+
+def test_update_rounds_does_not_oscillate_on_large_batches():
+    """The E3 failure, pinned.
+
+    Per-observation updates over month-sized batches drove the level into its
+    clip bounds and coverage swung between 0.517 and 1.000. One step per round
+    must stay stable on the same input.
+    """
+    rng = np.random.default_rng(0)
+    per_round = ACI(alpha_target=0.05, gamma=0.05, n_classes=2)
+    per_obs = ACI(alpha_target=0.05, gamma=0.05, n_classes=2)
+    trace_round, trace_obs = [], []
+
+    for _ in range(5):                                  # five monthly batches
+        y = np.ones(1400, dtype=int)
+        covered = rng.random(1400) > 0.06               # ~6% miscoverage
+        per_round.update_rounds(y, covered)
+        per_obs.update_batch(y, covered)
+        trace_round.append(per_round.alpha(1))
+        trace_obs.append(per_obs.alpha(1))
+
+    lo, hi = per_round.clip
+    assert lo < per_round.alpha(1) < hi, "per-round update hit a clip bound"
+    assert abs(per_round.alpha(1) - 0.05) < 0.02, "per-round level drifted far"
+
+    # The failure mode is volatility: one step per row makes the level swing by
+    # an order of magnitude more than one step per round on identical input.
+    swing_round = max(trace_round) - min(trace_round)
+    swing_obs = max(trace_obs) - min(trace_obs)
+    assert swing_obs > 10 * swing_round, (
+        f"per-observation swing {swing_obs:.4f} vs per-round {swing_round:.4f}"
+    )
+
+
+def test_update_rounds_tracks_a_shift_in_difficulty():
+    a = ACI(alpha_target=0.05, gamma=0.1, n_classes=1)
+    for _ in range(5):
+        a.update_round(0, error_rate=0.05)              # on target
+    steady = a.alpha(0)
+    for _ in range(5):
+        a.update_round(0, error_rate=0.30)              # regime gets harder
+    assert a.alpha(0) < steady
+
+
+def test_update_round_rejects_bad_rate():
+    with pytest.raises(ValueError, match="error_rate must lie"):
+        ACI(alpha_target=0.05).update_round(0, error_rate=1.5)

@@ -84,13 +84,15 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--pilot", action="store_true", help="one arm, two months")
     ap.add_argument("--thinking", action="store_true", help="use TabPFN-3.5-Thinking")
+    ap.add_argument("--arms", nargs="+", default=None, choices=ARMS,
+                    help="subset of arms to run; default is all three")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--timeout", type=int, default=1200,
                     help="seconds before a stalled month is abandoned")
     ap.add_argument("--gamma", type=float, default=GAMMA)
     args = ap.parse_args()
 
-    arms = ("aci",) if args.pilot else ARMS
+    arms = ("aci",) if args.pilot else tuple(args.arms or ARMS)
     walk = WALK_MONTHS[:2] if args.pilot else WALK_MONTHS
 
     if not load_token():
@@ -213,9 +215,13 @@ def main() -> int:
                   f"({rec['seconds']}s)", flush=True)
 
             if arm == "aci":
-                # Labels for month m arrive after the fact: that is the ACI protocol.
+                # Labels for month m arrive after the fact: that is the ACI
+                # protocol. One step per MONTH, not one per row -- update_batch
+                # would apply ~1,400 steps here and drive the level into its
+                # clip bounds. Observed doing exactly that before this fix:
+                # 0.05 -> 0.5 -> 0.0001 -> 0.5 across five months.
                 covered = sets[np.arange(len(y_ev)), np.searchsorted(cc.classes_, y_ev)]
-                aci.update_batch(np.searchsorted(cc.classes_, y_ev), covered)
+                aci.update_rounds(np.searchsorted(cc.classes_, y_ev), covered)
             history.append(int(m))
 
     print(f"\nWritten to {OUT.relative_to(REPO)}")
