@@ -90,3 +90,10 @@ resuming: 4 configuration(s) already done
 [33/40] split F=200  s=1 cal_frauds=100  fraud_cov@0.1=0.935 width=1.306 (91.1s)
 [34/40] cross F=200  s=1 cal_frauds=200  fraud_cov@0.1=0.933 width=1.304 (107.1s)
 [35/40] split F=200  s=2 cal_frauds=100  fraud_cov@0.1=0.926 width=1.258 (90.3s)
+40 configurations, 4 alphas swept offline (free)
+estimated cost: 1,600,000 tokens  (~8.0% of the monthly budget)
+pool months (0, 1, 2, 3, 4, 5): 794,989 rows, 8,151 frauds
+eval months (6, 7): 205,011 rows, 2,878 frauds
+resuming: 35 configuration(s) already done
+[36/40] cross F=200  s=2 cal_frauds=200  fraud_cov@0.1=0.908 width=1.239 (55.2s)
+[37/40] split F=200  s=3 cal_frauds=100  fraud_cov@0.1=0.949 width=1.349 (11.2s)

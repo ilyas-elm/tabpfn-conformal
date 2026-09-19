@@ -1,55 +1,134 @@
 # tabpfn-conformal
 
-**Split conformal spends your scarcest resource — confirmed fraud labels — to save your cheapest one. With a model that never trains, that trade is simply wrong.**
+**With a hundred confirmed frauds, the 99% guarantee your regulator asks for is
+mathematically unavailable to standard practice. This makes it available.**
 
-Split conformal prediction makes you choose. With a fraud base rate near 1%, a
-pool of 10,000 labelled rows holds roughly a hundred frauds — and split
-conformal spends half of them calibrating a guarantee instead of teaching the
-model. Cross-conformal removes the choice: every label calibrates *and* every
-label is context. The reason nobody reaches for it by default is that it costs
-K refits.
+Conformal prediction turns a model's probabilities into prediction sets with a
+distribution-free coverage guarantee. Split conformal — the default everyone
+uses — holds out half your labels to calibrate that guarantee. With a fraud base
+rate near 1%, a pool of 10,000 transactions holds roughly a hundred frauds, and
+split conformal spends fifty of them on calibration instead of on the model.
 
-**TabPFN-3.5 has no training step.** `fit` swaps the in-context set; no gradient
-descent happens. So K folds are K forward passes rather than K training runs.
-
-Being precise about the cost, because it is easy to overclaim here:
-cross-conformal is **K× the API cost of split conformal** — measured, not
-assumed. What makes it affordable is not the ratio but the absolute figure.
-Five folds on a 10,000-row pool is roughly 50,000 tokens, a quarter of one
-percent of a monthly budget. A hundred confirmed fraud labels costs an analyst
-team weeks. Split conformal spends the expensive resource to save the cheap
-one, and that trade only ever made sense when refitting meant retraining.
+That trade only ever made sense because the alternative meant retraining.
+**TabPFN-3.5 has no training step** — `fit` swaps the in-context set and takes no
+gradient — so K-fold cross-conformal is K forward passes, and every fraud label
+can be both context *and* calibration.
 
 ```python
 from tabpfn_conformal import ConformalClassifier
 
-cc = ConformalClassifier(base_model, method="mondrian", strategy="cross", n_folds=5)
+cc = ConformalClassifier(model, method="mondrian", strategy="cross", n_folds=5)
 cc.fit(X_pool, y_pool)
-sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) boolean: is each label in the set?
+sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the set?
 ```
 
-Changing `strategy="split"` to `strategy="cross"` is the whole diff.
+`strategy="split"` → `"cross"` is the whole diff.
 
-> **Status: work in progress** for the Prior Labs TabPFN-3.5 Hackathon
-> (deadline 6 October 2026). The library and its test suite are complete and
-> run on CPU. The TabPFN experiments and their figures are not yet in the repo;
-> the full plan, including pre-registered predictions and what would falsify
-> them, is in [`docs/CAHIER-DES-CHARGES.md`](docs/CAHIER-DES-CHARGES.md).
-> No results are reported here until they have been measured.
+> **Work in progress** for the Prior Labs TabPFN-3.5 Hackathon (deadline 6 Oct
+> 2026). The library and its 86 tests are complete and run on CPU in under a
+> second. Experiments are running; every number below is measured and the
+> results files are committed. Two of our own pre-registered predictions have
+> already been falsified and are reported as such — see
+> [Results](#results-so-far) and [`docs/limitations.md`](docs/limitations.md).
 
-## Why conformal prediction on top of TabPFN
+## The argument
 
-TabPFN is reported to be the best-calibrated tabular model available — the
-lowest ECE and Brier scores in independent comparisons. But average calibration
-is not a guarantee, and it is not a guarantee *about the class you care about*.
-The same literature finds TabPFN becomes increasingly majority-biased as
-imbalance grows, and fraud lives entirely in the minority class.
+### 1. There is a hard ceiling on what split conformal can promise
 
-Conformal prediction converts that strength into something a risk committee can
-act on: a finite-sample, distribution-free bound on how often the true label is
-in the predicted set. Class-conditional (Mondrian) calibration makes that a
-promise about fraud specifically, not about the average of fraud and
-legitimate traffic.
+Conformal's threshold is the ⌈(n+1)(1−α)⌉-th smallest calibration score, and that
+index cannot exceed `n`. So a calibration set of size `n` can only certify
+**α ≥ 1/(n+1)** — below that, no threshold exists and the predictor must return
+every label. Split conformal calibrates on half your positives. Cross-conformal
+calibrates on all of them:
+
+| confirmed frauds | split can certify | cross can certify |
+|---:|---:|---:|
+| 50 | 96.2% | **98.0%** |
+| 100 | 98.0% | **99.0%** |
+| 200 | 99.0% | **99.5%** |
+| 400 | 99.5% | **99.75%** |
+
+**Cross-conformal exactly halves the tightest guarantee obtainable.** This is
+arithmetic, not a result — you can check it on paper, and it does not depend on
+the dataset, the model, or a random seed.
+
+### 2. Split conformal does not deliver the level you ask for
+
+The same rounding has a second consequence that is easy to miss. The index
+rounds *up*, so a small calibration set silently targets a **higher** level than
+requested:
+
+| calibration positives | level actually targeted at α = 0.10 |
+|---:|---:|
+| 13 | **100.0%** — the threshold *is* the maximum score |
+| 25 | 96.0% |
+| 50 | 92.0% |
+| 100 | 91.0% |
+| 200 | 90.5% |
+
+At any budget, split calibrates on half as many positives as cross, so split is
+always the more conservative of the two. Measured on Bank Account Fraud at
+α=0.10 with a budget of **50 confirmed frauds**: split calibrates on 25 of them,
+targets 96%, and delivers **coverage 0.960 with mean set size 1.497**;
+cross calibrates on all 50, targets 92%, and delivers **0.880 with set size
+1.263**. Split's higher coverage is not better calibration — it is aiming at 96%
+because it cannot aim at 90%, and paying for the overshoot in set width.
+
+### 3. Under extreme imbalance, marginal conformal abandons the minority class
+
+This part is **not our finding** — it is published
+([arXiv:2607.27143](https://arxiv.org/abs/2607.27143); *MAKE* 8(7):190, both
+2026) — and this library pins it as a regression test
+(`tests/test_coverage.py`). Marginal conformal spends its error budget where the
+mass is, so at a 1% base rate the fraud class can fall far below 1−α while the
+headline number looks healthy. Class-conditional (Mondrian) calibration is the
+fix, and it is the default here.
+
+## Results so far
+
+Bank Account Fraud (Feedzai, NeurIPS 2022), 1,000,000 rows at a 1.1029% fraud
+rate. Temporal protocol: months 0–5 are the labelled pool, months 6–7 the
+evaluation set — never a random split, because the fraud rate climbs from 0.875%
+in month 2 to 1.475% in month 7. TabPFN-3.5 through the Prior Labs API.
+
+![Fraud coverage and set size against the fraud-label budget](figures/e1_coverage_alpha005.png)
+
+Regenerate from the committed results, no API key required:
+
+```bash
+python experiments/analyze_e1.py --alpha 0.05
+```
+
+### What we predicted, and what happened
+
+Predictions were registered in [`docs/CAHIER-DES-CHARGES.md`](docs/CAHIER-DES-CHARGES.md)
+before the experiments ran.
+
+| | prediction | outcome |
+|---|---|---|
+| **P1** | cross-conformal has lower seed-variance of fraud coverage | **falsified** — spread 0.107 vs 0.083 at F=25 (cross better) but 0.044 vs 0.081 at F=100 (cross worse). No consistent direction. |
+| **P2** | cross-conformal costs under 2× split in API tokens | **falsified** — measured exactly K×: 2.0× at K=2, 20.0× at K=20. The API prices a call by total rows touched, so each fold is a full pass over the pool. |
+| **P3** | marginal CP under-covers the fraud class; Mondrian does not | holds (and was already published) |
+
+Both performance predictions failed. What survives is the two deterministic
+claims above, which is a sturdier place to stand.
+
+### Cost, measured rather than claimed
+
+`estimate_cost()` transmits dimensions only, so these cost nothing to obtain:
+
+| context rows | normal | cached | saving |
+|---:|---:|---:|---:|
+| 50,000 | 10,000 | 10,000 | 0% |
+| 100,000 | 19,039 | 10,000 | 47% |
+| 200,000 | 68,319 | 17,080 | **75%** |
+| 500,000 | 364,290 | 91,072 | **75%** |
+
+Below ~100,000 context rows everything sits on a 10,000-token minimum charge, so
+the documented KV-cache saving is real but invisible at small scale. Five folds
+on a 10,000-row pool is roughly 50,000 tokens — about 0.25% of a monthly budget.
+Cross-conformal is not cheap relative to split; it is cheap in absolute terms,
+and labels are the resource that is actually scarce.
 
 ## Install
 
@@ -58,94 +137,86 @@ pip install -e ".[dev]"
 pytest
 ```
 
-The core package depends on **numpy, pandas and scikit-learn only**. No torch,
-no `tabpfn`, no GPU: it installs in seconds and its tests run on a laptop. The
-TabPFN code lives in `experiments/` and is never imported by `src/`.
+The core depends on **numpy, pandas and scikit-learn only** — no torch, no
+`tabpfn`, no GPU. 86 tests in under a second on a laptop. TabPFN appears in
+`experiments/` and is never imported by `src/`.
 
-## What's in the library
+For the experiments you additionally need a free Prior Labs account:
 
-| Module | What it does |
+```bash
+pip install -e ".[experiments]"
+python -c "import tabpfn_client; tabpfn_client.init()"
+```
+
+See [`experiments/api/README.md`](experiments/api/README.md) for the token,
+budget discipline and rate limits.
+
+## Library
+
+| module | what it does |
 |---|---|
-| `scores.py` | Nonconformity scores (`one_minus_prob` by default) |
-| `calibration.py` | Split-conformal quantiles: marginal and class-conditional (Mondrian) |
-| `crossconformal.py` | K-fold out-of-fold scoring — the cheap-with-TabPFN path |
-| `wrapper.py` | `ConformalClassifier`, sklearn-compatible |
-| `metrics.py` | Coverage by class, set size, empty-set rate |
+| `scores.py` | nonconformity scores (`one_minus_prob` by default) |
+| `calibration.py` | split-conformal quantiles: marginal and class-conditional |
+| `crossconformal.py` | K-fold out-of-fold scoring |
+| `adaptive.py` | adaptive conformal inference — online per-class levels under drift |
+| `decision.py` | prediction sets → approve / block / review under a budget |
+| `wrapper.py` | `ConformalClassifier`, scikit-learn compatible |
+| `metrics.py` | coverage by class, set size, empty-set rate |
 
-Coming before the deadline: adaptive conformal inference (`adaptive.py`) for
-monthly drift, and a review-budget decision layer (`decision.py`).
+Three decisions worth knowing:
 
-### Two design decisions worth knowing
+**`alpha` is a prediction-time argument.** Calibration stores the *scores*;
+thresholds are derived on demand. Sweeping α costs no further calls to the base
+estimator, which against a metered API is the difference between one billed pass
+and thirty. `predict_set_from_proba` goes further — score once, sweep offline.
 
-**`alpha` is a prediction-time argument, not a calibration-time one.** The
-calibration *scores* are stored and thresholds are derived on demand, so
-sweeping `alpha` costs no extra calls to the base estimator. When each call is a
-metered API request, that is the difference between one experiment and thirty.
-`predict_set_from_proba` goes further: score a test set once, sweep offline.
+**`cal_size` is a constructor argument**, because how a scarce label budget
+should be divided between a foundation model's context and its calibration set
+is the open question this package was built to measure.
 
-**`cal_size` is a constructor argument.** How a scarce label budget should be
-divided between a foundation model's in-context set and its calibration set is
-an open question — one you can only ask of a model with no training step. Making
-it a first-class parameter means the sweep is a loop over the public API.
+**Too few calibration points is a warning, not a silent clip.** When α cannot be
+certified the library returns the trivial all-labels set and raises
+`InsufficientCalibrationWarning`. This fires on real data: at 25 fraud labels it
+fires for every α below 0.0714.
 
 ## Relation to MAPIE and crepes
 
 [MAPIE](https://github.com/scikit-learn-contrib/MAPIE) and
-[crepes](https://github.com/henrikbostrom/crepes) are excellent, mature
-conformal prediction libraries. To be explicit about what is and is not new
-here: **MAPIE 1.5 already ships both `SplitConformalClassifier` and
-`CrossConformalClassifier`, and crepes ships Mondrian conformal classifiers.**
+[crepes](https://github.com/henrikbostrom/crepes) are mature libraries, and to be
+explicit: **MAPIE 1.5 already ships both `SplitConformalClassifier` and
+`CrossConformalClassifier`**, and crepes ships Mondrian classifiers.
 Cross-conformal is a standard method (Vovk, 2015). This package did not invent
 it and does not claim to.
 
-The claim is about *economics*, not method. Cross-conformal is standard and
-rarely used, because K refits is a real cost for a gradient-boosted model. For a
-model with no training step that cost collapses — and TabPFN-3.5 is that model.
-The contribution is measuring what that changes for a fraud-sized label budget,
-and packaging it so the change is a one-word diff.
-
-What this package adds on top of the existing libraries:
-
-- **Label-budget allocation as a first-class parameter** (`cal_size`), because
-  the context-versus-calibration split is the open question for a training-free
-  model.
-- **`alpha` at prediction time and `predict_set_from_proba`**, so an experiment
-  scores a test set once and sweeps `alpha` offline. Against a metered API this
-  is the difference between one billed pass and thirty.
-- **Mondrian combined with cross-conformal** in one object, which is the
-  combination the imbalanced case actually needs.
-- **Online adaptive conformal inference** for monthly drift (in progress).
-- A dependency footprint small enough to vendor into
-  [`tabpfn-extensions`](https://github.com/PriorLabs/tabpfn-extensions), which
-  today has interpretability, embeddings, unsupervised learning and Bayesian
-  optimization but no conformal prediction at all.
-
-Correctness is verified against MAPIE rather than asserted:
+Correctness is verified rather than asserted:
 `tests/test_agreement_with_mapie.py` checks that our marginal split-conformal
-prediction sets are **exactly identical** to MAPIE's `SplitConformalClassifier`
-with the `lac` conformity score, across three alphas and three seeds.
+prediction sets are **exactly identical** to MAPIE's with the `lac` score, across
+three alphas and three seeds.
 
-## Honest caveats
+What is added on top: the label-budget allocation question as a first-class
+parameter, α at prediction time for metered APIs, Mondrian combined with
+cross-conformal in one object, online ACI for monthly drift, and a dependency
+footprint small enough to vendor into
+[`tabpfn-extensions`](https://github.com/PriorLabs/tabpfn-extensions) — which
+today has interpretability, embeddings, unsupervised learning and Bayesian
+optimization, but no conformal prediction at all.
 
-- **Cross-conformal gives approximate validity**, not the exact finite-sample
-  guarantee of split conformal. Pooling out-of-fold scores and applying them to
-  a model fitted on the full pool is the cross-conformal predictor of Vovk
-  (2015); the related CV+ of Barber et al. (2021) bounds worst-case coverage at
-  `1 - 2·alpha`. Empirical coverage is reported alongside this caveat, never
-  instead of it.
-- **Marginal conformal under-covers the minority class** under imbalance. This
-  is a known result ([arXiv:2607.27143](https://arxiv.org/abs/2607.27143), *MAKE*
-  8(7):190), not a discovery of ours — it is pinned here as a regression test.
-- **Too few calibration points in a class** makes the requested `alpha`
-  uncertifiable. The library returns the trivial all-labels set and emits
-  `InsufficientCalibrationWarning`. It never silently clips.
+## Limitations
+
+[`docs/limitations.md`](docs/limitations.md) is written for a reader looking for
+the weak points. In brief: cross-conformal is *approximately* valid, not exactly
+valid (CV+ worst case 1−2α); the feasibility boundary is about what can be
+certified, not what is well estimated; coverage and set size must always be read
+together, because a predictor returning every label has perfect coverage and no
+value; and every cost claim this project originally made about cross-conformal
+being nearly free was wrong and is corrected there.
 
 ## Licence
 
-This repository is licensed under the **Apache License 2.0** (see `LICENSE`).
+Apache 2.0 — see [`LICENSE`](LICENSE).
 
-Note that **TabPFN-3.5's model weights are released by Prior Labs under a
-separate, non-commercial licence**. This package does not bundle, depend on, or
-redistribute them; the experiment scripts call TabPFN through the public
-`tabpfn-client` API or through locally downloaded weights that you obtain and
-license yourself.
+**TabPFN-3.5's model weights are released by Prior Labs under a separate,
+non-commercial licence.** This package does not bundle, depend on, or
+redistribute them; the experiment scripts reach TabPFN through the public
+`tabpfn-client` API. Note also that TabPFN-3.5-Thinking and -Plus have **no local
+weights at all** and exist only through the managed API.
