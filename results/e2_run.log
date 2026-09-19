@@ -1,0 +1,8 @@
+80 configurations, 4 alphas swept offline (free)
+estimated cost: 2,000,000 tokens (~10.0% of the monthly budget)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=20 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.04762). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[1/80] F=100  cal_size=0.2   s=0 cal_frauds=20   cov@.05=0.982 width=1.619  (89.5s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=30 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.03226). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[2/80] F=100  cal_size=0.3   s=0 cal_frauds=30   cov@.05=0.966 width=1.524  (10.7s)
