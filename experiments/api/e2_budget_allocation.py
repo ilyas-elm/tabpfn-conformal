@@ -39,8 +39,8 @@ import numpy as np
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 
-from _common import (  # noqa: E402
-    REPO, load_frames, load_token, make_eval, make_pool, resume_keys, save_proba,
+from _common import (    # noqa: E402
+    REPO, load_frames, load_token, make_eval, make_pool, resume_keys, save_proba, time_limit,
 )
 
 OUT = REPO / "results" / "e2.jsonl"
@@ -74,6 +74,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--pilot", action="store_true")
+    ap.add_argument("--timeout", type=int, default=900,
+                    help="seconds before a stalled configuration is abandoned")
     args = ap.parse_args()
 
     budgets = (100,) if args.pilot else FRAUD_BUDGETS
@@ -132,8 +134,9 @@ def main() -> int:
         )
         t0 = time.perf_counter()
         try:
-            cc.fit(X_pool, y_pool)
-            proba = cc.predict_proba(X_eval)
+            with time_limit(args.timeout):
+                cc.fit(X_pool, y_pool)
+                proba = cc.predict_proba(X_eval)
         except Exception as exc:  # noqa: BLE001
             print(f"[{i}/{len(configs)}] {key(cfg)}: FAILED {type(exc).__name__}: "
                   f"{str(exc)[:110]}", flush=True)

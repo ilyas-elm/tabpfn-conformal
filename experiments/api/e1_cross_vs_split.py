@@ -51,6 +51,9 @@ import pandas as pd
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+from _common import time_limit  # noqa: E402
 
 DATA = REPO / "data" / "Base.csv"
 OUT = REPO / "results" / "e1.jsonl"
@@ -129,6 +132,8 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true", help="price the grid, spend nothing")
     ap.add_argument("--pilot", action="store_true", help="1 seed, 2 budgets")
     ap.add_argument("--seeds", type=int, default=len(SEEDS))
+    ap.add_argument("--timeout", type=int, default=900,
+                    help="seconds before a stalled configuration is abandoned")
     ap.add_argument(
         "--budgets",
         type=int,
@@ -199,8 +204,9 @@ def main() -> int:
         )
         t0 = time.perf_counter()
         try:
-            cc.fit(X_pool, y_pool)
-            proba = cc.predict_proba(X_eval)          # one billed call, reused below
+            with time_limit(args.timeout):
+                cc.fit(X_pool, y_pool)
+                proba = cc.predict_proba(X_eval)      # one billed call, reused below
         except Exception as exc:  # noqa: BLE001
             print(f"[{i}/{len(configs)}] {key(cfg)}: FAILED {type(exc).__name__}: {str(exc)[:120]}", flush=True)
             continue

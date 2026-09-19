@@ -50,7 +50,7 @@ import pandas as pd
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 
-from _common import DATA, LABEL, REPO, TIME, load_token, save_proba, split_xy  # noqa: E402
+from _common import DATA, LABEL, REPO, TIME, load_token, save_proba, split_xy, time_limit  # noqa: E402
 
 OUT = REPO / "results" / "e3.jsonl"
 
@@ -85,6 +85,8 @@ def main() -> int:
     ap.add_argument("--pilot", action="store_true", help="one arm, two months")
     ap.add_argument("--thinking", action="store_true", help="use TabPFN-3.5-Thinking")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--timeout", type=int, default=1200,
+                    help="seconds before a stalled month is abandoned")
     ap.add_argument("--gamma", type=float, default=GAMMA)
     args = ap.parse_args()
 
@@ -184,7 +186,8 @@ def main() -> int:
             level = aci.alpha_dict() if arm == "aci" else ALPHA
             t0 = time.perf_counter()
             try:
-                proba = cc.predict_proba(X_ev)
+                with time_limit(args.timeout):
+                    proba = cc.predict_proba(X_ev)
             except Exception as exc:  # noqa: BLE001
                 print(f"{arm} month {m}: FAILED {type(exc).__name__}: {str(exc)[:110]}",
                       flush=True)
