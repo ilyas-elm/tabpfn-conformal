@@ -53,7 +53,7 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src"))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _common import time_limit  # noqa: E402
+from _common import set_client_timeouts, time_limit  # noqa: E402
 
 DATA = REPO / "data" / "Base.csv"
 OUT = REPO / "results" / "e1.jsonl"
@@ -151,6 +151,7 @@ def main() -> int:
         if line.startswith("TABPFN_TOKEN=") and not os.environ.get("TABPFN_TOKEN"):
             os.environ["TABPFN_TOKEN"] = line.split("=", 1)[1].strip()
 
+    set_client_timeouts()
     from tabpfn_client import TabPFNClassifier, estimate_cost
 
     from tabpfn_conformal import ConformalClassifier, coverage_by_class, average_set_size

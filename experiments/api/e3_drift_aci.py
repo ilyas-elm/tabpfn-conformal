@@ -50,7 +50,7 @@ import pandas as pd
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 
-from _common import DATA, LABEL, REPO, TIME, load_token, save_proba, split_xy, time_limit  # noqa: E402
+from _common import DATA, LABEL, REPO, TIME, load_token, save_proba, set_client_timeouts, split_xy, time_limit  # noqa: E402
 
 OUT = REPO / "results" / "e3.jsonl"
 
@@ -99,6 +99,7 @@ def main() -> int:
         print("No TABPFN_TOKEN -- see experiments/api/README.md", file=sys.stderr)
         return 2
 
+    set_client_timeouts()
     from tabpfn_client import TabPFNClassifier, estimate_cost
     from tabpfn_conformal import ACI, ConformalClassifier, coverage_by_class, average_set_size
 

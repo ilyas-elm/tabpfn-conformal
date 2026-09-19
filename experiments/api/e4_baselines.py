@@ -39,7 +39,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 
 from _common import (  # noqa: E402
-    REPO, load_frames, load_token, make_eval, make_pool, resume_keys, save_proba,
+    REPO, load_frames, load_token, make_eval, make_pool, resume_keys, save_proba, set_client_timeouts,
     time_limit,
 )
 
@@ -112,6 +112,7 @@ def main() -> int:
         print("No TABPFN_TOKEN -- see experiments/api/README.md", file=sys.stderr)
         return 2
 
+    set_client_timeouts()
     from tabpfn_client import estimate_cost
     from tabpfn_conformal import (
         ConformalClassifier, average_set_size, coverage_by_class,
@@ -173,7 +174,16 @@ def main() -> int:
                     rec = {
                         **cfg, "n_grad_fits": n_grad,
                         "recall": float((flagged & (y_eval == 1)).sum() / max((y_eval == 1).sum(), 1)),
+                        # flag_rate is measured on an evaluation set enriched to
+                        # ~49% fraud, so it is NOT the production flag rate.
+                        # false_positive_rate is a within-class quantity and is
+                        # unbiased by the enrichment -- report that one.
                         "flag_rate": float(flagged.mean()),
+                        "false_positive_rate": float(
+                            (flagged & (y_eval == 0)).sum() / max((y_eval == 0).sum(), 1)
+                        ),
+                        "n_eval_fraud": int((y_eval == 1).sum()),
+                        "n_eval_legit": int((y_eval == 0).sum()),
                         "threshold": thr,
                         "has_guarantee": False,
                         "alphas": {},

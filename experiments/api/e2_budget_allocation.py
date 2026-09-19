@@ -40,7 +40,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 
 from _common import (    # noqa: E402
-    REPO, load_frames, load_token, make_eval, make_pool, resume_keys, save_proba, time_limit,
+    REPO, load_frames, load_token, make_eval, make_pool, resume_keys, save_proba, set_client_timeouts, time_limit,
 )
 
 OUT = REPO / "results" / "e2.jsonl"
@@ -87,6 +87,7 @@ def main() -> int:
         print("No TABPFN_TOKEN -- see experiments/api/README.md", file=sys.stderr)
         return 2
 
+    set_client_timeouts()
     from tabpfn_client import TabPFNClassifier, estimate_cost
     from tabpfn_conformal import ConformalClassifier, average_set_size, coverage_by_class
 
