@@ -198,6 +198,52 @@ so the paired test is the correct one, and it reverses the call.
 
 ---
 
+## E4 — baselines, the guarantee, and the daily cap
+
+**⚑ TabPFN beats LightGBM at a matched guarantee, in all four comparisons.** Same
+strategy and budget ⇒ same calibration size ⇒ identical targeted level, so set
+size compares the models cleanly:
+
+| strategy | budget | targeted level | TabPFN | LightGBM | TabPFN narrower by |
+|---|---:|---:|---:|---:|---:|
+| split | 100 | 98.0% | **1.618** | 1.764 | 8.3% |
+| split | 200 | 96.0% | **1.574** | 1.649 | 4.6% |
+| cross | 100 | 96.0% | **1.471** | 1.680 | **12.4%** |
+| cross | 200 | 95.5% | **1.459** | 1.566 | 6.8% |
+
+This is the cleanest showcase result in the project: conformal prediction
+converts model quality into a unit a fraud desk acts on — how many cases land in
+a human's queue — and TabPFN wins on it by 5–12%.
+
+**✗ P5 looks falsified too.** LightGBM cross-conformal ran in ~6s against
+TabPFN's ~51s. The comparison is confounded (remote vs local CPU) and every row
+carries `wallclock_comparable: false`, but the intuition behind P5 — that K
+gradient-boosted trainings would be prohibitive — is simply wrong at this scale.
+LightGBM trains on 9,000 rows in under a second. The hardware-neutral claim
+(0 gradient fits vs 6) stands; the speed claim does not, and should not be made.
+
+**✗ A marginal rate on an enriched evaluation set.** The threshold arms reported
+`flag_rate = 0.64`, measured on a set that is ~49% fraud by construction. That is
+not a production flag rate. Replaced with **false-positive rate**, a within-class
+quantity that the enrichment cannot bias: the tuned-threshold arm flags **41% of
+legitimate traffic** to reach 0.92 recall. The same caveat applies to reading set
+size as a review load, and is now printed with the table.
+
+**⚙ The daily cap is 5,000,000 tokens, separate from the 20M monthly.** E4 hit it
+at 4.99M and the remaining nine TabPFN configurations failed with HTTP 429. Not a
+bug and fully recoverable — the run resumes — but the cahier tracked the monthly
+budget and not the daily one. Both need watching.
+
+**⚙ The SIGALRM watchdog does not work on this client.** `tabpfn-client` uses
+httpx with its own timeouts: 900s per request and **7200s — two hours — for
+uploads and async polling**, which is precisely the 1h50m stall seen earlier. A
+signal handler cannot interrupt a socket read happening below Python off the
+main thread, and the watchdog silently failed to fire 18 minutes past a 15-minute
+limit. The real fix is `TABPFN_CLIENT_TIMEOUT`, `TABPFN_CLIENT_UPLOAD_TIMEOUT`
+and `TABPFN_CLIENT_ASYNC_POLL_TIMEOUT`, which are read from the environment and
+must be set **before** importing the client. `_common.set_client_timeouts()` does
+this and every experiment calls it.
+
 ## Scoreboard
 
 | | prediction, registered before the experiments ran | outcome |
@@ -206,9 +252,9 @@ so the paired test is the correct one, and it reverses the call.
 | P2 | cross-conformal costs under 2× split in tokens | **falsified** — exactly K× |
 | P3 | marginal CP under-covers the fraud class; Mondrian fixes it | held (already published) |
 | P4 | static thresholds decay under drift; ACI holds coverage | **falsified** — threshold quantization |
-| P5 | LightGBM cross-conformal costs far more wall-clock | **not yet measured** (E4) |
+| P5 | LightGBM cross-conformal costs far more wall-clock | **falsified** — ~6s vs TabPFN's ~51s. Confounded (remote vs local), but the intuition was wrong: LightGBM trains on 9,000 rows in under a second. |
 
-Three of four resolved predictions failed. What survived is sturdier for it: the
+Four of five resolved predictions failed. What survived is sturdier for it: the
 feasibility ceiling and level fidelity are *deterministic* — checkable on paper,
 not falsifiable by more data — and the half-the-labels result is measured at
 matched level with no confound.

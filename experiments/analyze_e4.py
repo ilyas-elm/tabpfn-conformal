@@ -48,6 +48,7 @@ def load(alpha: str):
         else:
             cell["recall"].append(r["recall"])
             cell["flag_rate"].append(r["flag_rate"])
+            cell["fpr"].append(r.get("false_positive_rate", float("nan")))
     return conf, thresh, len(rows)
 
 
@@ -92,7 +93,7 @@ def cost(conf, thresh):
 
 def guarantee(conf, thresh, alpha: str):
     print("\n### 3. Guarantee versus no guarantee\n")
-    print("| arm | guarantee? | fraud coverage / recall | cost in set size or flag rate |")
+    print("| arm | guarantee? | fraud coverage / recall | operational cost |")
     print("|---|:--:|---:|---:|")
     for (arm, budget), cell in sorted(conf.items()):
         if budget != max(b for (_, b) in conf):
@@ -103,8 +104,13 @@ def guarantee(conf, thresh, alpha: str):
         if budget != max(b for (_, b) in thresh):
             continue
         print(f"| {arm} | **no** | {np.mean(cell['recall']):.3f} recall | "
-              f"{np.mean(cell['flag_rate']):.3f} flag rate |")
-    print("\nThe threshold arms are the approach arXiv:2605.21742 found strongest for "
+              f"{np.nanmean(cell['fpr']):.3f} of legitimate traffic flagged |")
+    print("\n> Both cost columns are within-class or set-size quantities. The evaluation "
+          "set is enriched to ~49% fraud, so any *marginal* rate measured on it — a raw "
+          "flag rate, or set size read as a production review load — would be inflated. "
+          "False-positive rate is a within-class quantity and is unbiased by the "
+          "enrichment.\n")
+    print("The threshold arms are the approach arXiv:2605.21742 found strongest for "
           "prior-data fitted networks, and they reach comparable recall. What they "
           "cannot do is tell you that recall will hold on next month's traffic. That is "
           "the entire difference, and it is not visible in a recall column.")

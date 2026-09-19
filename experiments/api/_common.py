@@ -24,6 +24,27 @@ EVAL_LEGIT = 3_000
 BASE_RATE = 0.011
 
 
+# httpx timeouts the client applies to its own calls. The shipped defaults are
+# 900s for a request and 7200s -- two hours -- for uploads and async polling,
+# which is why a dropped response once stalled a run for 1h50m while consuming
+# 18 seconds of CPU. A SIGALRM watchdog does NOT rescue this: the read blocks
+# below Python, off the main thread, so the signal is never delivered. These
+# must be set BEFORE tabpfn_client is imported.
+CLIENT_TIMEOUTS = {
+    "TABPFN_CLIENT_TIMEOUT": "300",
+    "TABPFN_CLIENT_UPLOAD_TIMEOUT": "600",
+    "TABPFN_CLIENT_ASYNC_POLL_TIMEOUT": "900",
+}
+
+
+def set_client_timeouts(**overrides) -> dict[str, str]:
+    """Bound how long a single API call may block. Call before importing the client."""
+    applied = {**CLIENT_TIMEOUTS, **{k: str(v) for k, v in overrides.items()}}
+    for k, v in applied.items():
+        os.environ.setdefault(k, v)
+    return applied
+
+
 def load_token() -> bool:
     """Put TABPFN_TOKEN in the environment from .env if it is not already set."""
     if os.environ.get("TABPFN_TOKEN"):
