@@ -18,7 +18,10 @@ Conformal prediction is a mature field. **Nothing in the method is new.**
 | Conformal prediction over TabPFN | Moudiki's nnetsauce posts — **regression only** |
 
 What is actually contributed: a tested, installable conformal layer for TabPFN
-**classification**, which did not exist anywhere; a measurement of how a scarce
+**classification**. (`tabpfn-extensions` does ship one conformal module,
+`cp_missing_data`, but it is regression-only and specialised to missing-data
+patterns — there is no conformal classification anywhere in the TabPFN
+ecosystem that we could find.) a measurement of how a scarce
 label budget should be divided between a training-free model's in-context set
 and its calibration set, which nobody has published; and the observation that a
 model with no training step changes which conformal variant is practical.

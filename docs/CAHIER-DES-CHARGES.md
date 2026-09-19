@@ -82,7 +82,7 @@ Everything below was checked on 18 Sept 2026. Re-verify anything marked ⚠ befo
 
 ### 3.3 The gap in `tabpfn-extensions` is real
 
-Confirmed modules: `interpretability`, `many_class`, `unsupervised`, `embedding`, `image`, `tabebm`, `pval_crt`, `bayesian_optimization`. **No conformal prediction, no calibration, no coverage guarantees.** Apache 2.0, contributions welcome, `uv` + `pytest` conventions.
+**⚠ Corrected 20 Sept from the source, not the README.** The repo has 13 modules: `bayesian_optimization`, `benchmarking`, `cp_missing_data`, `embedding`, `image`, `interpretability`, `many_class`, `misc`, `pval_crt`, `scoring`, `survival`, `tabebm`, `unsupervised`. **`cp_missing_data` is conformal** — but regression-only (`CPMDATabPFNRegressor`), split-conformal, specialised to missing-data patterns. The gap is **conformal prediction for classification**: no class-conditional calibration, no cross-conformal, no online variant. Apache 2.0, contributions welcome, `uv` + `pytest` conventions.
 
 ### 3.4 Bank Account Fraud (BAF), Feedzai / NeurIPS 2022
 

@@ -287,9 +287,16 @@ What is added on top: the label-budget allocation question as a first-class
 parameter, α at prediction time for metered APIs, Mondrian combined with
 cross-conformal in one object, online ACI for monthly drift, and a dependency
 footprint small enough to vendor into
-[`tabpfn-extensions`](https://github.com/PriorLabs/tabpfn-extensions) — which
-today has interpretability, embeddings, unsupervised learning and Bayesian
-optimization, but no conformal prediction at all.
+[`tabpfn-extensions`](https://github.com/PriorLabs/tabpfn-extensions).
+
+To be precise about that last point, since it is easy to overstate: the
+extensions repo **does** contain one conformal module, `cp_missing_data`, which
+exports `CPMDATabPFNRegressor` — a **regression** interval estimator specialised
+to missing-data patterns, using a single split-conformal calibration set. There
+is no conformal prediction for **classification**, no class-conditional
+calibration, no cross-conformal, and no online variant. That is the gap. The
+existence of `cp_missing_data` is encouraging rather than awkward: it shows
+conformal contributions are in scope.
 
 ## What we got wrong
 

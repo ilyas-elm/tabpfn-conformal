@@ -26,10 +26,9 @@ only. Thinking tops TabArena, BeyondArena, STRABLE and MulTaBench. So a Kaggle
 GPU runs the *second-best* model, and the API is not a budget compromise but the
 only route to the best one. This settled the compute plan.
 
-**⚑ `tabpfn-extensions` has no conformal prediction.** Verified against its
-module list: interpretability, many_class, unsupervised, embedding, image,
-tabebm, pval_crt, bayesian_optimization. The gap is real. Apache 2.0, takes
-contributions.
+**⚑ `tabpfn-extensions` has no conformal prediction for classification.**
+*(Originally recorded as "no conformal prediction at all" — corrected 20 Sept,
+see below.)* Apache 2.0, takes contributions.
 
 **Correction to the brief:** BAF Base is **1.10%** fraud (~1 in 91), not 1 in 300.
 
@@ -243,6 +242,33 @@ limit. The real fix is `TABPFN_CLIENT_TIMEOUT`, `TABPFN_CLIENT_UPLOAD_TIMEOUT`
 and `TABPFN_CLIENT_ASYNC_POLL_TIMEOUT`, which are read from the environment and
 must be set **before** importing the client. `_common.set_client_timeouts()` does
 this and every experiment calls it.
+
+## 20 September — a claim of ours that was wrong
+
+**✗ `tabpfn-extensions` does contain a conformal module.** Four documents said
+it had "no conformal prediction at all". That came from a web summary of the
+repo's README rather than its source, and it is false: `cp_missing_data` exports
+`CPMDATabPFNRegressor`.
+
+Read from the source this time, the accurate statement is narrower and still a
+real gap. `cp_missing_data` is a **regression** interval estimator specialised to
+**missing-data patterns** — single split-conformal calibration (`val_size=0.3`),
+correction terms per missing-data mask, quantile intervals rather than
+prediction sets. There is no conformal prediction for **classification**, no
+class-conditional calibration, no cross-conformal, and no online variant.
+
+The full module list is also longer than recorded: bayesian_optimization,
+benchmarking, cp_missing_data, embedding, image, interpretability, many_class,
+misc, pval_crt, scoring, survival, tabebm, unsupervised.
+
+This one mattered. Prior Labs personnel judge this hackathon, they know their own
+repository, and "no conformal prediction at all" is the kind of overstatement
+that discredits everything stated next to it. Found only because the PR
+preparation required cloning the repo rather than reading about it.
+
+It also cuts the other way: `cp_missing_data` existing is **evidence conformal
+contributions are in scope**, which is a better argument for the PR than an
+empty category would have been.
 
 ## Scoreboard
 
