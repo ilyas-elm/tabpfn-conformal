@@ -25,7 +25,7 @@ FAST_TEST_MODE=1 pytest tests/test_conformal.py -v
 ```
 
 Verified locally: the module imports as `tabpfn_extensions.conformal` and all
-**9 tests pass under `FAST_TEST_MODE=1` in 0.84s**, with no TabPFN import and no
+**all tests pass under `FAST_TEST_MODE=1` in under a second**, with no TabPFN import and no
 GPU.
 
 ## PR description
@@ -63,8 +63,13 @@ GPU.
 > scikit-learn estimators rather than TabPFN, since the machinery is model-agnostic
 > and testing against TabPFN would slow the suite without covering anything extra.
 >
-> **Honest scope.** Binary and multiclass prediction sets; the benchmarks are
-> binary only. Cross-conformal is approximately valid rather than exactly valid
+> **Scope.** Prediction sets for any number of classes — `tests/test_multiclass.py`
+> covers 3 and 5, where the class-conditional argument is if anything stronger
+> (marginal leaves the worst class at 0.679 coverage against a 0.90 target;
+> Mondrian holds 0.890). Should compose with `ManyClassClassifier`. The
+> benchmarks here are binary, because the motivating problem is.
+>
+> Cross-conformal is approximately valid rather than exactly valid
 > (Vovk 2015; CV+ worst case `1 - 2*alpha`) and the module says so where it matters.
 > The methods are standard — this is packaging, not new statistics.
 >

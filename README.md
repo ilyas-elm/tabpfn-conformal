@@ -224,7 +224,7 @@ and labels are the resource that is actually scarce.
 
 ```bash
 pip install -e ".[dev]"   # tests, plus everything needed to redraw the figures
-pytest                    # 90 tests, CPU, ~10s on a cold clone
+pytest                    # 99 tests, CPU, ~10s on a cold clone
 ```
 
 The core depends on **numpy, pandas and scikit-learn only** — no torch, no
@@ -251,6 +251,15 @@ budget discipline and rate limits.
 | `adaptive.py` | adaptive conformal inference — online per-class levels under drift |
 | `decision.py` | prediction sets → approve / block / review under a budget |
 | `wrapper.py` | `ConformalClassifier`, scikit-learn compatible |
+
+The conformal machinery is **not restricted to binary** — scores, calibration,
+cross-conformal and the wrapper all work for any number of classes, and the
+class-conditional argument gets stronger with more of them: at five skewed
+classes, marginal conformal leaves the worst class at **0.679** coverage while
+Mondrian holds **0.890** against a 0.90 target. `tests/test_multiclass.py` pins
+this. Only `decision.route` is binary by nature — approve / block / review has no
+sensible reading across five classes. The **benchmarks** in this repository are
+binary, because the motivating problem is.
 | `metrics.py` | coverage by class, set size, empty-set rate |
 
 Three decisions worth knowing:
