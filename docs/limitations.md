@@ -83,8 +83,10 @@ same experiment.
 
 ## Scope
 
-Binary classification only. No regression, no multiclass, no fine-tuning of
-TabPFN. One dataset (Bank Account Fraud Base); the other five BAF variants and
+No regression and no fine-tuning of TabPFN. **Multiclass is supported and
+tested** (`tests/test_multiclass.py`) even though the benchmarks are binary —
+only `decision.route` is binary by nature. Treat multiclass as working software
+with no benchmark evidence behind it here, rather than as a validated claim. One dataset (Bank Account Fraud Base); the other five BAF variants and
 other imbalanced datasets are untested. `one_minus_prob` is the only score that
 changes anything — for a fixed threshold, any strictly increasing transform of
 it produces identical prediction sets, which `tests/test_scores.py` asserts.

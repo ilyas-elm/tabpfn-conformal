@@ -170,7 +170,7 @@ Point 3 is small. It is one good figure, not a paper. Sized honestly it is an as
 
 ### 4.3 Explicitly OUT of scope
 
-Fine-tuning TabPFN · regression · multiclass · web UI · beating raw AUC · **any TabPFN/torch/GPU import inside `src/tabpfn_conformal`** · conformal risk control · weighted/covariate-shift conformal (mention as future work).
+Fine-tuning TabPFN · regression · ~~multiclass~~ (*the core turned out to be class-count agnostic and is now tested for it; only the decision layer is binary — 20 Sept*) · web UI · beating raw AUC · **any TabPFN/torch/GPU import inside `src/tabpfn_conformal`** · conformal risk control · weighted/covariate-shift conformal (mention as future work).
 
 ---
 
