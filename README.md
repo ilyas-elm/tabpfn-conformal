@@ -234,6 +234,14 @@ footprint small enough to vendor into
 today has interpretability, embeddings, unsupervised learning and Bayesian
 optimization, but no conformal prediction at all.
 
+## What we got wrong
+
+[`docs/FINDINGS.md`](docs/FINDINGS.md) is a chronological log of every discovery
+and every correction, including four claims this project made and then measured
+to be false. Three of four pre-registered predictions were falsified. The
+corrections are in the log because they are the most informative part of the
+work, not despite being unflattering.
+
 ## Limitations
 
 [`docs/limitations.md`](docs/limitations.md) is written for a reader looking for

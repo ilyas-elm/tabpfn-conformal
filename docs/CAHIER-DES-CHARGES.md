@@ -2,6 +2,9 @@
 
 **Prior Labs TabPFN-3.5 Hackathon** · drafted 18 Sept 2026 · deadline **6 Oct 2026, 23:59 CEST** (22:59 Morocco) · **18 days**
 
+> **Findings live in [`FINDINGS.md`](FINDINGS.md).** This document is the *plan*;
+> the log is what actually happened, in order. Where they disagree, the log wins.
+>
 > Status: **v2 (19 Sept) — positioning locked, API shape signed off, library and tests done. Blocked on an API token (M0b).** This document is the contract. If a decision is not written here, it has not been made; if it is written here, do not relitigate it mid-build without editing this file first.
 
 ---
