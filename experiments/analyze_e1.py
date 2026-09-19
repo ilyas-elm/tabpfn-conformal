@@ -204,6 +204,40 @@ def tables(agg, alpha: str):
         print(f"| {f} | {1 - 2 / (f + 2):.2%} | **{1 - 1 / (f + 1):.2%}** |")
 
 
+def matched_level_table(agg, alpha: str):
+    """The comparison that is not confounded.
+
+    Split at budget 2F calibrates on F positives, exactly as cross at budget F
+    does. Identical calibration size means an identical targeted level, so these
+    pairs can be compared directly on set width -- no interpolation, no matching
+    on realised coverage, no confound. The question it answers is the practical
+    one: how many confirmed frauds does each method need for the same guarantee?
+    """
+    a = float(alpha)
+    by_ncal = {}
+    for strategy in ("split", "cross"):
+        for budget, cell in agg.get(strategy, {}).items():
+            n = int(round(np.mean(cell["n_cal"])))
+            by_ncal.setdefault(n, {})[strategy] = (budget, float(np.mean(cell["width"])))
+
+    pairs = {n: v for n, v in by_ncal.items() if {"split", "cross"} <= set(v)}
+    if not pairs:
+        return
+
+    print(f"\n### Matched on calibration size — identical targeted level (alpha = {alpha})\n")
+    print("| calib. positives | targeted level | split needs | its set size | "
+          "cross needs | its set size | labels saved |")
+    print("|---:|---:|---:|---:|---:|---:|---:|")
+    for n in sorted(pairs):
+        k = math.ceil((n + 1) * (1 - a))
+        target = "infeasible" if k > n else f"{k / n:.1%}"
+        (sb, sw), (cb, cw) = pairs[n]["split"], pairs[n]["cross"]
+        verdict = "narrower" if cw < sw else "wider"
+        print(f"| {n} | {target} | {sb} frauds | {sw:.3f} | **{cb} frauds** | "
+              f"**{cw:.3f}** ({verdict} by {abs(cw - sw) / sw:.1%}) | "
+              f"**{sb - cb} ({(sb - cb) / sb:.0%})** |")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--alpha", default="0.05")
@@ -216,6 +250,7 @@ def main() -> int:
     print(f"{len(rows)} result rows; strategies {sorted(agg)}")
     figure(agg, float(args.alpha), FIGS / f"e1_coverage_alpha{args.alpha.replace('.', '')}")
     tables(agg, args.alpha)
+    matched_level_table(agg, args.alpha)
     return 0
 
 

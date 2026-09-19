@@ -1,7 +1,10 @@
 # tabpfn-conformal
 
-**With a hundred confirmed frauds, the 99% guarantee your regulator asks for is
-mathematically unavailable to standard practice. This makes it available.**
+**Cross-conformal reaches the same coverage guarantee from half the confirmed
+frauds — and that is only affordable because TabPFN never trains.**
+
+With a hundred confirmed frauds, the 99% guarantee a regulator asks for is
+mathematically unavailable to standard practice. This makes it available.
 
 Conformal prediction turns a model's probabilities into prediction sets with a
 distribution-free coverage guarantee. Split conformal — the default everyone
@@ -52,7 +55,30 @@ calibrates on all of them:
 arithmetic, not a result — you can check it on paper, and it does not depend on
 the dataset, the model, or a random seed.
 
-### 2. Split conformal does not deliver the level you ask for
+### 2. Measured: the same guarantee from half the labels
+
+Split conformal at a budget of 2F frauds calibrates on F of them — exactly as
+cross-conformal at a budget of F does. **Identical calibration size means an
+identical targeted level**, so these pairs compare directly on set width with no
+confound, no interpolation and no matching on realised coverage. Measured on
+Bank Account Fraud at α = 0.10:
+
+| targeted level | split needs | its set size | cross needs | its set size | labels saved |
+|---:|---:|---:|---:|---:|---:|
+| 96.0% | 50 frauds | 1.497 | **25 frauds** | **1.304** (12.9% narrower) | **50%** |
+| 92.0% | 100 frauds | 1.345 | **50 frauds** | **1.263** (6.1% narrower) | **50%** |
+| 91.0% | 200 frauds | 1.300 | **100 frauds** | **1.268** (2.5% narrower) | **50%** |
+
+Cross-conformal halves the number of confirmed frauds needed for any given
+guarantee, and the sets are narrower rather than wider — in five of six
+comparisons across α = 0.05 and 0.10, with the sixth a 0.4% tie. The advantage
+grows as labels get scarcer, which is the regime that matters.
+
+For a fraud desk, a hundred confirmed frauds is weeks of analyst work. Fifty
+thousand API tokens is 0.25% of a monthly budget. Split conformal spends the
+expensive resource to save the cheap one.
+
+### 3. Split conformal does not deliver the level you ask for
 
 The same rounding has a second consequence that is easy to miss. The index
 rounds *up*, so a small calibration set silently targets a **higher** level than
@@ -74,7 +100,7 @@ cross calibrates on all 50, targets 92%, and delivers **0.880 with set size
 1.263**. Split's higher coverage is not better calibration — it is aiming at 96%
 because it cannot aim at 90%, and paying for the overshoot in set width.
 
-### 3. Under extreme imbalance, marginal conformal abandons the minority class
+### 4. Under extreme imbalance, marginal conformal abandons the minority class
 
 This part is **not our finding** — it is published
 ([arXiv:2607.27143](https://arxiv.org/abs/2607.27143); *MAKE* 8(7):190, both
