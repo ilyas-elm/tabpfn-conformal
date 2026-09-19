@@ -311,6 +311,45 @@ What survives does not depend on a ratio, which is why it is stronger:
 
 Point 3 is the durable claim: it is about data efficiency, survives any cost measurement, and still needs a training-free model to be actionable.
 
+### 7.4 Two corrections forced by the E1 data (19 Sept)
+
+**(a) Realised coverage was being compared at different levels.** The conformal
+index ⌈(n+1)(1−α)⌉ rounds *up*, so a small calibration set silently targets a
+higher level than α asks for:
+
+| calibration positives | level actually targeted at α=0.10 |
+|---:|---:|
+| 13 | **100.0%** (the threshold *is* the maximum score) |
+| 25 | 96.0% |
+| 50 | 92.0% |
+| 100 | 91.0% |
+| 200 | 90.5% |
+
+At any fraud budget split calibrates on half as many positives as cross, so
+**split is always the more conservative of the two** and its higher realised
+coverage at small budgets is granularity, not calibration. Reporting the two
+side by side without this column was comparing a 100% predictor against a 96%
+predictor and calling the first one better. `analyze_e1.py` now prints the
+targeted level and the gap to it, and the figure draws each method's own target
+as a dotted line.
+
+**(b) P1 is NOT supported by the data.** Seed spread of fraud coverage at
+α=0.10: F=25 split 0.107 vs cross 0.083 (cross better), but F=100 split 0.044
+vs cross 0.081 (cross **worse**). Mixed, with no consistent direction. Per §7.1
+the falsification rule applies: P1 does not carry the headline.
+
+**What survives, in order of strength:**
+
+1. **§7.3 feasibility** — deterministic, checkable on paper, unaffected by any of this.
+2. **Level fidelity** — cross targets what you asked for; split overshoots at fraud-scale n. Also deterministic.
+3. **Set width** — cross is narrower at every budget (1.30 vs 1.50 at F=25). ⚠ *Partly confounded*: cross also targets a lower level, and narrower sets at a lower target is not a clean win. The honest comparison is width at **matched realised coverage**, which needs a dense α sweep.
+
+**Process fix:** E1 stored only four α values, so (3) cannot be settled from the
+data already paid for. E2 and E3 now persist the evaluation probabilities
+(`results/proba/`, ~80 KB per configuration) so α can be swept densely offline
+for free and the frontier computed after the fact. This should have been in E1
+from the start.
+
 ### 7.3 The feasibility boundary — sharper than P1, and deterministic
 
 Found in the E1 pilot, 19 Sept. Split conformal can only certify

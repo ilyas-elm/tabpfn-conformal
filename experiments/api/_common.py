@@ -102,3 +102,22 @@ def resume_keys(path: pathlib.Path, key_fn) -> set:
         except (ValueError, KeyError):
             continue
     return out
+
+
+def save_proba(tag: str, key: str, proba, y_true) -> str:
+    """Persist evaluation probabilities so alpha can be swept densely, offline.
+
+    Without this, an experiment is locked to whatever alpha grid it happened to
+    choose at runtime, and the honest comparison -- set width at MATCHED
+    realised coverage -- cannot be computed after the fact without paying for
+    the predictions again. Roughly 80 KB per configuration.
+    """
+    import re
+
+    out = REPO / "results" / "proba" / tag
+    out.mkdir(parents=True, exist_ok=True)
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", key)
+    path = out / f"{safe}.npz"
+    np.savez_compressed(path, proba=np.asarray(proba, dtype=np.float32),
+                        y_true=np.asarray(y_true))
+    return str(path.relative_to(REPO))

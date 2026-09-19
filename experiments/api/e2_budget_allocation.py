@@ -40,7 +40,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 
 from _common import (  # noqa: E402
-    REPO, load_frames, load_token, make_eval, make_pool, resume_keys,
+    REPO, load_frames, load_token, make_eval, make_pool, resume_keys, save_proba,
 )
 
 OUT = REPO / "results" / "e2.jsonl"
@@ -142,6 +142,7 @@ def main() -> int:
         n_cal_fraud = int(cc.n_calibration_.get(1, 0))
         rec = {
             **cfg,
+            "proba_file": save_proba("e2", key(cfg), proba, y_eval),
             "n_pool": int(len(y_pool)),
             "n_cal_fraud": n_cal_fraud,
             # The hard floor from section 7.3, recorded per row so the analysis
