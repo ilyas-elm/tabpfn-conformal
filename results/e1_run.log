@@ -97,3 +97,8 @@ eval months (6, 7): 205,011 rows, 2,878 frauds
 resuming: 35 configuration(s) already done
 [36/40] cross F=200  s=2 cal_frauds=200  fraud_cov@0.1=0.908 width=1.239 (55.2s)
 [37/40] split F=200  s=3 cal_frauds=100  fraud_cov@0.1=0.949 width=1.349 (11.2s)
+[38/40] cross F=200  s=3 cal_frauds=200  fraud_cov@0.1=0.887 width=1.230 (55.4s)
+[39/40] split F=200  s=4 cal_frauds=100  fraud_cov@0.1=0.931 width=1.283 (11.7s)
+[40/40] cross F=200  s=4 cal_frauds=200  fraud_cov@0.1=0.913 width=1.272 (60.5s)
+
+Written to results/e1.jsonl
