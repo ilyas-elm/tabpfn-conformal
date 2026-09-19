@@ -1,6 +1,6 @@
 # tabpfn-conformal
 
-**Conformal prediction, priced for a model that never trains.**
+**Split conformal spends your scarcest resource — confirmed fraud labels — to save your cheapest one. With a model that never trains, that trade is simply wrong.**
 
 Split conformal prediction makes you choose. With a fraud base rate near 1%, a
 pool of 10,000 labelled rows holds roughly a hundred frauds — and split
@@ -10,11 +10,15 @@ label is context. The reason nobody reaches for it by default is that it costs
 K refits.
 
 **TabPFN-3.5 has no training step.** `fit` swaps the in-context set; no gradient
-descent happens. So K folds are K forward passes, and on the Prior Labs API
-fits are not even token-charged — only predictions are, and each row is
-predicted exactly once regardless of K. The strongest form of calibration
-becomes affordable because of a property of the model, not because of anything
-clever in this library.
+descent happens. So K folds are K forward passes rather than K training runs.
+
+Being precise about the cost, because it is easy to overclaim here:
+cross-conformal is **K× the API cost of split conformal** — measured, not
+assumed. What makes it affordable is not the ratio but the absolute figure.
+Five folds on a 10,000-row pool is roughly 50,000 tokens, a quarter of one
+percent of a monthly budget. A hundred confirmed fraud labels costs an analyst
+team weeks. Split conformal spends the expensive resource to save the cheap
+one, and that trade only ever made sense when refitting meant retraining.
 
 ```python
 from tabpfn_conformal import ConformalClassifier
