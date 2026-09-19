@@ -80,7 +80,7 @@ class ACI:
 
         self.alphas_ = np.full(self.n_classes, float(alpha_target))
         self.n_updates_ = np.zeros(self.n_classes, dtype=int)
-        self.n_errors_ = np.zeros(self.n_classes, dtype=int)
+        self.n_errors_ = np.zeros(self.n_classes, dtype=float)
         self.history_: list[dict] = []
 
     # -------------------------------------------------------------- reading
@@ -117,8 +117,55 @@ class ACI:
         self.n_errors_[class_idx] += int(not covered)
         return self.alpha(class_idx)
 
+    def update_round(self, class_idx: int, error_rate: float) -> float:
+        """One ACI step for a whole batch, using its observed miscoverage rate.
+
+        Use this when predictions arrive in batches -- a month of transactions,
+        a daily file -- rather than one point at a time.
+
+        The distinction matters more than it looks. :meth:`update` applies one
+        step of size ``gamma`` per observation, which is correct when you
+        predict one point, see its label, and predict the next. Feeding a whole
+        month through it applies as many steps as the month has rows, so a
+        batch of 1,400 frauds adapts 1,400 times before the next prediction and
+        the level slams into its clip bounds. Observed in E3 before this method
+        existed: the fraud level oscillated 0.05 -> 0.5 -> 0.0001 -> 0.5 across
+        five months and coverage swung between 0.517 and 1.000.
+
+        One round, one step, using the rate the batch actually realised.
+        """
+        if not 0 <= class_idx < self.n_classes:
+            raise IndexError(f"class_idx {class_idx} outside 0..{self.n_classes - 1}.")
+        if not 0.0 <= error_rate <= 1.0:
+            raise ValueError(f"error_rate must lie in [0, 1], got {error_rate}.")
+
+        new = self.alphas_[class_idx] + self.gamma * (self.alpha_target - error_rate)
+        self.alphas_[class_idx] = float(np.clip(new, *self.clip))
+        self.n_updates_[class_idx] += 1
+        self.n_errors_[class_idx] += error_rate
+        return self.alpha(class_idx)
+
+    def update_rounds(self, y_idx, covered) -> dict[int, float]:
+        """One :meth:`update_round` per class, from a batch of outcomes."""
+        y_idx = np.asarray(y_idx).ravel()
+        covered = np.asarray(covered).ravel().astype(bool)
+        if y_idx.shape != covered.shape:
+            raise ValueError(
+                f"y_idx {y_idx.shape} and covered {covered.shape} must align."
+            )
+        for k in range(self.n_classes):
+            mask = y_idx == k
+            if mask.any():
+                self.update_round(k, float(1.0 - covered[mask].mean()))
+        return self.alpha_dict()
+
     def update_batch(self, y_idx, covered) -> dict[int, float]:
-        """Fold in a batch in order. Returns the resulting levels."""
+        """Fold in a batch one observation at a time, in order.
+
+        This is the genuinely online protocol: one step per point. For
+        batched arrivals use :meth:`update_rounds` instead -- see the note
+        there for why the difference is not cosmetic.
+        """
         y_idx = np.asarray(y_idx).ravel()
         covered = np.asarray(covered).ravel().astype(bool)
         if y_idx.shape != covered.shape:

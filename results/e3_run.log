@@ -1,0 +1,27 @@
+3 arm(s) x 5 months
+estimated cost: 181,091 tokens (~0.9% of the monthly budget)
+context months (0, 1, 2): 20,000 rows, 196 frauds | calibration: 5,000 rows, 46 frauds
+frozen  base     month 3  fraud_cov=0.978 width=1.394 alpha_fraud=0.0500 (5.4s)
+frozen  base     month 4  fraud_cov=0.976 width=1.399 alpha_fraud=0.0500 (6.8s)
+frozen  base     month 5  fraud_cov=0.955 width=1.437 alpha_fraud=0.0500 (4.8s)
+frozen  base     month 6  fraud_cov=0.957 width=1.448 alpha_fraud=0.0500 (6.3s)
+frozen  base     month 7  fraud_cov=0.955 width=1.429 alpha_fraud=0.0500 (6.2s)
+aci     base     month 3  fraud_cov=0.978 width=1.394 alpha_fraud=0.0500 (4.8s)
+aci     base     month 4  fraud_cov=0.644 width=1.022 alpha_fraud=0.5000 (5.2s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/wrapper.py:194: InsufficientCalibrationWarning: Group 1 has n=46 calibration points, which cannot certify alpha=0.0001 (the smallest achievable alpha is 0.02128). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(
+aci     base     month 5  fraud_cov=1.000 width=1.715 alpha_fraud=0.0001 (5.5s)
+aci     base     month 6  fraud_cov=0.517 width=0.941 alpha_fraud=0.5000 (4.8s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/wrapper.py:194: InsufficientCalibrationWarning: Group 1 has n=46 calibration points, which cannot certify alpha=0.0026 (the smallest achievable alpha is 0.02128). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(
+aci     base     month 7  fraud_cov=1.000 width=1.772 alpha_fraud=0.0026 (5.4s)
+refit   base     month 3  fraud_cov=0.976 width=1.367 alpha_fraud=0.0500 (4.7s)
+refit   base     month 4  fraud_cov=0.990 width=1.477 alpha_fraud=0.0500 (4.7s)
+refit   base     month 5  fraud_cov=0.955 width=1.429 alpha_fraud=0.0500 (19.4s)
+refit   base     month 6  fraud_cov=0.964 width=1.453 alpha_fraud=0.0500 (4.8s)
+refit   base     month 7  fraud_cov=0.981 width=1.505 alpha_fraud=0.0500 (4.7s)
+
+Written to results/e3.jsonl
+1 arm(s) x 5 months
+estimated cost: 60,000 tokens (~0.3% of the monthly budget)
+context months (0, 1, 2): 20,000 rows, 196 frauds | calibration: 5,000 rows, 46 frauds

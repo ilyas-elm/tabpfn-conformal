@@ -109,3 +109,4 @@ estimated cost: 2,000,000 tokens (~10.0% of the monthly budget)
 /Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=60 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.01639). Returning a trivial (all-labels) threshold.
   k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
 [37/80] F=200  cal_size=0.3   s=0 cal_frauds=60   cov@.05=0.981 width=1.546  (11.7s)
+[38/80] split|0.4|200|0: FAILED ConfigTimeout: exceeded 600s
