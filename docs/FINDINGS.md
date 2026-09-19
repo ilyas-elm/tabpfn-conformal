@@ -167,6 +167,21 @@ online adaptation working at all.**
 
 ---
 
+**✗ A wrong number nearly shipped in a figure title.** E3 recorded the
+*evaluation set's* fraud rate as `fraud_rate`, and the evaluation set keeps every
+fraud plus a fixed legitimate sample — so it is ~41% by construction and says
+nothing about the month. The drift figure was captioned "as the fraud rate drifts
+(41.04% → 41.66%)". Now records `eval_fraud_rate` and `month_fraud_rate`
+separately; the real drift is **0.92% → 1.47%** across months 3–7.
+
+**Re-encoding the context monthly made coverage *worse*, not better** (mean
+deviation 0.0232 vs 0.0143 frozen). The arm refreshes the model from recent
+history but recalibrates against the *same* months 0–2 calibration set, so a
+fresher model is scored against a staler calibration. That is a real design
+limit, not a bug: tracking drift needs fresh *labels*, and fresh labels are
+exactly what a fraud desk does not have. Refreshing the context alone does not
+substitute.
+
 ## E2 — the original open question, answered
 
 **Largely a negative result.** At 100 frauds there is no detectable optimal

@@ -95,10 +95,10 @@ def figure(by_arm, rows, path: pathlib.Path):
 
     # The drift itself, as context for why any of this is needed.
     months_all = sorted({m for a in by_arm for m in by_arm[a]})
-    rates = [next(by_arm[a][m]["fraud_rate"] for a in by_arm if m in by_arm[a])
+    rates = [next(by_arm[a][m]["month_fraud_rate"] for a in by_arm if m in by_arm[a])
              for m in months_all]
     ax_c.set_title(
-        "Fraud-class coverage as the fraud rate drifts  "
+        "Fraud-class coverage as the monthly fraud rate drifts  "
         f"({rates[0]:.2%} → {rates[-1]:.2%} across these months)",
         fontsize=11.5, color=INK, loc="left", pad=10,
     )
@@ -129,7 +129,7 @@ def table(by_arm):
     print(header)
     print("|---:|---:|" + "---:|" * len(by_arm))
     for m in months:
-        rate = next(by_arm[a][m]["fraud_rate"] for a in by_arm if m in by_arm[a])
+        rate = next(by_arm[a][m]["month_fraud_rate"] for a in by_arm if m in by_arm[a])
         cells = " | ".join(
             f"{by_arm[a][m]['coverage_fraud']:.3f}" if m in by_arm[a] else "—" for a in by_arm
         )

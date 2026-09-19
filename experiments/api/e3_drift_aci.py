@@ -143,6 +143,7 @@ def main() -> int:
     if not DATA.exists():
         raise SystemExit(f"Missing {DATA.relative_to(REPO)} -- run scripts/download_data.py")
     df = pd.read_csv(DATA)
+    month_rates = df.groupby(TIME)[LABEL].mean().to_dict()
 
     early = month_slice(df, CALIBRATION_MONTHS, N_CONTEXT + N_CAL, args.seed)
     ctx0, cal0 = early.iloc[:N_CONTEXT], early.iloc[N_CONTEXT:]
@@ -211,7 +212,12 @@ def main() -> int:
                 "calibration_file": cal_file,
                 "gamma": args.gamma, "alpha_target": ALPHA,
                 "n_eval": int(len(y_ev)), "n_eval_fraud": int((y_ev == 1).sum()),
-                "fraud_rate": float((y_ev == 1).mean()),
+                # The evaluation set keeps every fraud plus a fixed legitimate
+                # sample, so its own rate is ~40% by construction and says
+                # nothing about the month. Record the month's TRUE rate too --
+                # that is the drift the experiment is about.
+                "eval_fraud_rate": float((y_ev == 1).mean()),
+                "month_fraud_rate": float(month_rates[int(m)]),
                 "coverage_fraud": cov[1], "coverage_legit": cov[0],
                 "set_size": average_set_size(sets),
                 "levels": aci.alpha_dict() if arm == "aci" else {0: ALPHA, 1: ALPHA},

@@ -1,0 +1,12 @@
+36 configurations (6 arms)
+estimated cost: 720,000 tokens (~3.6% of the monthly budget)
+[7/36] tabpfn_cross               F=100  s=1 grad_fits=0  cov@.05=0.935 width=1.448 (45.3s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=50 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.01961). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[8/36] tabpfn_split               F=100  s=1 grad_fits=0  cov@.05=0.977 width=1.614 (10.1s)
+[9/36] lightgbm_cross             F=100  s=1 grad_fits=6  cov@.05=0.950 width=1.602 (6.1s)
+/Users/ilyas/project_hub/tabpfn-conformal/src/tabpfn_conformal/calibration.py:104: InsufficientCalibrationWarning: Group 1 has n=50 calibration points, which cannot certify alpha=0.01 (the smallest achievable alpha is 0.01961). Returning a trivial (all-labels) threshold.
+  k: conformal_quantile(cal_scores[y_cal_idx == k], alpha, group=k)
+[10/36] lightgbm_split             F=100  s=1 grad_fits=1  cov@.05=0.989 width=1.795 (0.9s)
+[11/36] tabpfn_balanced_threshold  F=100  s=1 grad_fits=0  recall=0.890 (9.1s)
+[12/36] tabpfn_tuned_threshold     F=100  s=1 grad_fits=0  recall=0.890 (33.8s)
