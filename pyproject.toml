@@ -27,8 +27,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "mapie>=0.8"]
-experiments = ["tabpfn-client", "matplotlib", "lightgbm", "pyarrow", "kagglehub"]
+# Regenerating the figures must not require the TabPFN stack: a reader checking
+# the results should never need an API key, a GPU, or lightgbm.
+analysis = ["matplotlib>=3.7"]
+dev = ["pytest>=7.0", "mapie>=0.8", "matplotlib>=3.7"]
+experiments = ["tabpfn-client", "matplotlib>=3.7", "lightgbm", "pyarrow", "kagglehub"]
 
 [project.urls]
 Homepage = "https://github.com/TODO/tabpfn-conformal"
