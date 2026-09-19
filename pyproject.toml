@@ -28,7 +28,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "mapie>=0.8"]
-experiments = ["tabpfn-client", "matplotlib", "lightgbm", "pyarrow"]
+experiments = ["tabpfn-client", "matplotlib", "lightgbm", "pyarrow", "kagglehub"]
 
 [project.urls]
 Homepage = "https://github.com/TODO/tabpfn-conformal"
