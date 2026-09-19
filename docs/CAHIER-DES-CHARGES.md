@@ -72,7 +72,11 @@ Everything below was checked on 18 Sept 2026. Re-verify anything marked ⚠ befo
 | `estimate_cost()` | sends dimensions only — **no upload, no quota consumed** |
 | Cache limits | max 10,000 test rows per cached predict call |
 
-⚠ **Contradiction to resolve on day 1:** the KV-cache doc says caching is *incompatible with Thinking mode on the managed API*; another source says the client *forces* `use_kv_cache=True` when thinking is enabled. Spike S1 resolves this empirically. It changes whether the cache story and the Thinking story can appear in the same experiment.
+✅ **RESOLVED 19 Sept by spike S1 — measured, not inferred.** The KV-cache doc was right. The server rejects the combination outright:
+
+> `HTTP 422 — Value error, FIT_WITH_CACHE fit mode is not compatible with thinking mode`
+
+**Consequence, now binding:** the cache story and the Thinking story cannot share a figure. Cache economics attach to **E1/E2** on base TabPFN-3.5; Thinking attaches to **E3** (temporal drift), where Prior Labs claims it is strongest. This was the pre-planned contingency in §11 and costs us nothing.
 
 ### 3.3 The gap in `tabpfn-extensions` is real
 
@@ -102,6 +106,22 @@ Confirmed modules: `interpretability`, `many_class`, `unsupervised`, `embedding`
 **Independently reported and useful to us:** TabPFN achieves the lowest ECE/Brier among tabular models, *but* becomes "increasingly majority-biased as data becomes imbalanced." That is the exact hook: TabPFN's best-in-class average calibration is not a per-class guarantee, and fraud lives entirely in the minority class.
 
 **Closest hackathon competitor found:** `IFoA-ADSWP/tabpfn-reserving` (actuarial loss reserving). Strong README, `docs/method.md`, `docs/readiness.md`, honest results, baseline comparison. **No tests, no video.** That is the bar and that is its gap.
+
+### 3.5b Measured on the API, 19 Sept — these override any doc estimate
+
+| Finding | Measurement |
+|---|---|
+| **Cost is not a constraint at our planned scale.** Every workload up to ~50k context rows quotes at the **10,000-token minimum**. | `predict` at 1k/10k/50k context = 10,000 tokens flat |
+| **The 75% cache discount is real but invisible below ~100k rows** — under that, both paths sit on the floor | 100k ctx: 19,039 → 10,000 (47%). 200k: 68,319 → 17,080 (**75%**). 500k: 364,290 → 91,072 (**75%**) |
+| **⇒ Design requirement:** to *demonstrate* cache economics, E1/E4 must run at **≥100k context rows**. Below that there is nothing to show. BAF has 1M rows, so this is free — and a bigger demo is a better demo. | |
+| **At tiny scale the cache actively hurts**, exactly as the docs warn | 200-row context: repeat predict 1.84 s uncached vs **9.72 s cached** |
+| Thinking predict exceeds the floor | 20k ctx / 5k scored = 26,620 tokens |
+| `thinking_effort` is valid **only** on `thinking_fit`, not `thinking_predict` | HTTP 422 otherwise |
+| Budget observed | 20,000,000/month, **resets 1 Oct** → ~40M across the hackathon. Four S1 probes cost **213,481** (~1%). |
+
+**⇒ The 29 Sept 50%-discount deadline is no longer a scheduling constraint.** We sit on the token floor; halving a floor changes nothing. M3 stays a useful go/no-go date, but not a financial one. *(Earlier estimate of "~40k tokens" for the S1 probes was wrong by 5×; the measured figure is above.)*
+
+---
 
 ### 3.6 What we are explicitly NOT claiming
 
@@ -297,7 +317,7 @@ Practical notes: develop against ≤3,000-row BAF subsamples locally (CPU ceilin
 
 Budget: **5M/day, 20M/month**, 10k minimum per billable op, **50% off until 29 Sept**. Fits and uploads are free; only predictions bill.
 
-**Rule: run every wide sweep (E1, E2) before 29 Sept.** That is 11 days, and it halves the cost of the two biggest experiments.
+~~Rule: run every wide sweep before 29 Sept.~~ **Superseded by measurement (§3.5b): we sit on the token floor, so the discount is irrelevant and there is no cost reason to rush.** Spend the freed-up schedule on running E1 at ≥100k context instead, which is what makes the cache result visible at all.
 
 **Thinking fits are capped at 30/hour.** A 5-fold cross-conformal Thinking run = 5 fits = 6 runs/hour maximum. Plan Thinking runs as a short, scripted, overnight batch — never interactively.
 
@@ -333,7 +353,7 @@ Before any sweep: run a dry-run script that sums `estimate_cost()` over the whol
 | ID | Date | Gate |
 |---|---|---|
 | **M0** ✅ | 19 Sept | **Done:** repo at `~/project_hub/tabpfn-conformal`, Apache 2.0, CI workflow, cahier, API shape signed off. |
-| **M0b** ⬜ | **ASAP — blocks everything downstream** | **Prior Labs account created, hackathon credits requested, `PRIORLABS_API_TOKEN` set, spike S1 run.** Only Ilyas can do this. Every TabPFN milestone below is blocked until it is done. |
+| **M0b** ✅ | 19 Sept | **Unblocked.** `TABPFN_TOKEN` in `.env` (gitignored), API reachable, spike S1 run and answered, cost curve measured. Credits turned out to be unnecessary. |
 | **M1** ✅ | 22 Sept | *Done early, 19 Sept.* Library complete: scores, marginal, Mondrian, cross-conformal, wrapper, metrics. 53 tests green on CPU. **This was the local-only phase — no TabPFN needed.** |
 | **M2** | 25 Sept | First real TabPFN numbers: E1 at small scale via API. Figure 1 v0 exists. |
 | **M3** | **28 Sept** | **E1 + E2 complete at full scale** (before the discount ends 29 Sept). **Go/no-go on the headline** per §7.1. |
@@ -367,8 +387,8 @@ Items 6–8 are the ones to sacrifice. **Never sacrifice 1–4.**
 | **P1/P2 falsified** — cross-conformal is not cheaper or not better | high | Pre-registered fallback to E2 as headline, decided at M3. |
 | **Originality** — Mondrian result is published | medium | Cite it, demote it to background, lead with cross-conformal. |
 | **"Why not MAPIE?"** | medium | §6.4 section + numerical agreement test. |
-| **API quota / rate limits**, esp. Thinking at 30/hr | high | `estimate_cost()` dry runs; request credits day 1; sweeps before 29 Sept; Thinking batched overnight; Kaggle fallback. |
-| **KV-cache × Thinking incompatibility** ⚠ | medium | Spike S1. If incompatible, the cache story attaches to E1/E2 (base model) and Thinking attaches to E3 — they simply do not share a figure. |
+| API quota | **downgraded to low** | Measured: 20M/month, everything at the 10k floor below 100k rows, 213k spent so far. Credits not needed. **Thinking's 30 fits/hour remains the real limit** — batch those. |
+| ~~KV-cache × Thinking incompatibility~~ ✅ | resolved | **Measured 19 Sept: incompatible, server-enforced.** Cache → E1/E2, Thinking → E3. Contingency was pre-planned; no cost. |
 | **Kaggle has no TabPFN-3.5 model page** | low | `pip install tabpfn` with internet on; accept licence. Spike S2. |
 | **Licence confusion** (Apache 2.0 repo, non-commercial weights) | medium | Explicit README section. |
 | **Scope overrun**, solo, 18 days, 8 GB laptop | high | §10.1 cut line, enforced at M3 and M5. |
@@ -418,7 +438,7 @@ tabpfn-conformal/
 
 ### Day-1 spikes
 
-- **S1** — Does `fit_mode="fit_with_cache"` work together with `thinking_effort` on the managed API? Resolves the §3.2 contradiction.
+- ~~**S1**~~ ✅ **Done 19 Sept: incompatible, server-enforced.** See §3.2 and §3.5b.
 - **S2** — Kaggle notebook: `pip install tabpfn`, download 3.5 weights, one prediction on a T4. Confirms tier T2 exists.
 - **S3** — Create the Prior Labs account, request hackathon credits, run `estimate_cost()` on a BAF-shaped grid, and record real numbers in `docs/method.md`.
 

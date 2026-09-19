@@ -1,0 +1,109 @@
+{
+  "probe_shape": {
+    "n_train": 200,
+    "n_test": 50,
+    "n_features": 8
+  },
+  "cost_quotes": [
+    {
+      "label": "E1 split conformal, 10k pool",
+      "n_context": 5000,
+      "n_scored": 5000,
+      "operation": "predict",
+      "tokens": 10000
+    },
+    {
+      "label": "E1 cross-conformal, 10k pool, per fold",
+      "n_context": 8000,
+      "n_scored": 2000,
+      "operation": "predict",
+      "tokens": 10000
+    },
+    {
+      "label": "E1 cross-conformal, same fold, cached",
+      "n_context": 8000,
+      "n_scored": 2000,
+      "operation": "cache_predict",
+      "tokens": 10000
+    },
+    {
+      "label": "E2 budget sweep, one cell",
+      "n_context": 4000,
+      "n_scored": 4000,
+      "operation": "predict",
+      "tokens": 10000
+    },
+    {
+      "label": "E2 budget sweep, one cell, cached",
+      "n_context": 4000,
+      "n_scored": 4000,
+      "operation": "cache_predict",
+      "tokens": 10000
+    },
+    {
+      "label": "E3 one month of drift",
+      "n_context": 20000,
+      "n_scored": 5000,
+      "operation": "predict",
+      "tokens": 10000
+    },
+    {
+      "label": "E3 one month, Thinking fit",
+      "n_context": 20000,
+      "n_scored": null,
+      "operation": "thinking_fit",
+      "tokens": 10000
+    },
+    {
+      "label": "E3 one month, Thinking predict",
+      "n_context": 20000,
+      "n_scored": 5000,
+      "operation": "thinking_predict",
+      "tokens": 26620
+    }
+  ],
+  "api_usage_before": "Currently, you have used 0 of the allowed limit of 20000000 credits. The limit will reset at 2026-10-01 00:00:00 UTC.",
+  "configs": [
+    {
+      "config": "baseline",
+      "fit_seconds": 5.25,
+      "predict_seconds": 1.45,
+      "second_predict_seconds": 1.84,
+      "ok": true,
+      "proba_shape": [
+        50,
+        2
+      ]
+    },
+    {
+      "config": "fit_with_cache",
+      "fit_seconds": 3.98,
+      "predict_seconds": 2.49,
+      "second_predict_seconds": 9.72,
+      "ok": true,
+      "proba_shape": [
+        50,
+        2
+      ]
+    },
+    {
+      "config": "thinking_mode",
+      "fit_seconds": 4.1,
+      "predict_seconds": 4.39,
+      "second_predict_seconds": 3.97,
+      "ok": true,
+      "proba_shape": [
+        50,
+        2
+      ]
+    },
+    {
+      "config": "fit_with_cache + thinking_mode   <-- S1",
+      "ok": false,
+      "error_type": "RuntimeError",
+      "error": "Fail to call fit: [HTTP 422] [{'type': 'value_error', 'loc': ('body',), 'msg': 'Value error, FIT_WITH_CACHE fit mode is not compatible with thinking mode', 'input': {'task_config': {'task': 'classification', 'tabpfn_config': {'random_state': 0, 'ignore_pretraining_limits': False, 'fit_mode': 'fit_with_cache', 'balance_probabilities': False}}, 'tabpfn_systems': ['preprocessing', 'text', 'thinking'], 'thinking_config': {'effort': 'medium'}, 'train_set_upload_id': '01a0b95f-c56c-72a3-bf60-f12f05cdc"
+    }
+  ],
+  "s1_answer": "incompatible (RuntimeError)",
+  "api_usage_after": "Currently, you have used 213481 of the allowed limit of 20000000 credits. The limit will reset at 2026-10-01 00:00:00 UTC."
+}
