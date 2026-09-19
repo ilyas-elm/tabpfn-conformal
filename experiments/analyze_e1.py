@@ -204,6 +204,91 @@ def tables(agg, alpha: str):
         print(f"| {f} | {1 - 2 / (f + 2):.2%} | **{1 - 1 / (f + 1):.2%}** |")
 
 
+def matched_figure(agg, alpha: float, path: pathlib.Path):
+    """The headline figure: set size against calibration size, not budget.
+
+    Plotting against calibration positives rather than the label budget is what
+    makes the claim legible. Both methods land on the same x positions, so they
+    are compared at an identical targeted level -- and the annotation says how
+    many confirmed frauds each one needed to get there. Cross needs half.
+    """
+    by_ncal = {}
+    for strategy in ("split", "cross"):
+        for budget, cell in agg.get(strategy, {}).items():
+            n = int(round(np.mean(cell["n_cal"])))
+            by_ncal.setdefault(n, {})[strategy] = (
+                budget, float(np.mean(cell["width"])),
+                float(np.min(cell["width"])), float(np.max(cell["width"])),
+            )
+    pairs = sorted(n for n, v in by_ncal.items() if {"split", "cross"} <= set(v))
+    if not pairs:
+        return
+
+    fig, ax = plt.subplots(figsize=(7.6, 4.8))
+    fig.patch.set_facecolor(SURFACE)
+    ax.set_facecolor(SURFACE)
+    ax.grid(True, which="major", color="#e6e5e0", linewidth=0.8, zorder=0)
+    ax.grid(False, which="minor")
+    ax.set_axisbelow(True)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    for side in ("left", "bottom"):
+        ax.spines[side].set_color("#d8d7d1")
+    ax.tick_params(colors=INK_2, labelsize=9, length=0)
+    ax.set_xscale("log")
+
+    for strategy, colour, label in (
+        ("split", SPLIT_C, "split conformal"),
+        ("cross", CROSS_C, "cross-conformal"),
+    ):
+        x = np.array(pairs, dtype=float)
+        mean = np.array([by_ncal[n][strategy][1] for n in pairs])
+        lo = np.array([by_ncal[n][strategy][2] for n in pairs])
+        hi = np.array([by_ncal[n][strategy][3] for n in pairs])
+        ax.fill_between(x, lo, hi, color=colour, alpha=0.13, linewidth=0, zorder=2)
+        ax.plot(x, mean, color=colour, linewidth=2.0, zorder=3, label=label,
+                solid_capstyle="round")
+        ax.plot(x, mean, "o", color=colour, markersize=6.5,
+                markeredgecolor=SURFACE, markeredgewidth=2.0, zorder=4)
+        for n, m in zip(pairs, mean):
+            ax.annotate(f"{by_ncal[n][strategy][0]} frauds", xy=(n, m),
+                        xytext=(0, 11 if strategy == "split" else -17),
+                        textcoords="offset points", ha="center", fontsize=8.5,
+                        color=INK_2)
+        ax.annotate(label, xy=(pairs[-1], mean[-1]), xytext=(9, 0),
+                    textcoords="offset points", va="center", fontsize=9, color=INK_2)
+
+    ax.set_xticks(pairs)
+    ax.xaxis.set_major_formatter(ticker.ScalarFormatter())
+    ax.xaxis.set_minor_formatter(ticker.NullFormatter())
+    labels = []
+    for n in pairs:
+        k = math.ceil((n + 1) * (1 - alpha))
+        labels.append(f"{n}\n({k / n:.1%})" if k <= n else f"{n}\n(infeasible)")
+    ax.set_xticklabels(labels)
+    ax.set_xlabel("calibration positives  (and the coverage level that implies)",
+                  fontsize=10, color=INK)
+    ax.set_ylabel("mean set size  (lower is better)", fontsize=10, color=INK)
+    ax.set_title("The same guarantee from half the confirmed frauds",
+                 fontsize=12, color=INK, loc="left", pad=10)
+    ax.legend(frameon=False, fontsize=9, loc="upper right", labelcolor=INK_2)
+    fig.text(
+        0.012, 0.012,
+        "Both methods are compared at an identical targeted level, because identical calibration size\n"
+        "implies an identical level. The annotation is how many confirmed frauds each one needed.\n"
+        f"\u03b1 = {alpha:g}; bands span min\u2013max across 5 seeds; Bank Account Fraud; "
+        "TabPFN-3.5 via the Prior Labs API.",
+        fontsize=7.5, color=INK_MUTED, linespacing=1.5, va="bottom",
+    )
+    ax.margins(x=0.10)
+    fig.subplots_adjust(left=0.13, right=0.79, top=0.90, bottom=0.30)
+    FIGS.mkdir(exist_ok=True)
+    for ext in ("png", "svg"):
+        fig.savefig(path.with_suffix(f".{ext}"), dpi=200, facecolor=SURFACE)
+    plt.close(fig)
+    print(f"wrote {path.with_suffix('.png').relative_to(REPO)} and .svg")
+
+
 def matched_level_table(agg, alpha: str):
     """The comparison that is not confounded.
 
@@ -250,6 +335,8 @@ def main() -> int:
     print(f"{len(rows)} result rows; strategies {sorted(agg)}")
     figure(agg, float(args.alpha), FIGS / f"e1_coverage_alpha{args.alpha.replace('.', '')}")
     tables(agg, args.alpha)
+    matched_figure(agg, float(args.alpha),
+                   FIGS / f"e1_matched_alpha{args.alpha.replace('.', '')}")
     matched_level_table(agg, args.alpha)
     return 0
 

@@ -117,11 +117,18 @@ rate. Temporal protocol: months 0–5 are the labelled pool, months 6–7 the
 evaluation set — never a random split, because the fraud rate climbs from 0.875%
 in month 2 to 1.475% in month 7. TabPFN-3.5 through the Prior Labs API.
 
+![Set size at matched coverage level: cross-conformal reaches each level with half the fraud labels](figures/e1_matched_alpha01.png)
+
+Both methods sit at an identical targeted level at each x position, because
+identical calibration size implies an identical level. The annotation is how
+many confirmed frauds each one needed to get there.
+
 ![Fraud coverage and set size against the fraud-label budget](figures/e1_coverage_alpha005.png)
 
-Regenerate from the committed results, no API key required:
+Regenerate every figure from the committed results, no API key required:
 
 ```bash
+python experiments/analyze_e1.py --alpha 0.1
 python experiments/analyze_e1.py --alpha 0.05
 ```
 
