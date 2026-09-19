@@ -7,8 +7,10 @@ experiment changes together.
 
 from __future__ import annotations
 
+import contextlib
 import os
 import pathlib
+import signal
 
 import numpy as np
 import pandas as pd
@@ -121,3 +123,36 @@ def save_proba(tag: str, key: str, proba, y_true) -> str:
     np.savez_compressed(path, proba=np.asarray(proba, dtype=np.float32),
                         y_true=np.asarray(y_true))
     return str(path.relative_to(REPO))
+
+
+class ConfigTimeout(Exception):
+    """A single configuration exceeded its wall-clock budget."""
+
+
+@contextlib.contextmanager
+def time_limit(seconds: int):
+    """Abort a configuration that hangs instead of losing the whole run to it.
+
+    Observed 19 Sept: a plain ``predict`` against the managed API blocked for
+    1h50m with 18 seconds of CPU time -- the client sets no timeout on ordinary
+    calls, so a dropped response stalls forever and every later configuration
+    waits behind it. Every experiment here is resumable, so the right response
+    to a stall is to abandon that configuration and move on.
+
+    Uses SIGALRM, so it only interrupts the main thread on Unix. Zero or None
+    disables it.
+    """
+    if not seconds:
+        yield
+        return
+
+    def _fire(signum, frame):
+        raise ConfigTimeout(f"exceeded {seconds}s")
+
+    previous = signal.signal(signal.SIGALRM, _fire)
+    signal.alarm(int(seconds))
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, previous)
