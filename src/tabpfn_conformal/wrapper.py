@@ -7,7 +7,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.model_selection import train_test_split
 from sklearn.utils.validation import check_is_fitted
 
-from .calibration import marginal_thresholds, mondrian_thresholds
+from .calibration import conformal_quantile, marginal_thresholds, mondrian_thresholds
 from .crossconformal import _take, aligned_proba, out_of_fold_proba
 from .scores import get_score
 
@@ -172,16 +172,40 @@ class ConformalClassifier(BaseEstimator, ClassifierMixin):
 
     # -------------------------------------------------------------- predict
 
-    def quantiles(self, alpha: float) -> dict:
-        """Per-class thresholds at ``alpha``. Marginal returns ``{None: t}``."""
+    def quantiles(self, alpha) -> dict:
+        """Per-class thresholds at ``alpha``. Marginal returns ``{None: t}``.
+
+        ``alpha`` is a float, or -- for ``method="mondrian"`` -- a mapping from
+        class index to level, which is what :class:`~tabpfn_conformal.ACI`
+        produces when it adapts each class separately under drift.
+        """
         check_is_fitted(self, "calibration_scores_")
+
+        if isinstance(alpha, dict):
+            if self.method != "mondrian":
+                raise ValueError(
+                    "per-class alpha needs method='mondrian'; a marginal predictor "
+                    "has one shared threshold, so pass a float."
+                )
+            missing = set(range(self.n_classes_)) - set(alpha)
+            if missing:
+                raise ValueError(f"alpha is missing class indices {sorted(missing)}.")
+            return {
+                k: conformal_quantile(
+                    self.calibration_scores_[self.calibration_labels_ == k],
+                    alpha[k],
+                    group=k,
+                )
+                for k in range(self.n_classes_)
+            }
+
         if self.method == "marginal":
             return marginal_thresholds(self.calibration_scores_, alpha)
         return mondrian_thresholds(
             self.calibration_scores_, self.calibration_labels_, self.n_classes_, alpha
         )
 
-    def predict_set_from_proba(self, proba, alpha: float) -> np.ndarray:
+    def predict_set_from_proba(self, proba, alpha) -> np.ndarray:
         """Prediction sets from probabilities you already hold.
 
         Lets an experiment score a test set once and then sweep ``alpha``
@@ -204,7 +228,7 @@ class ConformalClassifier(BaseEstimator, ClassifierMixin):
         )
         return scores <= thresholds[None, :]
 
-    def predict_set(self, X, alpha: float = 0.1) -> np.ndarray:
+    def predict_set(self, X, alpha=0.1) -> np.ndarray:
         """Boolean ``(n_samples, n_classes)`` membership matrix."""
         check_is_fitted(self, "estimator_")
         return self.predict_set_from_proba(

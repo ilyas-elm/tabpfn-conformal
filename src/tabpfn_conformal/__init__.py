@@ -12,7 +12,9 @@ from .calibration import (
     marginal_thresholds,
     mondrian_thresholds,
 )
+from .adaptive import ACI
 from .crossconformal import out_of_fold_proba
+from .decision import decision_summary, route
 from .metrics import (
     average_set_size,
     coverage_by_class,
@@ -26,6 +28,9 @@ __version__ = "0.1.0"
 
 __all__ = [
     "ConformalClassifier",
+    "ACI",
+    "route",
+    "decision_summary",
     "conformal_quantile",
     "marginal_thresholds",
     "mondrian_thresholds",

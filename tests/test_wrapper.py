@@ -137,3 +137,44 @@ def test_base_estimator_without_predict_proba_is_rejected():
     X, y = make_imbalanced(n_samples=500, seed=0)
     with pytest.raises(TypeError, match="no predict_proba"):
         ConformalClassifier(LinearSVC()).fit(X, y)
+
+
+def test_per_class_alpha_widens_only_the_targeted_class():
+    """The ACI integration: a dict of levels, one per class."""
+    from tabpfn_conformal import ACI
+
+    X, y = make_imbalanced(n_samples=4000, minority_rate=0.05, seed=0)
+    cc = ConformalClassifier(
+        LogisticRegression(max_iter=1000), method="mondrian", random_state=0
+    ).fit(X, y)
+
+    flat = cc.quantiles(0.1)
+    tight_minority = cc.quantiles({0: 0.1, 1: 0.02})
+    assert tight_minority[0] == pytest.approx(flat[0])      # untouched
+    assert tight_minority[1] >= flat[1]                     # lower alpha -> higher threshold
+
+    sets_flat = cc.predict_set(X, 0.1)
+    sets_adaptive = cc.predict_set(X, {0: 0.1, 1: 0.02})
+    assert sets_adaptive[:, 1].sum() >= sets_flat[:, 1].sum()
+
+    aci = ACI(alpha_target=0.1, gamma=0.05, n_classes=2)
+    aci.update(1, covered=False)
+    assert cc.predict_set(X, aci.alpha_dict()).shape == (len(X), 2)
+
+
+def test_per_class_alpha_rejected_for_marginal():
+    X, y = make_imbalanced(n_samples=800, seed=0)
+    cc = ConformalClassifier(
+        LogisticRegression(max_iter=1000), method="marginal", random_state=0
+    ).fit(X, y)
+    with pytest.raises(ValueError, match="needs method='mondrian'"):
+        cc.quantiles({0: 0.1, 1: 0.1})
+
+
+def test_per_class_alpha_must_cover_every_class():
+    X, y = make_imbalanced(n_samples=800, seed=0)
+    cc = ConformalClassifier(
+        LogisticRegression(max_iter=1000), method="mondrian", random_state=0
+    ).fit(X, y)
+    with pytest.raises(ValueError, match="missing class indices"):
+        cc.quantiles({0: 0.1})
