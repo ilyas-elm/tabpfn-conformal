@@ -1,0 +1,162 @@
+{
+  "frozen": [
+    {
+      "month": 3,
+      "coverage_fraud": 0.978448275862069,
+      "set_size": 1.3941627358490567,
+      "alpha_fraud": 0.05
+    },
+    {
+      "month": 4,
+      "coverage_fraud": 0.9758953168044077,
+      "set_size": 1.3988991888760138,
+      "alpha_fraud": 0.05
+    },
+    {
+      "month": 5,
+      "coverage_fraud": 0.9553508150248051,
+      "set_size": 1.4374083846379362,
+      "alpha_fraud": 0.05
+    },
+    {
+      "month": 6,
+      "coverage_fraud": 0.956551724137931,
+      "set_size": 1.4484057971014492,
+      "alpha_fraud": 0.05
+    },
+    {
+      "month": 7,
+      "coverage_fraud": 0.9551820728291317,
+      "set_size": 1.4291131855309218,
+      "alpha_fraud": 0.05
+    }
+  ],
+  "gamma=0.05": [
+    {
+      "month": 3,
+      "coverage_fraud": 0.978448275862069,
+      "set_size": 1.3941627358490567,
+      "alpha_fraud": 0.05
+    },
+    {
+      "month": 4,
+      "coverage_fraud": 0.9758953168044077,
+      "set_size": 1.399768250289687,
+      "alpha_fraud": 0.05142241379310345
+    },
+    {
+      "month": 5,
+      "coverage_fraud": 0.9553508150248051,
+      "set_size": 1.4426854294928173,
+      "alpha_fraud": 0.052717179633323834
+    },
+    {
+      "month": 6,
+      "coverage_fraud": 0.956551724137931,
+      "set_size": 1.4510144927536233,
+      "alpha_fraud": 0.05298472038456409
+    },
+    {
+      "month": 7,
+      "coverage_fraud": 0.9551820728291317,
+      "set_size": 1.4326137689614935,
+      "alpha_fraud": 0.053312306591460634
+    }
+  ],
+  "gamma=0.2": [
+    {
+      "month": 3,
+      "coverage_fraud": 0.978448275862069,
+      "set_size": 1.3941627358490567,
+      "alpha_fraud": 0.05
+    },
+    {
+      "month": 4,
+      "coverage_fraud": 0.9758953168044077,
+      "set_size": 1.4125144843568946,
+      "alpha_fraud": 0.055689655172413796
+    },
+    {
+      "month": 5,
+      "coverage_fraud": 0.9553508150248051,
+      "set_size": 1.4547053649956025,
+      "alpha_fraud": 0.06086871853329533
+    },
+    {
+      "month": 6,
+      "coverage_fraud": 0.956551724137931,
+      "set_size": 1.4605797101449276,
+      "alpha_fraud": 0.06193888153825635
+    },
+    {
+      "month": 7,
+      "coverage_fraud": 0.9551820728291317,
+      "set_size": 1.4378646441073513,
+      "alpha_fraud": 0.06324922636584254
+    }
+  ],
+  "gamma=0.5": [
+    {
+      "month": 3,
+      "coverage_fraud": 0.978448275862069,
+      "set_size": 1.3941627358490567,
+      "alpha_fraud": 0.05
+    },
+    {
+      "month": 4,
+      "coverage_fraud": 0.9387052341597796,
+      "set_size": 1.3154692931633836,
+      "alpha_fraud": 0.06422413793103449
+    },
+    {
+      "month": 5,
+      "coverage_fraud": 0.9553508150248051,
+      "set_size": 1.474347698622105,
+      "alpha_fraud": 0.05857675501092428
+    },
+    {
+      "month": 6,
+      "coverage_fraud": 0.956551724137931,
+      "set_size": 1.4550724637681158,
+      "alpha_fraud": 0.06125216252332684
+    },
+    {
+      "month": 7,
+      "coverage_fraud": 0.90406162464986,
+      "set_size": 1.3100933488914819,
+      "alpha_fraud": 0.06452802459229234
+    }
+  ],
+  "gamma=1": [
+    {
+      "month": 3,
+      "coverage_fraud": 0.978448275862069,
+      "set_size": 1.3941627358490567,
+      "alpha_fraud": 0.05
+    },
+    {
+      "month": 4,
+      "coverage_fraud": 0.9387052341597796,
+      "set_size": 1.3444380069524913,
+      "alpha_fraud": 0.07844827586206896
+    },
+    {
+      "month": 5,
+      "coverage_fraud": 0.8944011339475549,
+      "set_size": 1.337144532395192,
+      "alpha_fraud": 0.06715351002184854
+    },
+    {
+      "month": 6,
+      "coverage_fraud": 1.0,
+      "set_size": 1.7257971014492755,
+      "alpha_fraud": 0.011554643969403477
+    },
+    {
+      "month": 7,
+      "coverage_fraud": 0.9551820728291317,
+      "set_size": 1.456534422403734,
+      "alpha_fraud": 0.06155464396940348
+    }
+  ]
+}
