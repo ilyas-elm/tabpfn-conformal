@@ -12,10 +12,9 @@ Wrap TabPFN-3.5's probability outputs in a **distribution-free, finite-sample co
 
 **The one-line pitch (README first screen, video first 30 s):**
 
-> *Conformal prediction, priced for a model that never trains.*
-> Split conformal makes you throw away half of your ~100 labelled fraud cases to calibrate a guarantee. TabPFN-3.5 has no training step — so K-fold **cross-conformal** costs K forward passes instead of K retrainings, and every fraud label counts twice: once in the context, once in the calibration. On the Prior Labs API, fits are not even billed — only predictions are, and each row is predicted once regardless of K. For LightGBM the same guarantee costs K full trainings.
+> *Split conformal spends your scarcest resource — confirmed fraud labels — to save your cheapest one. With a model that never trains, that trade is simply wrong.*
 >
-> *Wording discipline: "cheap", never "free". Cross-conformal predicts against a larger context than split conformal, so tokens go up somewhat. P2 in §7.1 pins how much. Do not write a number we have not measured.*
+> **⚠ Rewritten 19 Sept.** The original pitch claimed K folds cost about the same as one. Measured false: cross-conformal costs **exactly K×** split in API tokens. See §7.2 for what survives and why it is stronger.
 
 ---
 
@@ -292,12 +291,24 @@ Write these down *now* so the results are honest either way. A submission that r
 | # | Prediction | Falsified if |
 |---|---|---|
 | P1 | Cross-conformal has **lower seed-variance** of fraud coverage than split at F ≤ 200 | variance is equal or higher |
-| P2 | Cross-conformal costs **< 2× split** in API tokens (because fits are unbilled) | ≥ 2× |
+| ~~P2~~ | ~~Cross-conformal costs **< 2× split** in API tokens~~ | **FALSIFIED 19 Sept. Measured: exactly K×** — 2.0× at K=2, 5.0× at K=5, 20.0× at K=20. The API prices a call by total rows touched, so each fold is a full pass over the pool and the folds add up linearly. Fits being unbilled is true and irrelevant: the *predicts* are what cost. See §7.2. |
 | P3 | Marginal CP under-covers fraud at α=0.05; Mondrian does not | marginal is fine (would contradict published work) |
 | P4 | Static Mondrian thresholds lose coverage by month 7; ACI holds it | static holds — then report that BAF drift is too mild and say so |
 | P5 | LightGBM cross-conformal costs ≫ TabPFN in wall-clock on identical hardware | comparable — then the headline weakens to "equally cheap", and we re-weight toward E2/E3 |
 
-**If P1 and P2 both fail, the headline changes to E2.** Decide by 28 Sept (milestone M3).
+**If P1 and P2 both fail, the headline changes to E2.** Decide by 28 Sept (milestone M3). **P2 has already failed, so P1 is now load-bearing on its own.**
+
+### 7.2 The headline, corrected after P2 failed
+
+The original argument was *"K folds cost about the same as one."* **That is false, and measured false, on day two.** Cross-conformal costs K× for everybody, TabPFN included. Anyone repeating the original claim in the README or the video would be stating something a judge can disprove with one free `estimate_cost` call.
+
+What survives does not depend on a ratio, which is why it is stronger:
+
+1. **The absolute cost is negligible.** K=5 on a 10,000-row pool is 50,000 tokens — **0.25% of a monthly budget**.
+2. **K× of a forward pass is not K× of a training run.** For LightGBM, K-fold conformal means K full fits plus the tuning question that comes with them; for TabPFN, `clone().fit()` swaps a context and takes no gradient step. ⚠ **Not yet measured.** LightGBM trains fast on 100k×30 and may well win on wall-clock. E4 measures it and we report whichever way it falls.
+3. **Labels are the scarce resource in fraud, not compute.** A hundred confirmed frauds costs an analyst team weeks; fifty thousand tokens costs nothing. Split conformal trades the expensive resource to save the cheap one — a trade that made sense when refitting meant retraining, and stops making sense the moment it does not.
+
+Point 3 is the durable claim: it is about data efficiency, survives any cost measurement, and still needs a training-free model to be actionable.
 
 ---
 
