@@ -166,8 +166,8 @@ and labels are the resource that is actually scarce.
 ## Install
 
 ```bash
-pip install -e ".[dev]"
-pytest
+pip install -e ".[dev]"   # tests, plus everything needed to redraw the figures
+pytest                    # 90 tests, CPU, ~10s on a cold clone
 ```
 
 The core depends on **numpy, pandas and scikit-learn only** — no torch, no
