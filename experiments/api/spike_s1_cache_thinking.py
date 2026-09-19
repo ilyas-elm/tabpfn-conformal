@@ -88,7 +88,9 @@ def quote_plan(estimate_cost) -> list[dict]:
         row = {"label": label, "n_context": n_ctx, "n_scored": n_scored, "operation": op}
         try:
             kwargs = {"operation": op}
-            if op.startswith("thinking"):
+            # The API rejects thinking_effort on thinking_predict: it is only
+            # accepted for thinking_fit. Verified against a 422 on 19 Sept.
+            if op == "thinking_fit":
                 kwargs["thinking_effort"] = "medium"
             q = estimate_cost(
                 np.zeros((n_ctx, BAF_FEATURES)),
