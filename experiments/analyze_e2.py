@@ -94,9 +94,12 @@ def figure(split, cross, alpha: float, path: pathlib.Path):
         if budget in cross:
             ax_w.axhline(np.mean(cross[budget]["width"]), color=colour, linewidth=1.3,
                          linestyle=(0, (2, 2)), zorder=2)
-            ax_w.annotate(f"cross-conformal, {budget}", xy=(0.012, np.mean(cross[budget]["width"])),
+            ax_w.annotate(f"cross-conformal, {budget} frauds",
+                          xy=(0.012, np.mean(cross[budget]["width"])),
                           xycoords=("axes fraction", "data"), fontsize=8, color=INK_2,
-                          va="bottom")
+                          va="bottom" if budget == min(split) else "top",
+                          xytext=(0, 3 if budget == min(split) else -3),
+                          textcoords="offset points")
 
     ax_c.set_ylabel("fraud-class coverage", fontsize=10, color=INK)
     ax_w.set_ylabel("mean set size  (lower is better)", fontsize=10, color=INK)
@@ -137,18 +140,37 @@ def table(split, cross, alpha: str):
             print(f"| {b} | *cross* | {b} | yes | "
                   f"{np.mean(cross[b]['coverage']):.3f} | {np.mean(cross[b]['width']):.3f} |")
 
-    print("\n**Best feasible split per budget (lowest set size):**\n")
+    print("\n**Is the best cal_size a real optimum, or seed noise?**\n")
+    print("A best-looking setting means nothing if the gap to the worst setting is no")
+    print("bigger than the scatter across seeds within a single setting.\n")
     for b in sorted(split):
-        feasible = {c: np.mean(v["width"]) for c, v in split[b].items() if all(v["feasible"])}
+        feasible = {c: v for c, v in split[b].items() if all(v["feasible"])}
         if not feasible:
             print(f"- {b} frauds: no split-conformal setting can certify this level")
             continue
-        best = min(feasible, key=feasible.get)
-        line = f"- {b} frauds: cal_size **{best:.1f}**, set size {feasible[best]:.3f}"
+        means = {c: float(np.mean(v["width"])) for c, v in feasible.items()}
+        best, worst = min(means, key=means.get), max(means, key=means.get)
+
+        # The seeds are paired across cal_size settings -- the same five pools --
+        # so compare them pairwise rather than against pooled scatter. With five
+        # seeds this has little power, which is itself worth reporting.
+        nb, nw = len(feasible[best]["width"]), len(feasible[worst]["width"])
+        if nb == nw and nb > 1:
+            diff = np.array(feasible[worst]["width"]) - np.array(feasible[best]["width"])
+            se = float(np.std(diff, ddof=1) / np.sqrt(len(diff)))
+            t = float(np.mean(diff) / se) if se > 0 else float("inf")
+            verdict = (f"paired difference {np.mean(diff):+.3f} ± {se:.3f} (t={t:.1f}, n={nb}) → "
+                       + ("**a real optimum**" if abs(t) > 2.78  # t crit, 4 df, two-sided 0.05
+                          else "**not distinguishable from noise**"))
+        else:
+            verdict = "unequal seed counts; no paired test"
+        print(f"- **{b} frauds**: best cal_size {best:.1f} ({means[best]:.3f}), "
+              f"worst {worst:.1f} ({means[worst]:.3f}). {verdict}")
         if b in cross:
-            cw = np.mean(cross[b]["width"])
-            line += f" — cross-conformal {cw:.3f} ({'better' if cw < feasible[best] else 'worse'})"
-        print(line)
+            cw = float(np.mean(cross[b]["width"]))
+            verdict2 = ("**beats every split setting**" if cw < means[best]
+                        else "does not beat the best split")
+            print(f"  Cross-conformal: {cw:.3f} — {verdict2}.")
 
 
 def main() -> int:
