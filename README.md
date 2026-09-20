@@ -42,6 +42,23 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 > already been falsified and are reported as such — see
 > [Results](#results-so-far) and [`docs/limitations.md`](docs/limitations.md).
 
+## Everything measured, in one table
+
+| | measured | where |
+|---|---|---|
+| Cross-conformal reaches the same guarantee from **half the confirmed frauds** | 25 vs 50, 50 vs 100, 100 vs 200 — narrower sets in 5 of 6 | [E1](#2-measured-the-same-guarantee-from-half-the-labels) |
+| TabPFN gives **narrower prediction sets than LightGBM** at an identical targeted level | 4.6–12.4% narrower, 4 of 4 comparisons | [E4](#against-the-baselines-tabpfn-wins-where-it-counts) |
+| TabPFN's **calibration error is 74–86% lower** — the mechanism behind the above | ECE 0.0019–0.0037 vs 0.0129–0.0141 | [calibration](#why-tabpfn-wins-calibration-measured-rather-than-cited) |
+| Under drift, **TabPFN-3.5-Thinking holds the guarantee; the base model does not** | 0 of 5 months below target vs 4 of 5 *(one seed, being replicated)* | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
+| The **KV cache** makes the evaluation pass **6.8× faster** at 200k context, identical sets | 36.9 s → 5.4 s | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
+| **Abundant data does not substitute for confirmed positives** — 20× more context changes nothing | slope −0.017 vs seed SD 0.046 | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
+| Where a scarce label budget should go: **nowhere — don't split it** | no detectable optimum; cross beats every ratio | [E2](#where-should-a-scarce-label-budget-go-mostly-nowhere) |
+| **Four of five pre-registered predictions were falsified** | including two of our own about cost | [scoreboard](#what-we-predicted-and-what-happened) |
+
+**[▶ Try the interactive demo](https://claude.ai/artifact/RQdPAtjvKefEv1iUT1RB1q)** — drag
+the label budget and watch the certifiable ceiling move, then route 400 real
+TabPFN predictions through the decision layer under an analyst budget you set.
+
 ## The argument
 
 ### 1. There is a hard ceiling on what split conformal can promise
@@ -221,12 +238,6 @@ calibration advantage into a number someone can budget for.
 ```bash
 python experiments/analyze_calibration.py
 ```
-
-### Try it
-
-**[Interactive demo →](https://claude.ai/artifact/RQdPAtjvKefEv1iUT1RB1q)** — drag the
-label budget and watch the certifiable ceiling move, then route 400 real TabPFN
-predictions through the decision layer under an analyst budget you control.
 
 ### Drift: adaptive calibration cannot help at this label budget
 
