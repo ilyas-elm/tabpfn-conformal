@@ -113,8 +113,11 @@ No consistent direction.
 
 **⚑ The headline, found in data already collected.** Split at budget 2F
 calibrates on F positives, exactly as cross at budget F does. Identical
-calibration size ⇒ **identical targeted level**, so those pairs compare directly
-with no confound:
+calibration size ⇒ **identical targeted level**, so those pairs compare directly.
+Noted 20 Sept: this was written as "no confound", which is not quite right —
+split at 2F also holds twice the in-context rows (4,545 vs 2,273 and so on). The
+asymmetry favours split, so the margins below are conservative, but it is an
+asymmetry and the README now says so:
 
 | targeted level | split needs | set size | cross needs | set size |
 |---:|---:|---:|---:|---:|
@@ -525,4 +528,4 @@ that produced it. It is now printed by `analyze_e3` and checked by
 Four of five resolved predictions failed. What survived is sturdier for it: the
 feasibility ceiling and level fidelity are *deterministic* — checkable on paper,
 not falsifiable by more data — and the half-the-labels result is measured at
-matched level with no confound.
+matched level, with the only asymmetry favouring the baseline.
