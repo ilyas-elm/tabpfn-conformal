@@ -46,6 +46,7 @@ OUT = REPO / "results" / "e5.jsonl"
 
 N_FRAUDS = 200                                    # held fixed throughout
 CONTEXTS = (10_000, 25_000, 50_000, 100_000, 200_000)
+CROSS_CONTEXTS = (10_000, 25_000)   # see the note in main(): wall-clock, not a result
 SEEDS = (0, 1, 2)
 ALPHAS = (0.01, 0.05, 0.10, 0.20)
 N_FOLDS = 5
@@ -80,8 +81,15 @@ def main() -> int:
         configs = [{"strategy": "split", "n_legit": n, "seed": 0, "cache": c}
                    for n in (50_000, 100_000, 200_000) for c in (False, True)]
     else:
-        configs = [{"strategy": s, "n_legit": n, "seed": d, "cache": False}
-                   for n in CONTEXTS for d in SEEDS for s in ("split", "cross")]
+        # Cross-conformal refits K times, and each fold's server-side fit grows
+        # with the context: 40s at a 10k context, ~25 minutes at 25k. At 100k and
+        # 200k it would be hours per configuration, so cross is capped at the
+        # contexts where it is affordable and split carries the scale curve.
+        # A wall-clock limit, not a result -- said plainly in the writeup.
+        configs = [{"strategy": "split", "n_legit": n, "seed": d, "cache": False}
+                   for n in CONTEXTS for d in SEEDS]
+        configs += [{"strategy": "cross", "n_legit": n, "seed": d, "cache": False}
+                    for n in CROSS_CONTEXTS for d in SEEDS]
 
     if not load_token():
         print("No TABPFN_TOKEN -- see experiments/api/README.md", file=sys.stderr)

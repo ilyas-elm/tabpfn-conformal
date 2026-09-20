@@ -8,3 +8,12 @@ pool months (0, 1, 2, 3, 4, 5): 794,989 rows available
 [5/30] split ctx= 10,200 (1.96% fraud) s=2 cache=off cov@.05=0.980 width=1.555 fit=6.7s pred=3.6s
 [6/30] cross ctx= 10,200 (1.96% fraud) s=2 cache=off cov@.05=0.957 width=1.420 fit=38.8s pred=3.2s
 [7/30] split ctx= 25,200 (0.79% fraud) s=0 cache=off cov@.05=0.931 width=1.382 fit=9.1s pred=3.9s
+21 configurations, 200 confirmed frauds held fixed
+estimated cost: 911,034 tokens (18% of the 5M daily cap)
+pool months (0, 1, 2, 3, 4, 5): 794,989 rows available
+[5/21] split ctx= 25,200 (0.79% fraud) s=1 cache=off cov@.05=0.953 width=1.498 fit=10.7s pred=9.6s
+[6/21] split ctx= 25,200 (0.79% fraud) s=2 cache=off cov@.05=0.946 width=1.442 fit=9.3s pred=9.4s
+[8/21] split ctx= 50,200 (0.40% fraud) s=1 cache=off cov@.05=0.950 width=1.456 fit=16.9s pred=6.7s
+[9/21] split ctx= 50,200 (0.40% fraud) s=2 cache=off cov@.05=0.958 width=1.439 fit=17.0s pred=13.0s
+[11/21] split ctx=100,200 (0.20% fraud) s=1 cache=off cov@.05=0.969 width=1.522 fit=30.6s pred=18.9s
+[12/21] split ctx=100,200 (0.20% fraud) s=2 cache=off cov@.05=0.941 width=1.435 fit=30.6s pred=13.9s
