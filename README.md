@@ -37,7 +37,7 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 `strategy="split"` → `"cross"` is the whole diff.
 
 > **Work in progress** for the Prior Labs TabPFN-3.5 Hackathon (deadline 6 Oct
-> 2026). The library and its 110 tests are complete and run on CPU in a few
+> 2026). The library and its 111 tests are complete and run on CPU in a few
 > second. Experiments are running; every number below is measured and the
 > results files are committed. Two of our own pre-registered predictions have
 > already been falsified and are reported as such — see
@@ -248,6 +248,22 @@ resource cross-conformal stops wasting.
 each fold's server-side fit grows with the context, so 100k and 200k would have
 been hours per configuration. A wall-clock limit, not a result.)*
 
+**What the KV cache is worth**, at the same contexts — `fit_mode="fit_with_cache"`,
+same seed, same rows:
+
+| context | predict uncached | predict cached | speedup | fit uncached | fit cached | same sets? |
+|---:|---:|---:|---:|---:|---:|:--:|
+| 50,200 | 6.7 s | **2.3 s** | 2.9× | 15.0 s | 24.4 s | yes |
+| 100,200 | 13.6 s | **4.4 s** | 3.1× | 31.6 s | 54.7 s | yes |
+| 200,200 | 36.9 s | **5.4 s** | **6.8×** | 153.4 s | 134.2 s | yes |
+
+**The cache is not free**: it front-loads the attention state, so `fit` gets
+*slower* at 50k and 100k and only the prediction pass gets faster. At 50,200 the
+round trip is worse overall — 26.7 s cached against 21.7 s uncached. It pays off
+because conformal scores the same context twice, once to calibrate and once to
+evaluate, and because the predict saving grows with context while the fit
+penalty does not.
+
 ### Why TabPFN wins: calibration, measured rather than cited
 
 Until now this README borrowed the claim that TabPFN is unusually well
@@ -371,11 +387,11 @@ and labels are the resource that is actually scarce.
 
 ```bash
 pip install -e ".[dev]"   # tests, plus everything needed to redraw the figures
-pytest                    # 110 tests, CPU, ~3s warm (~10s on a cold clone)
+pytest                    # 111 tests, CPU, ~3s warm (~10s on a cold clone)
 ```
 
 The core depends on **numpy, pandas and scikit-learn only** — no torch, no
-`tabpfn`, no GPU. 110 tests in about three seconds on a laptop. TabPFN appears in
+`tabpfn`, no GPU. 111 tests in about three seconds on a laptop. TabPFN appears in
 `experiments/` and is never imported by `src/`.
 
 For the experiments you additionally need a free Prior Labs account:
@@ -411,7 +427,7 @@ python scripts/verify_claims.py       # recomputes 49 README/script claims; non-
 The conformal machinery is **not restricted to binary** — scores, calibration,
 cross-conformal and the wrapper all work for any number of classes, and the
 class-conditional argument gets stronger with more of them: at five skewed
-classes, marginal conformal leaves the worst class at **0.679** coverage while
+classes, marginal conformal leaves the worst class at **0.675** coverage while
 Mondrian holds **0.890** against a 0.90 target. `tests/test_multiclass.py` pins
 this. Only `decision.route` is binary by nature — approve / block / review has no
 sensible reading across five classes. The **benchmarks** in this repository are

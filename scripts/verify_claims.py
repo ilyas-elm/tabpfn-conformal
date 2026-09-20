@@ -250,6 +250,30 @@ if e5:
               slope, 0.0006)
         check("E5 seed SD", in_readme(r"seed standard deviation\nof ([\d.]+)"), sd, 0.0006)
 
+    # The README's cache table: predict and fit, cached and not, per context.
+    _cached = {r["n_context"]: r for r in e5 if r["cache"]}
+    _plain = {r["n_context"]: r for r in e5 if not r["cache"] and r["seed"] == 0
+              and r["strategy"] == "split"}
+    for _ctx in sorted(_cached):
+        if _ctx not in _plain:
+            continue
+        c, u = _cached[_ctx], _plain[_ctx]
+        B = r"\*{0,2}"   # the table bolds whichever cell is the headline
+        row = (rf"\| {_ctx // 1000},{_ctx % 1000:03d} \| {B}([\d.]+) s{B} \| {B}([\d.]+) s{B} "
+               rf"\| {B}([\d.]+)×{B} \| {B}([\d.]+) s{B} \| {B}([\d.]+) s{B} \|")
+        m = re.search(row, README)
+        check(f"E5 cache {_ctx} predict uncached",
+              float(m.group(1)) if m else None, u["predict_seconds"], 0.05)
+        check(f"E5 cache {_ctx} predict cached",
+              float(m.group(2)) if m else None, c["predict_seconds"], 0.05)
+        check(f"E5 cache {_ctx} speedup",
+              float(m.group(3)) if m else None,
+              u["predict_seconds"] / c["predict_seconds"], 0.05)
+        check(f"E5 cache {_ctx} fit uncached",
+              float(m.group(4)) if m else None, u["fit_seconds"], 0.05)
+        check(f"E5 cache {_ctx} fit cached",
+              float(m.group(5)) if m else None, c["fit_seconds"], 0.05)
+
     cached = {r["n_context"]: r for r in e5 if r["cache"]}
     plain = {r["n_context"]: r for r in e5 if not r["cache"] and r["seed"] == 0
              and r["strategy"] == "split"}
@@ -297,6 +321,27 @@ if _total:
                    f'computed {_tally["wider"]} significantly wider, README says 0'))
     check("E6 significantly narrower",
           in_readme(r"Significantly narrower in (\d+)\*\*"), float(_tally["narrower"]), 0.5)
+
+# ---- 5e. The multiclass figures the README attributes to the test suite ---
+# The README says tests/test_multiclass.py "pins this"; make that literally so.
+_mc = REPO / "tests/test_multiclass.py"
+if _mc.exists():
+    # Match the value inside a pytest.approx(...) assertion, not anywhere in the
+    # file: a bare substring search passed on 0.700 because the fixture weights
+    # line contains "0.7".
+    _asserted = {float(m) for m in re.findall(r"pytest\.approx\(([\d.]+)", _mc.read_text())}
+    for _label, _pat in (
+        ("multiclass marginal worst",
+         r"marginal conformal leaves the worst class at \*\*([\d.]+)\*\*"),
+        ("multiclass mondrian worst", r"Mondrian holds \*\*([\d.]+)\*\*"),
+    ):
+        _claimed = in_readme(_pat)
+        checks.append((
+            _label,
+            _claimed is not None and any(abs(_claimed - a) < 1e-9 for a in _asserted),
+            f"README says {_claimed}; tests/test_multiclass.py asserts "
+            f"{sorted(_asserted)} — the README says this file pins it",
+        ))
 
 # ---- 6. Test count --------------------------------------------------------
 import subprocess

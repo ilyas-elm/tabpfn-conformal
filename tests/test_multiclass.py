@@ -92,3 +92,17 @@ def test_string_labels_multiclass():
     cc = ConformalClassifier(LogisticRegression(max_iter=1000), random_state=0).fit(X, names)
     assert set(cc.classes_) == {"low", "mid", "high"}
     assert cc.predict_set(X, ALPHA).shape == (len(X), 3)
+
+
+def test_the_five_class_numbers_quoted_in_the_readme():
+    """Pins the two figures the README cites, because it says this file does.
+
+    `run` is deterministic -- fixed seeds, fixed splits -- so these are exact
+    rather than statistical. The tolerance absorbs a BLAS or sklearn point
+    release changing the last digit of a logistic fit, not a real regression:
+    the gap being asserted is 0.21, forty times wider.
+    """
+    _, marginal_worst = run(5, "marginal")
+    _, mondrian_worst = run(5, "mondrian")
+    assert marginal_worst == pytest.approx(0.675, abs=0.005)
+    assert mondrian_worst == pytest.approx(0.890, abs=0.005)
