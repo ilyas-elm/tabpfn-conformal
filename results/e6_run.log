@@ -51,3 +51,5 @@ Written to results/e6.jsonl
 estimated cost: 1,440,000 tokens (29% of the 5M daily cap)
 
 Variant II: pool 794,990 rows (1.025% fraud), eval 205,010 (2,878 frauds)
+[18/36] Variant II   cross F=50   s=1 n_cal=50   cov@.10=0.834 width=1.168 (74.4s)
+[19/36] Variant II   split F=200  s=1 n_cal=100  cov@.10=0.882 width=1.230 (11.6s)
