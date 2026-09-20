@@ -343,6 +343,39 @@ if _mc.exists():
             f"{sorted(_asserted)} — the README says this file pins it",
         ))
 
+# ---- 5f. The extensions payload is the code we actually tested --------------
+# contrib/ is generated from src/ and ships to another repository. The payload
+# carries 9 tests; the 111 that matter run against src/, so the two must be the
+# same code or the PR is backed by a suite that never saw it.
+def _logic(path, rename=False):
+    import ast
+    src = path.read_text()
+    if rename:
+        src = src.replace("tabpfn_conformal", "tabpfn_extensions.conformal")
+    tree = ast.parse(src)
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            b = node.body
+            if b and isinstance(b[0], ast.Expr) and isinstance(b[0].value, ast.Constant) \
+               and isinstance(b[0].value.value, str):
+                node.body = b[1:] or [ast.Pass()]
+    return ast.dump(tree)
+
+
+_payload = REPO / "contrib/tabpfn-extensions/src/tabpfn_extensions/conformal"
+if _payload.exists():
+    _drifted = []
+    for _mod in sorted(REPO.glob("src/tabpfn_conformal/*.py")):
+        if _mod.name == "__init__.py":
+            continue
+        _ship = _payload / _mod.name
+        if not _ship.exists():
+            _drifted.append(f"{_mod.name} missing from payload")
+        elif _logic(_mod, rename=True) != _logic(_ship):
+            _drifted.append(f"{_mod.name} logic differs")
+    checks.append(("extensions payload matches src", not _drifted,
+                   "; ".join(_drifted) + " — run scripts/build_extension_pr.py"))
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",

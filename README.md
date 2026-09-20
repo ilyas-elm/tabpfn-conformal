@@ -85,9 +85,9 @@ the dataset, the model, or a random seed.
 
 Split conformal at a budget of 2F frauds calibrates on F of them — exactly as
 cross-conformal at a budget of F does. **Identical calibration size means an
-identical targeted level**, so these pairs compare directly on set width with no
-confound, no interpolation and no matching on realised coverage. Measured on
-Bank Account Fraud at α = 0.10:
+identical targeted level**, so these pairs compare directly on set width, with no
+interpolation and no matching on realised coverage. Measured on Bank Account
+Fraud at α = 0.10:
 
 | targeted level | split needs | its set size | cross needs | its set size | labels saved |
 |---:|---:|---:|---:|---:|---:|
@@ -98,6 +98,14 @@ Bank Account Fraud at α = 0.10:
 Cross-conformal halves the number of confirmed frauds needed for any given
 guarantee. On Base the sets are also narrower, and most so where labels are
 scarcest — 12.9% at 25 calibration positives.
+
+**The one asymmetry in this comparison runs the other way.** A budget of 2F
+frauds is a pool of 2F/0.011 rows, so split at 2F hands TabPFN exactly **twice
+the in-context rows** that cross gets at F — 4,545 against 2,273, 9,091 against
+4,545, 18,182 against 9,091. The better-resourced model is the one being beaten,
+which makes these margins conservative rather than flattering. (E5 separately
+finds context size barely moves set width at a fixed fraud count, so the effect
+is small either way.)
 
 **Tested across four datasets, the robust claim is the halving, not the
 narrowing.** See [below](#does-it-replicate-four-datasets): in nine paired
@@ -364,7 +372,7 @@ before the experiments ran.
 **Four of five failed.** What survives is sturdier for it: the feasibility
 ceiling and level fidelity are *deterministic* — checkable on paper, not
 falsifiable by more data — and the half-the-labels and baseline results are
-measured at matched level with no confound.
+measured at matched level, with the only asymmetry favouring the baseline.
 
 ### Cost, measured rather than claimed
 

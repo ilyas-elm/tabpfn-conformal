@@ -37,7 +37,8 @@ refits, which is why nobody reaches for it.
 **TabPFN has no training step**, so those K refits are K forward passes and 0
 gradient-trained fits. Measured at an *identical targeted coverage level* —
 split at budget 2F and cross at budget F calibrate on the same number of
-positives, so they compare directly with no confound:
+positives, so they compare directly. The one asymmetry favours split, which at
+2F also gets twice the in-context rows:
 
 **Cross-conformal reaches the same guarantee from half the confirmed frauds**,
 at no cost in set width. Across four datasets and nine paired comparisons it is
