@@ -207,15 +207,22 @@ a real replication test. Re-running only the matched-level comparison:
 | Variant I | 100 | −0.0005 ± 0.0379 (n=3) | tie |
 | Variant II | 50 | +0.0157 ± 0.0161 (n=3) | tie |
 | Variant II | 100 | +0.0109 ± 0.0363 (n=3) | tie |
-| Variant III | 50 | +0.0152 ± 0.0106 (n=2) | tie |
+| Variant III | 50 | +0.0126 ± 0.0067 (n=3) | tie |
+| Variant III | 100 | −0.0423 ± 0.0162 (n=3) | tie *(see below)* |
 
-**Significantly wider in 0 of 8. Significantly narrower in 1** — the scarcest
+**Significantly wider in 0 of 9. Significantly narrower in 1** — the scarcest
 budget on Base. Everything else is a tie.
 
 The raw win count was 6 of 9, which over-reads noise: the seeds are paired, so
 they must be tested pairwise. Doing that properly shrinks the claim and makes it
 survive — *the same guarantee from half the labels, for free*, everywhere tested,
 with a real width advantage where positives are scarcest.
+
+One row is worth naming rather than burying. **Variant III at 100 calibration
+positives is the closest thing to a loss**: −0.0423 ± 0.0162, t ≈ 2.6, which does
+not clear significance at three seeds but is not nothing either. If the claim
+fails anywhere, that is where to look first, and more seeds there would settle
+it.
 
 ### Scale: abundant data does not substitute for confirmed positives
 
