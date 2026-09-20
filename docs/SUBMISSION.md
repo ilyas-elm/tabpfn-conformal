@@ -44,7 +44,7 @@ with narrower prediction sets in five of six comparisons.
 
 Three supporting results:
 
-- **TabPFN gives narrower sets than LightGBM** at every matched level (4.6–12.4%),
+- **TabPFN gives narrower sets than LightGBM** at every matched level (6.9–12.4%),
   and the mechanism is measurable: TabPFN's calibration error is **74–86% lower**
   on identical rows. Conformal is distribution-free, so calibration does not buy
   validity — it buys *efficiency*, meaning fewer cases in a human's queue.
