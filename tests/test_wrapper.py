@@ -211,3 +211,36 @@ def test_non_finite_probabilities_are_rejected_not_turned_into_empty_sets():
     cc = ConformalClassifier(Sane(), prefit=True).fit(X, y)
     with pytest.raises(ValueError, match="non-finite"):
         cc.predict_set_from_proba(np.full((5, 2), np.inf), 0.1)
+
+
+def test_a_dataframe_with_a_non_default_index_is_taken_positionally():
+    """Row selection must be positional, whatever the index says.
+
+    `test_accepts_dataframes` builds its frame with a default RangeIndex, where
+    `.iloc[i]` and `.loc[i]` are the same row, so it cannot tell them apart:
+    switching `_take` to `.loc` passes the whole suite. Real frames rarely have
+    a default index -- any filter, merge or concat breaks it -- and with `.loc`
+    the wrapper would pair each row of X with another row's label and report
+    coverage on the mismatch, silently.
+
+    A scrambled index that is still a permutation of 0..n-1 is the dangerous
+    case: `.loc` neither raises nor returns the right row.
+    """
+    X, y = make_imbalanced(n_samples=800, minority_rate=0.15, seed=0)
+    cols = [f"f{i}" for i in range(X.shape[1])]
+
+    plain = pd.DataFrame(X, columns=cols)
+    scrambled = pd.DataFrame(X, columns=cols,
+                             index=np.random.default_rng(0).permutation(len(X)))
+    offset = pd.DataFrame(X, columns=cols, index=np.arange(len(X)) + 10_000)
+
+    def sets(frame):
+        cc = ConformalClassifier(
+            LogisticRegression(max_iter=1000), strategy="cross", n_folds=3,
+            random_state=0,
+        ).fit(frame, y)
+        return cc.predict_set(frame, 0.1)
+
+    reference = sets(plain)
+    for name, frame in (("scrambled", scrambled), ("offset", offset)):
+        np.testing.assert_array_equal(reference, sets(frame)), name
