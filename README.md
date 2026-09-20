@@ -1,7 +1,8 @@
 # tabpfn-conformal
 
 **Cross-conformal reaches the same coverage guarantee from half the confirmed
-frauds — and on TabPFN-3.5 it costs zero training runs to get there.**
+frauds, at no cost in set width — and on TabPFN-3.5 it costs zero training runs
+to get there.**
 
 With a hundred confirmed frauds, the 99% guarantee a regulator asks for is
 mathematically unavailable to standard practice. This makes it available.
@@ -46,7 +47,7 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 
 | | measured | where |
 |---|---|---|
-| Cross-conformal reaches the same guarantee from **half the confirmed frauds** | 25 vs 50, 50 vs 100, 100 vs 200 — narrower sets in 5 of 6 | [E1](#2-measured-the-same-guarantee-from-half-the-labels) |
+| Cross-conformal reaches the same guarantee from **half the confirmed frauds** | never significantly wider (0 of 8 paired tests); narrower where labels are scarcest | [E1](#2-measured-the-same-guarantee-from-half-the-labels) · [E6](#does-it-replicate-four-datasets) |
 | TabPFN gives **narrower prediction sets than LightGBM** at an identical targeted level | 4.6–12.4% narrower, 4 of 4 comparisons | [E4](#against-the-baselines-tabpfn-wins-where-it-counts) |
 | TabPFN's **calibration error is 74–86% lower** — the mechanism behind the above | ECE 0.0019–0.0037 vs 0.0129–0.0141 | [calibration](#why-tabpfn-wins-calibration-measured-rather-than-cited) |
 | Under drift, **TabPFN-3.5-Thinking holds the guarantee; the base model does not** | 0 of 5 months below target vs 4 of 5 *(one seed, being replicated)* | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
@@ -95,9 +96,14 @@ Bank Account Fraud at α = 0.10:
 | 91.0% | 200 frauds | 1.300 | **100 frauds** | **1.268** (2.5% narrower) | **50%** |
 
 Cross-conformal halves the number of confirmed frauds needed for any given
-guarantee, and the sets are narrower rather than wider — in five of six
-comparisons across α = 0.05 and 0.10, with the sixth a 0.4% tie. The advantage
-grows as labels get scarcer, which is the regime that matters.
+guarantee. On Base the sets are also narrower, and most so where labels are
+scarcest — 12.9% at 25 calibration positives.
+
+**Tested across four datasets, the robust claim is the halving, not the
+narrowing.** See [below](#does-it-replicate-four-datasets): in eight paired
+comparisons cross-conformal is significantly wider in **zero**, and
+significantly narrower in one — the scarcest budget. The rest are ties. Half the
+labels, free.
 
 For a fraud desk, a hundred confirmed frauds is weeks of analyst work. Fifty
 thousand API tokens is 0.25% of a monthly budget. Split conformal spends the
@@ -185,6 +191,31 @@ threshold shifts from 0.0045 to 0.29) but leaves recall and false-positive rate
 identical in four of six seeds and within two cases in 2,878 on the other two —
 a monotone rescaling, which threshold tuning absorbs. It earns its keep only
 against a *fixed* cutoff like 0.5.
+
+### Does it replicate? Four datasets
+
+One dataset is one result. The BAF suite is six one-million-row datasets at the
+same 1.103% fraud rate, differing in the bias deliberately injected into them —
+a real replication test. Re-running only the matched-level comparison:
+
+| dataset | calib. positives | paired difference (split − cross) | verdict |
+|---|---:|---:|---|
+| Base | 25 | +0.1924 ± 0.0402 (n=5) | **cross narrower** |
+| Base | 50 | +0.0815 ± 0.0458 (n=5) | tie |
+| Base | 100 | +0.0322 ± 0.0274 (n=5) | tie |
+| Variant I | 50 | −0.0215 ± 0.0749 (n=3) | tie |
+| Variant I | 100 | −0.0005 ± 0.0379 (n=3) | tie |
+| Variant II | 50 | +0.0157 ± 0.0161 (n=3) | tie |
+| Variant II | 100 | +0.0109 ± 0.0363 (n=3) | tie |
+| Variant III | 50 | +0.0152 ± 0.0106 (n=2) | tie |
+
+**Significantly wider in 0 of 8. Significantly narrower in 1** — the scarcest
+budget on Base. Everything else is a tie.
+
+The raw win count was 6 of 9, which over-reads noise: the seeds are paired, so
+they must be tested pairwise. Doing that properly shrinks the claim and makes it
+survive — *the same guarantee from half the labels, for free*, everywhere tested,
+with a real width advantage where positives are scarcest.
 
 ### Scale: abundant data does not substitute for confirmed positives
 
