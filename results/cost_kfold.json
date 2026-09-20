@@ -1,0 +1,53 @@
+{
+  "n_features": 30,
+  "rows": [
+    {
+      "n_pool": 10000,
+      "k": 2,
+      "split_tokens": 10000,
+      "per_fold_tokens": 10000,
+      "cross_tokens": 20000,
+      "ratio": 2.0
+    },
+    {
+      "n_pool": 10000,
+      "k": 5,
+      "split_tokens": 10000,
+      "per_fold_tokens": 10000,
+      "cross_tokens": 50000,
+      "ratio": 5.0
+    },
+    {
+      "n_pool": 10000,
+      "k": 20,
+      "split_tokens": 10000,
+      "per_fold_tokens": 10000,
+      "cross_tokens": 200000,
+      "ratio": 20.0
+    },
+    {
+      "n_pool": 100000,
+      "k": 2,
+      "split_tokens": 14373,
+      "per_fold_tokens": 14373,
+      "cross_tokens": 28746,
+      "ratio": 2.0
+    },
+    {
+      "n_pool": 100000,
+      "k": 5,
+      "split_tokens": 14373,
+      "per_fold_tokens": 14373,
+      "cross_tokens": 71865,
+      "ratio": 5.0
+    },
+    {
+      "n_pool": 100000,
+      "k": 20,
+      "split_tokens": 14373,
+      "per_fold_tokens": 14373,
+      "cross_tokens": 287460,
+      "ratio": 20.0
+    }
+  ]
+}

@@ -162,20 +162,36 @@ def main() -> int:
     if pairs:
         print("\n### What the KV cache is worth\n")
         print("| context | predict uncached | predict cached | speedup | "
-              "fit uncached | fit cached | same answer? |")
-        print("|---:|---:|---:|---:|---:|---:|:--:|")
+              "fit uncached | fit cached | max |\u0394p| | \u0394 width |")
+        print("|---:|---:|---:|---:|---:|---:|---:|---:|")
         for ctx in sorted(pairs):
             on, off = pairs[ctx]["on"], pairs[ctx]["off"]
-            same = (abs(on["alphas"][args.alpha]["set_size"]
-                        - off["alphas"][args.alpha]["set_size"]) < 5e-3)
+            # This column used to read "same answer? yes", decided by comparing
+            # MEAN set size within 5e-3. That is an average, not an agreement:
+            # the two runs can return different sets and the same mean. Compare
+            # the saved probabilities instead, which is the actual claim.
+            dp = float("nan")
+            try:
+                a = np.load(REPO / off["proba_file"])["proba"].astype(float)
+                b = np.load(REPO / on["proba_file"])["proba"].astype(float)
+                if a.shape == b.shape:
+                    dp = float(np.abs(a - b).max())
+            except (KeyError, OSError):
+                pass
+            dw = abs(on["alphas"][args.alpha]["set_size"]
+                     - off["alphas"][args.alpha]["set_size"])
             print(f"| {ctx:,} | {off['predict_seconds']:.1f} s | "
                   f"**{on['predict_seconds']:.1f} s** | "
-                  f"**{off['predict_seconds'] / max(on['predict_seconds'], 1e-9):.1f}×** | "
+                  f"**{off['predict_seconds'] / max(on['predict_seconds'], 1e-9):.1f}\u00d7** | "
                   f"{off['fit_seconds']:.1f} s | {on['fit_seconds']:.1f} s | "
-                  f"{'yes' if same else 'NO'} |")
+                  f"{dp:.1e} | {dw:.1e} |")
         print("\nA cached fit front-loads the attention state, so `fit` gets slower and")
         print("every later pass gets faster. Conformal scores the same context twice —")
         print("once to calibrate, once to evaluate — so it pays back immediately.")
+        print("\nThe cached and uncached runs are **not bit-identical**: the probabilities")
+        print("differ in the fourth decimal on nearly every row. They agree to far better")
+        print("than the seed-to-seed spread, so the conclusion is unchanged, but the")
+        print("earlier \"same answer: yes\" was comparing mean set size, not the answers.")
     return 0
 
 

@@ -273,6 +273,18 @@ if e5:
               float(m.group(4)) if m else None, u["fit_seconds"], 0.05)
         check(f"E5 cache {_ctx} fit cached",
               float(m.group(5)) if m else None, c["fit_seconds"], 0.05)
+        # The "not bit-identical" claim, recomputed from the saved probabilities.
+        try:
+            _a = np.load(REPO / u["proba_file"])["proba"].astype(float)
+            _b = np.load(REPO / c["proba_file"])["proba"].astype(float)
+        except (KeyError, OSError):
+            _a = _b = None
+        if _a is not None and _a.shape == _b.shape:
+            _dp = float(np.abs(_a - _b).max())
+            _m2 = re.search(rf"\| {_ctx // 1000},{_ctx % 1000:03d} \|(?:[^|]*\|){{5}} "
+                            rf"([\d.]+e-\d+) \|", README)
+            check(f"E5 cache {_ctx} max dp",
+                  float(_m2.group(1)) if _m2 else None, _dp, 5e-6)
 
     cached = {r["n_context"]: r for r in e5 if r["cache"]}
     plain = {r["n_context"]: r for r in e5 if not r["cache"] and r["seed"] == 0
@@ -375,6 +387,21 @@ if _payload.exists():
             _drifted.append(f"{_mod.name} logic differs")
     checks.append(("extensions payload matches src", not _drifted,
                    "; ".join(_drifted) + " — run scripts/build_extension_pr.py"))
+
+# ---- 5g. The K-times cost correction, from committed quotes ---------------
+# This is the README's own correction of an earlier overclaim, and it had no
+# artifact behind it until experiments/api/cost_kfold.py was written.
+_cost = REPO / "results/cost_kfold.json"
+if _cost.exists():
+    _rows = json.loads(_cost.read_text())["rows"]
+    _exact = [r for r in _rows if abs(r["ratio"] - r["k"]) < 0.05]
+    checks.append(("cost ratio equals K in every quote", len(_exact) == len(_rows),
+                   f"{len(_exact)} of {len(_rows)} quotes have ratio == K"))
+    for _k in (2, 20):
+        _got = [r["ratio"] for r in _rows if r["k"] == _k]
+        if _got:
+            check(f"README cost ratio at K={_k}",
+                  in_readme(rf"([\d.]+)× at K={_k}"), float(_got[0]), 0.05)
 
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
