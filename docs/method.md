@@ -180,7 +180,7 @@ was observed to block for 1h50m on 18 seconds of CPU.
 ## 10. Reproducing
 
 ```bash
-pip install -e ".[dev]" && pytest          # 111 tests, CPU, a few seconds
+pip install -e ".[dev]" && pytest          # 113 tests, CPU, a few seconds
 python scripts/download_data.py            # Kaggle credentials needed
 pip install -e ".[experiments]"
 python -c "import tabpfn_client; tabpfn_client.init()"
