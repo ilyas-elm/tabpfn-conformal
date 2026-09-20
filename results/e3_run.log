@@ -22,3 +22,8 @@ Written to results/e3.jsonl
 estimated cost: 704,103 tokens (~3.5% of the monthly budget)
 Thinking fits: 18 (rate limit is 30/hour -- fine)
 context months (0, 1, 2): 20,000 rows, 196 frauds | calibration: 5,000 rows, 46 frauds
+frozen  thinking month 3  fraud_cov=0.994 width=1.496 alpha_fraud=0.0500 (8.8s)
+frozen  thinking month 4  fraud_cov=0.990 width=1.501 alpha_fraud=0.0500 (23.6s)
+frozen  thinking month 5  fraud_cov=0.984 width=1.565 alpha_fraud=0.0500 (18.1s)
+frozen  thinking month 6  fraud_cov=0.985 width=1.563 alpha_fraud=0.0500 (9.7s)
+frozen  thinking month 7  fraud_cov=0.985 width=1.556 alpha_fraud=0.0500 (8.7s)

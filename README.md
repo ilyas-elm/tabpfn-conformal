@@ -141,18 +141,31 @@ analyst's queue for the same guarantee:
 | strategy | budget | targeted level | TabPFN | LightGBM | TabPFN narrower by |
 |---|---:|---:|---:|---:|---:|
 | split | 100 | 98.0% | **1.618** | 1.764 | 8.3% |
-| split | 200 | 96.0% | **1.574** | 1.649 | 4.6% |
+| split | 200 | 96.0% | **1.517** | 1.649 | 8.0% |
 | cross | 100 | 96.0% | **1.471** | 1.680 | **12.4%** |
-| cross | 200 | 95.5% | **1.459** | 1.566 | 6.8% |
+| cross | 200 | 95.5% | **1.458** | 1.566 | 6.9% |
 
 Conformal prediction is what makes this measurable: it converts model quality
 into the unit a fraud desk actually budgets for.
 
 **Against TabPFN's own imbalance tooling**, which produces no guarantee at all:
-`balance_probabilities` with a tuned threshold — the approach
-[arXiv:2605.21742](https://arxiv.org/abs/2605.21742) found strongest for
-prior-data fitted networks — reaches 0.92 recall while flagging **41% of
-legitimate traffic**. Comparable recall, no promise it holds next month.
+a tuned threshold — the approach [arXiv:2605.21742](https://arxiv.org/abs/2605.21742)
+found strongest for prior-data fitted networks — reaches 0.925 recall while
+flagging **40.7% of legitimate traffic**. Comparable recall, no promise it holds
+next month.
+
+Worth knowing if you use it: **`balance_probabilities=True` changes nothing once
+you tune a threshold.** It moves the probability scale a long way (the tuned
+threshold shifts from 0.0045 to 0.29) but leaves recall and false-positive rate
+identical in four of six seeds and within two cases in 2,878 on the other two —
+a monotone rescaling, which threshold tuning absorbs. It earns its keep only
+against a *fixed* cutoff like 0.5.
+
+### Try it
+
+**[Interactive demo →](https://claude.ai/artifact/RQdPAtjvKefEv1iUT1RB1q)** — drag the
+label budget and watch the certifiable ceiling move, then route 400 real TabPFN
+predictions through the decision layer under an analyst budget you control.
 
 ### Drift: adaptive calibration cannot help at this label budget
 

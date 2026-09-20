@@ -228,6 +228,15 @@ quantity that the enrichment cannot bias: the tuned-threshold arm flags **41% of
 legitimate traffic** to reach 0.92 recall. The same caveat applies to reading set
 size as a review load, and is now printed with the table.
 
+**⚙ `balance_probabilities` is a no-op if you tune a threshold.** The two
+no-guarantee arms came back identical — 0.925 recall, 0.407 false-positive rate —
+in four of six seeds, and within two cases in 2,878 on the other two. Their tuned
+thresholds are wildly different (0.29 vs 0.0045), so the flag genuinely rescales
+the probabilities; it is just a monotone rescaling, which threshold tuning
+absorbs. It only matters against a *fixed* cutoff such as 0.5. Worth stating,
+because "we enabled TabPFN's imbalance handling" sounds like a stronger baseline
+than it is.
+
 **⚙ The daily cap is 5,000,000 tokens, separate from the 20M monthly.** E4 hit it
 at 4.99M and the remaining nine TabPFN configurations failed with HTTP 429. Not a
 bug and fully recoverable — the run resumes — but the cahier tracked the monthly
