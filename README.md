@@ -50,7 +50,7 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 | Cross-conformal reaches the same guarantee from **half the confirmed frauds** | never significantly wider (0 of 8 paired tests); narrower where labels are scarcest | [E1](#2-measured-the-same-guarantee-from-half-the-labels) · [E6](#does-it-replicate-four-datasets) |
 | TabPFN gives **narrower prediction sets than LightGBM** at an identical targeted level | 4.6–12.4% narrower, 4 of 4 comparisons | [E4](#against-the-baselines-tabpfn-wins-where-it-counts) |
 | TabPFN's **calibration error is 74–86% lower** — the mechanism behind the above | ECE 0.0019–0.0037 vs 0.0129–0.0141 | [calibration](#why-tabpfn-wins-calibration-measured-rather-than-cited) |
-| Under drift, **TabPFN-3.5-Thinking holds the guarantee; the base model does not** | 0 of 5 months below target vs 4 of 5 *(one seed, being replicated)* | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
+| Under drift, Thinking never fell below its promised level; base sometimes did | 0 of 10 seed-months vs 4 of 10 — but all four from one seed, so **directional only** | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
 | The **KV cache** makes the evaluation pass **6.8× faster** at 200k context, identical sets | 36.9 s → 5.4 s | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
 | **Abundant data does not substitute for confirmed positives** — 20× more context changes nothing | slope −0.017 vs seed SD 0.046 | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
 | Where a scarce label budget should go: **nowhere — don't split it** | no detectable optimum; cross beats every ratio | [E2](#where-should-a-scarce-label-budget-go-mostly-nowhere) |
@@ -286,18 +286,26 @@ at γ ∈ {0.05, 0.2} it is *numerically identical* to doing nothing, and at
 
 ![Coverage by month under drift](figures/e3_drift_base.png)
 
-**TabPFN-3.5-Thinking does fix it.** Measured against the level actually
-targeted (97.83% with 46 calibration positives, not 95% — the index rounds up):
+**TabPFN-3.5-Thinking may fix it, but the evidence is weaker than one seed
+suggested.** Measured against the level actually targeted (97.83% with 46
+calibration positives, not 95% — the index rounds up):
 
-| arm | months below the promised level | mean set size |
-|---|---:|---:|
-| base TabPFN-3.5 | 4 of 5 | 1.422 |
-| **TabPFN-3.5-Thinking** | **0 of 5** | 1.536 |
+| model | seed 0 | seed 1 | seed-months below target |
+|---|---:|---:|---:|
+| base TabPFN-3.5 | 4 of 5 below | **0 of 5** | 4 of 10 |
+| TabPFN-3.5-Thinking | 0 of 5 | 0 of 5 | **0 of 10** |
 
-The base model falls below its own promise from month 4 onward as the fraud rate
-climbs; Thinking stays above it in all five, at a cost of about 8% wider sets.
-(Five months, one seed — clean but thin, and being replicated.) This matches what
-Prior Labs documents — Thinking is stronger on temporal and grouped data — and
+The first seed looked decisive — base failing 4 months out of 5, Thinking none.
+**It does not replicate cleanly: on seed 1 the base model holds comfortably.**
+All four failures come from a single seed.
+
+So the honest statement is directional, not established. Thinking has not fallen
+below its promised level in any of ten seed-months; base has in four, all from
+one draw. A third seed is running, and this claim will be settled or dropped
+before submission rather than shipped on n=2. Thinking costs about 8% wider sets
+either way.
+
+This matches what Prior Labs documents — Thinking is stronger on temporal and grouped data — and
 Thinking has **no local weights**, so this result is only reachable through the
 managed API. It also passes `time_col`, which the base model rejects outright,
 so it compares recommended usage rather than isolating the checkpoint. One seed.
