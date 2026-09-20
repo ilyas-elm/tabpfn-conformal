@@ -161,6 +161,35 @@ identical in four of six seeds and within two cases in 2,878 on the other two �
 a monotone rescaling, which threshold tuning absorbs. It earns its keep only
 against a *fixed* cutoff like 0.5.
 
+### Why TabPFN wins: calibration, measured rather than cited
+
+Until now this README borrowed the claim that TabPFN is unusually well
+calibrated. Measured on our own rows, from probabilities already saved, at zero
+API cost — and reweighted to the true 1.41% base rate, because the evaluation
+set is enriched and calibration metrics are base-rate sensitive:
+
+| strategy | budget | TabPFN ECE | LightGBM ECE | TabPFN better by | AUC gap |
+|---|---:|---:|---:|---:|---:|
+| split | 100 | **0.00368** | 0.01411 | **74%** | +0.082 |
+| split | 200 | **0.00187** | 0.01380 | **86%** | +0.075 |
+| cross | 100 | **0.00357** | 0.01404 | **75%** | +0.071 |
+| cross | 200 | **0.00263** | 0.01286 | **80%** | +0.043 |
+
+**Four to seven times lower calibration error, on identical rows.** That is the
+mechanism behind the narrower sets above, and the direction matters:
+
+> Conformal prediction is *distribution-free*. Its coverage guarantee holds for a
+> badly calibrated model too — it just produces wider sets to get there. What
+> calibration buys is not validity but **efficiency**.
+
+So the chain is: TabPFN is better calibrated → its conformal sets are narrower →
+a fraud desk reviews fewer cases for the same promise. Conformal is what turns a
+calibration advantage into a number someone can budget for.
+
+```bash
+python experiments/analyze_calibration.py
+```
+
 ### Try it
 
 **[Interactive demo →](https://claude.ai/artifact/RQdPAtjvKefEv1iUT1RB1q)** — drag the
