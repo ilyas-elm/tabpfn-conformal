@@ -1,4 +1,4 @@
-# Status — 20 September 2026
+# Status — 20 September 2026 (updated)
 
 Written so the project can be picked up from the repository alone. Deadline
 **6 October 2026, 23:59 CEST** (22:59 Morocco) — 16 days.
@@ -36,16 +36,18 @@ needed unless more seeds are wanted.
 
 ## What is left to do, in order
 
-1. **Settle the Thinking claim** (above).
-2. **Open the extensions PR.** `python scripts/build_extension_pr.py` regenerates
+1. **Open the extensions PR.** `python scripts/build_extension_pr.py` regenerates
    the payload; [`../contrib/tabpfn-extensions/ISSUE.md`](../contrib/tabpfn-extensions/ISSUE.md)
    is the issue to post first (their CONTRIBUTING asks for an issue before a PR),
    and `PR.md` is the description. Verified: imports as
-   `tabpfn_extensions.conformal`, 9 tests pass under `FAST_TEST_MODE=1`.
-3. **Record the video** — [`VIDEO.md`](VIDEO.md) has the script and a list of two
-   claims not to make on camera.
-4. **Flip the repo public** before submitting. It is private now.
-5. **Submit** — [`SUBMISSION.md`](SUBMISSION.md) is the description field.
+   `tabpfn_extensions.conformal`, 9 tests pass under `FAST_TEST_MODE=1`
+   (locally: `FAST_TEST_MODE=1 PYTHONPATH=contrib/tabpfn-extensions/src pytest
+   contrib/tabpfn-extensions/tests`).
+2. **Record the video** — [`VIDEO.md`](VIDEO.md) has the script and a list of
+   four claims not to make on camera. Its numbers are checked by
+   `scripts/verify_claims.py`, so re-run that before recording.
+3. **Flip the repo public** before submitting. It is private now.
+4. **Submit** — [`SUBMISSION.md`](SUBMISSION.md) is the description field.
 
 Optional, if time allows: **P5 on fair hardware.** The wall-clock comparison
 against LightGBM is confounded (TabPFN remote, LightGBM local) and every E4 row
@@ -54,6 +56,13 @@ Kaggle GPU. It is the only explicitly unfinished item from the plan.
 
 ## Standing rules learned the hard way
 
+- **Never average two arms over different seed sets.** `analyze_e3` aggregated
+  `frozen` over three seeds and `aci` over one, then drew them together — which
+  made ACI look like it moved coverage when at a shared seed it does not. Arms
+  are now restricted to the seeds they all have, and the figure caption says so.
+- **A generated artifact needs a committed generator.** The demo's data had no
+  build script, so nothing could check it against `results/`. `scripts/build_demo.py`
+  now rebuilds it and `verify_claims.py` fails if the committed copy differs.
 - **When the seeds are shared, never compare means.** A raw win count flattered
   a result four times in this project; the paired test took it back every time.
 - **Re-run `scripts/verify_claims.py` after any experiment re-run.** It recomputes

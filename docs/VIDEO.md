@@ -56,8 +56,9 @@ thousand tokens is a quarter of one percent of a monthly budget."
 "Four hundred real TabPFN predictions. Singleton sets decide themselves —
 approve, block. Ambiguous ones need a human, and you only have so many.
 
-Watch the two numbers. Coverage stays at 95% — that is the guarantee, and it
-holds. Fraud *caught* moves from 30% to 95% as the budget rises.
+Watch the two numbers. Coverage sits at **94.2% against a 95% target** and does
+not move — the budget cannot change it, because that is the guarantee. Fraud
+*caught* moves from **49% to 94%** as the budget rises from zero to 200.
 
 That gap is the honest part. Conformal promises the true label is in the set.
 Acting on an ambiguous set still needs a free analyst. **An uncalibrated
@@ -75,9 +76,11 @@ and conformal turns that into narrower sets, because a better-calibrated model
 reaches the same guarantee with less ambiguity.
 
 And under drift, as the fraud rate climbs from 0.92 to 1.47 percent, the base
-model falls below its own promised coverage in four months out of five.
-**TabPFN-3.5-Thinking does it in zero.** Thinking has no local weights — that
-result exists only through the Prior Labs API.
+model drops below its own promised coverage in **nine of fifteen seed-months.
+Thinking, in three.** Thinking was never worse on any seed — but across three
+seeds that gap is directional, not statistically established, and we say so in
+the README. On the first seed it looked decisive. It did not replicate. Thinking
+has no local weights, so that comparison exists only through the Prior Labs API.
 
 We pre-registered five predictions. **Four were falsified** — including two of
 our own about cost. They are in the README with the numbers. What survived is
@@ -85,14 +88,15 @@ the part that is arithmetic."
 
 ## 2:35–end · It is real software
 
-> *Terminal: `pytest` (99 passing), then the extensions PR page.*
+> *Terminal: `pytest` (99 passing), then the extensions PR page — or
+> `contrib/tabpfn-extensions/` if the PR is not open yet.*
 
-"Ninety-nine tests, CPU only, about a second. The core depends on numpy, pandas
-and scikit-learn — no TabPFN, no GPU — so it installs in one second and every
+"Ninety-nine tests, CPU only, a few seconds. The core depends on numpy, pandas
+and scikit-learn — no TabPFN, no GPU — so it installs in seconds and every
 figure regenerates from committed results without an API key.
 
 `tabpfn-extensions` has conformal regression for missing data. It has nothing
-for classification. This fills that gap, and the PR is open."
+for classification. This fills that gap."
 
 ---
 
@@ -107,3 +111,8 @@ for classification. This fills that gap, and the PR is open."
   tokens. The claim is that labels cost more than compute.
 - Do **not** say the extensions repo has no conformal prediction. It has
   `cp_missing_data`, which is regression-only.
+- Do **not** say Thinking holds the guarantee and base does not, or quote
+  "four of five versus zero". That was one seed and it did not replicate. The
+  honest line is 9 of 15 versus 3 of 15 seed-months, directional at n = 3.
+- Only say "the PR is open" once it actually is. Until then: "the PR is ready
+  to open", and show `contrib/tabpfn-extensions/` instead of the PR page.

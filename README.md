@@ -37,7 +37,7 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 `strategy="split"` → `"cross"` is the whole diff.
 
 > **Work in progress** for the Prior Labs TabPFN-3.5 Hackathon (deadline 6 Oct
-> 2026). The library and its 86 tests are complete and run on CPU in under a
+> 2026). The library and its 99 tests are complete and run on CPU in a few
 > second. Experiments are running; every number below is measured and the
 > results files are committed. Two of our own pre-registered predictions have
 > already been falsified and are reported as such — see
@@ -371,11 +371,11 @@ and labels are the resource that is actually scarce.
 
 ```bash
 pip install -e ".[dev]"   # tests, plus everything needed to redraw the figures
-pytest                    # 99 tests, CPU, ~10s on a cold clone
+pytest                    # 99 tests, CPU, ~3s warm (~10s on a cold clone)
 ```
 
 The core depends on **numpy, pandas and scikit-learn only** — no torch, no
-`tabpfn`, no GPU. 86 tests in under a second on a laptop. TabPFN appears in
+`tabpfn`, no GPU. 99 tests in about three seconds on a laptop. TabPFN appears in
 `experiments/` and is never imported by `src/`.
 
 For the experiments you additionally need a free Prior Labs account:
@@ -388,6 +388,14 @@ python -c "import tabpfn_client; tabpfn_client.init()"
 See [`experiments/api/README.md`](experiments/api/README.md) for the token,
 budget discipline and rate limits.
 
+Everything downstream of the results is rebuildable without an API key:
+
+```bash
+python experiments/analyze_e1.py      # …e2 … e6, analyze_calibration, replay_aci
+python scripts/build_demo.py          # figures/demo_data.json + demo/index.html
+python scripts/verify_claims.py       # recomputes 49 README/script claims; non-zero on drift
+```
+
 ## Library
 
 | module | what it does |
@@ -398,6 +406,7 @@ budget discipline and rate limits.
 | `adaptive.py` | adaptive conformal inference — online per-class levels under drift |
 | `decision.py` | prediction sets → approve / block / review under a budget |
 | `wrapper.py` | `ConformalClassifier`, scikit-learn compatible |
+| `metrics.py` | coverage by class, set size, empty-set rate |
 
 The conformal machinery is **not restricted to binary** — scores, calibration,
 cross-conformal and the wrapper all work for any number of classes, and the
@@ -407,7 +416,6 @@ Mondrian holds **0.890** against a 0.90 target. `tests/test_multiclass.py` pins
 this. Only `decision.route` is binary by nature — approve / block / review has no
 sensible reading across five classes. The **benchmarks** in this repository are
 binary, because the motivating problem is.
-| `metrics.py` | coverage by class, set size, empty-set rate |
 
 Three decisions worth knowing:
 

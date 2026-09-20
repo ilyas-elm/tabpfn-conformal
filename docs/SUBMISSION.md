@@ -22,8 +22,8 @@ measuring what that buys on TabPFN-3.5 and the Bank Account Fraud dataset
 (Jesus et al., NeurIPS 2022; 1M rows, 1.1% fraud, real temporal drift).
 
 The core depends only on numpy, pandas and scikit-learn. It never imports TabPFN
-or torch, installs in about a second, and its 99 tests run on a laptop CPU in
-under two. TabPFN appears only in `experiments/`, reached through the managed
+or torch, installs in seconds, and its 99 tests run on a laptop CPU in
+about three. TabPFN appears only in `experiments/`, reached through the managed
 Prior Labs API — so **every figure regenerates from committed results with no API
 key and no GPU.**
 
@@ -48,10 +48,14 @@ Three supporting results:
   and the mechanism is measurable: TabPFN's calibration error is **74–86% lower**
   on identical rows. Conformal is distribution-free, so calibration does not buy
   validity — it buys *efficiency*, meaning fewer cases in a human's queue.
-- **Under drift, TabPFN-3.5-Thinking holds the guarantee and the base model does
-  not** — 0 of 5 months below target against 4 of 5, as the fraud rate climbs
-  0.92% → 1.47%. Thinking has no local weights, so this is reachable only through
-  the API.
+- **Under drift, TabPFN-3.5-Thinking is directionally more robust**, as the fraud
+  rate climbs 0.92% → 1.47%. Across three seeds the base model is below its target
+  coverage in 9 of 15 seed-months and Thinking in 3 of 15; Thinking was never worse
+  on any seed and strictly better on two of three, for ~5% wider sets. Paired by
+  seed the gap is 2.0 ± 1.2 months (t ≈ 1.7, n = 3) — **directional, not
+  statistically established.** The single-seed version of this looked decisive and
+  did not replicate; we report the weaker claim. Thinking has no local weights, so
+  this is reachable only through the API.
 - **The KV cache makes the evaluation pass 6.8× faster at 200k context** with
   identical prediction sets. Conformal is exactly the workload it assumes: one
   fixed context, scored twice.
