@@ -91,7 +91,7 @@ the part that is arithmetic."
 > *Terminal: `pytest` (99 passing), then the extensions PR page — or
 > `contrib/tabpfn-extensions/` if the PR is not open yet.*
 
-"A hundred and ten tests, CPU only, a few seconds. The core depends on numpy, pandas
+"A hundred and eleven tests, CPU only, a few seconds. The core depends on numpy, pandas
 and scikit-learn — no TabPFN, no GPU — so it installs in seconds and every
 figure regenerates from committed results without an API key.
 

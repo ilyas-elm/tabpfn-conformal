@@ -10,7 +10,7 @@ Every deliverable exists in draft or better.
 
 | deliverable | state |
 |---|---|
-| Library (`src/tabpfn_conformal`) | complete — 110 tests, multiclass, verified against MAPIE |
+| Library (`src/tabpfn_conformal`) | complete — 111 tests, multiclass, verified against MAPIE |
 | E1 cross vs split | complete, 40/40 |
 | E2 budget allocation | complete, 80/80 |
 | E3 drift + ACI + Thinking | ⚠ **seed 2 running** — see below |
@@ -36,17 +36,20 @@ needed unless more seeds are wanted.
 
 ## What is left to do, in order
 
-1. **Open the extensions PR.** `python scripts/build_extension_pr.py` regenerates
+1. **Flip the repo public.** It is private now, and this has to come *first*:
+   both [`../contrib/tabpfn-extensions/ISSUE.md`](../contrib/tabpfn-extensions/ISSUE.md)
+   and `PR.md` link to `github.com/ilyas-elm/tabpfn-conformal`, so posting either
+   while the repo is private gives Prior Labs a 404.
+2. **Open the extensions PR.** `python scripts/build_extension_pr.py` regenerates
    the payload; [`../contrib/tabpfn-extensions/ISSUE.md`](../contrib/tabpfn-extensions/ISSUE.md)
    is the issue to post first (their CONTRIBUTING asks for an issue before a PR),
    and `PR.md` is the description. Verified: imports as
    `tabpfn_extensions.conformal`, 9 tests pass under `FAST_TEST_MODE=1`
    (locally: `FAST_TEST_MODE=1 PYTHONPATH=contrib/tabpfn-extensions/src pytest
    contrib/tabpfn-extensions/tests`).
-2. **Record the video** — [`VIDEO.md`](VIDEO.md) has the script and a list of
+3. **Record the video** — [`VIDEO.md`](VIDEO.md) has the script and a list of
    four claims not to make on camera. Its numbers are checked by
    `scripts/verify_claims.py`, so re-run that before recording.
-3. **Flip the repo public** before submitting. It is private now.
 4. **Submit** — [`SUBMISSION.md`](SUBMISSION.md) is the description field.
 
 Optional, if time allows: **P5 on fair hardware.** The wall-clock comparison
