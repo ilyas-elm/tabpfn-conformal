@@ -83,8 +83,36 @@ def figure(stats, alpha: float, path: pathlib.Path):
                 solid_capstyle="round")
         ax.plot(x, mean, "o", color=colour, markersize=6, markeredgecolor=SURFACE,
                 markeredgewidth=2.0, zorder=4)
-        ax.annotate(label, xy=(x[-1], mean[-1]), xytext=(8, 0),
-                    textcoords="offset points", va="center", fontsize=9, color=INK_2)
+        if strategy == "split":
+            ax.annotate(label, xy=(x[-1], mean[-1]), xytext=(8, 0),
+                        textcoords="offset points", va="center", fontsize=9, color=INK_2)
+        else:
+            # Below its own line: to the right it would run across the split curve.
+            ax.annotate(label + "\n(capped at 25k \u2014 K refits, hours beyond)",
+                        xy=(x[0], mean[0]), xytext=(0, -30), textcoords="offset points",
+                        ha="left", va="top", fontsize=8.5, color=INK_2, linespacing=1.4)
+
+    # The effect is flat, and a tight y-axis makes seed noise look like structure.
+    # Draw the noise level explicitly and state the answer, so the figure cannot be
+    # read as a trend it does not contain.
+    sp = sorted((n, c) for (st, n), c in stats.items() if st == "split")
+    if len(sp) > 2:
+        xs = np.array([n for n, _ in sp], dtype=float)
+        ys = np.array([np.mean(c["width"]) for _, c in sp])
+        sd = float(np.mean([np.std(c["width"], ddof=1) for _, c in sp if len(c["width"]) > 1]))
+        slope = float(np.polyfit(np.log10(xs), ys, 1)[0])
+        ax.axhspan(ys.mean() - sd, ys.mean() + sd, color=SPLIT_C, alpha=0.07,
+                   zorder=1, linewidth=0)
+        ax.axhline(ys.mean(), color=INK_MUTED, linewidth=1.2, linestyle=(0, (4, 3)), zorder=1)
+        ax.annotate(f"±1 seed SD ({sd:.3f}) around the mean —\n"
+                    f"the whole curve sits inside it",
+                    xy=(xs[1], ys.mean() + sd), xytext=(0, 6),
+                    textcoords="offset points", fontsize=8, color=INK_2, linespacing=1.4)
+        ax.annotate(f"No. Slope {slope:+.3f} per 10\u00d7 context, against a seed SD of {sd:.3f}.",
+                    xy=(0.5, -0.30), xycoords="axes fraction", ha="center",
+                    fontsize=9.5, color=INK)
+        lo, hi = ys.min() - 4 * sd, ys.max() + 4 * sd
+        ax.set_ylim(lo, hi)
 
     ticks = sorted({n for _, n in stats})
     ax.set_xticks(ticks)
@@ -100,7 +128,7 @@ def figure(stats, alpha: float, path: pathlib.Path):
              "falls from 1.96% to 0.10%.\nBands span min–max across 3 seeds. "
              "Bank Account Fraud; TabPFN-3.5 via the Prior Labs API.",
              fontsize=7.5, color=INK_MUTED, linespacing=1.5, va="bottom")
-    fig.subplots_adjust(left=0.10, right=0.78, top=0.90, bottom=0.24)
+    fig.subplots_adjust(left=0.10, right=0.74, top=0.90, bottom=0.30)
     FIGS.mkdir(exist_ok=True)
     for ext in ("png", "svg"):
         fig.savefig(path.with_suffix(f".{ext}"), dpi=200, facecolor=SURFACE)
