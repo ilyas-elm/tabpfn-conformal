@@ -82,6 +82,11 @@ def route(
         raise ValueError(f"priority must be one of {_PRIORITIES}, got {priority!r}.")
     if overflow not in _OVERFLOWS:
         raise ValueError(f"overflow must be one of {_OVERFLOWS}, got {overflow!r}.")
+    # Every other argument here reports its own mistake; without this one,
+    # positive_idx=-1 surfaced as "index 2 is out of bounds", because the
+    # negative column is derived as 1 - positive_idx.
+    if positive_idx not in (0, 1):
+        raise ValueError(f"positive_idx must be 0 or 1 for a binary problem, got {positive_idx}.")
 
     negative_idx = 1 - positive_idx
     size = pred_sets.sum(axis=1)
