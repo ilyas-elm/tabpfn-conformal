@@ -41,9 +41,24 @@ def load(model_tag: str | None):
     rows = [json.loads(l) for l in RESULTS.read_text().splitlines() if l.strip()]
     if model_tag:
         rows = [r for r in rows if r.get("model") == model_tag]
-    by_arm = defaultdict(dict)
+    # Group by (arm, month) and AGGREGATE over seeds. Keying on month alone
+    # silently kept only the last seed, which would have quietly discarded a
+    # replication rather than reporting it.
+    grouped = defaultdict(lambda: defaultdict(list))
     for r in rows:
-        by_arm[r["arm"]][r["month"]] = r
+        grouped[r["arm"]][r["month"]].append(r)
+
+    by_arm = defaultdict(dict)
+    for arm, months in grouped.items():
+        for m, rs in months.items():
+            by_arm[arm][m] = {
+                **rs[0],
+                "coverage_fraud": float(np.mean([x["coverage_fraud"] for x in rs])),
+                "set_size": float(np.mean([x["set_size"] for x in rs])),
+                "n_seeds": len(rs),
+                "coverage_min": float(np.min([x["coverage_fraud"] for x in rs])),
+                "seeds": sorted({x["seed"] for x in rs}),
+            }
     return by_arm, rows
 
 
@@ -165,16 +180,24 @@ def table(by_arm):
     print("The level actually targeted is ceil((n+1)(1-alpha))/n, not 1-alpha. With")
     print(f"{n_cal} calibration positives at alpha=0.05 that is "
           f"{math.ceil((n_cal + 1) * 0.95) / n_cal:.3%}.\n")
-    print("| arm | months below the promised level | mean set size |")
-    print("|---|---:|---:|")
+    print("| arm | seeds | months below the promised level | worst single seed-month | mean set size |")
+    print("|---|---:|---:|---:|---:|")
     for a in by_arm:
-        alpha = next(iter(by_arm[a].values()))["alpha_target"]
-        target = math.ceil((n_cal + 1) * (1 - alpha)) / n_cal
         rs = list(by_arm[a].values())
+        alpha = rs[0]["alpha_target"]
+        target = math.ceil((n_cal + 1) * (1 - alpha)) / n_cal
+        # Mean over seeds can hide a single seed dipping below target, so report
+        # the worst individual observation too.
         below = sum(1 for r in rs if r["coverage_fraud"] < target)
+        below_any = sum(1 for r in rs if r["coverage_min"] < target)
+        n_seeds = max(r["n_seeds"] for r in rs)
         flag = "**" if below == 0 else ""
-        print(f"| {ARM_STYLE[a][1]} | {flag}{below} of {len(rs)}{flag} | "
-              f"{np.mean([r['set_size'] for r in rs]):.3f} |")
+        print(f"| {ARM_STYLE[a][1]} | {n_seeds} | {flag}{below} of {len(rs)}{flag} | "
+              f"{below_any} of {len(rs)} | {np.mean([r['set_size'] for r in rs]):.3f} |")
+    if any(r["n_seeds"] > 1 for a in by_arm for r in by_arm[a].values()):
+        print("\n*Months below* uses the seed mean; *worst single seed-month* counts a")
+        print("month where **any** seed fell below target. They should agree; where they")
+        print("do not, the mean is hiding a bad draw.")
 
 
 def main() -> int:
