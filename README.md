@@ -169,6 +169,30 @@ identical in four of six seeds and within two cases in 2,878 on the other two �
 a monotone rescaling, which threshold tuning absorbs. It earns its keep only
 against a *fixed* cutoff like 0.5.
 
+### Scale: abundant data does not substitute for confirmed positives
+
+A real fraud desk has millions of transactions and a few hundred confirmed
+frauds. So: hold the frauds at **200** and grow the legitimate context from
+10,000 to 200,000 rows, driving the context fraud rate from 1.96% down to
+**0.10%**. Does the guarantee get cheaper?
+
+| context | context fraud rate | set size |
+|---:|---:|---:|
+| 10,200 | 1.96% | 1.491 |
+| 50,200 | 0.40% | 1.452 |
+| 200,200 | 0.10% | 1.434 |
+
+**No.** Slope −0.017 set size per 10× context, against a seed standard deviation
+of 0.046 — flat. Adding 190,000 legitimate rows buys nothing.
+
+That is a negative result worth having, because it isolates the constraint: not
+data volume, not compute, but **confirmed positives**. Which is exactly the
+resource cross-conformal stops wasting.
+
+*(Cross-conformal was run only at 10k and 25k contexts: it refits K times and
+each fold's server-side fit grows with the context, so 100k and 200k would have
+been hours per configuration. A wall-clock limit, not a result.)*
+
 ### Why TabPFN wins: calibration, measured rather than cited
 
 Until now this README borrowed the claim that TabPFN is unusually well
