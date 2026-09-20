@@ -1,0 +1,53 @@
+36 configurations across 3 variants
+estimated cost: 1,440,000 tokens (29% of the 5M daily cap)
+
+Variant I: pool 794,990 rows (1.025% fraud), eval 205,010 (2,878 frauds)
+[1/36] Variant I    split F=100  s=0 n_cal=50   cov@.10=0.937 width=1.316 (9.6s)
+[2/36] Variant I    cross F=50   s=0 n_cal=50   cov@.10=0.936 width=1.355 (41.3s)
+[3/36] Variant I    split F=200  s=0 n_cal=100  cov@.10=0.919 width=1.287 (11.6s)
+[4/36] Variant I    cross F=100  s=0 n_cal=100  cov@.10=0.945 width=1.342 (41.4s)
+[5/36] Variant I    split F=100  s=1 n_cal=50   cov@.10=0.939 width=1.412 (9.4s)
+[6/36] Variant I    cross F=50   s=1 n_cal=50   cov@.10=0.924 width=1.296 (36.3s)
+[7/36] Variant I    split F=200  s=1 n_cal=100  cov@.10=0.945 width=1.372 (10.8s)
+[8/36] Variant I    cross F=100  s=1 n_cal=100  cov@.10=0.955 width=1.391 (41.7s)
+[9/36] Variant I    split F=100  s=2 n_cal=50   cov@.10=0.870 width=1.275 (9.7s)
+[10/36] Variant I    cross F=50   s=2 n_cal=50   cov@.10=0.963 width=1.417 (35.4s)
+[11/36] Variant I    split F=200  s=2 n_cal=100  cov@.10=0.926 width=1.323 (11.0s)
+[12/36] Variant I    cross F=100  s=2 n_cal=100  cov@.10=0.859 width=1.250 (41.5s)
+
+Variant II: pool 794,990 rows (1.025% fraud), eval 205,010 (2,878 frauds)
+[13/36] Variant II   split F=100  s=0 n_cal=50   cov@.10=0.930 width=1.295 (10.3s)
+[14/36] Variant II   cross F=50   s=0 n_cal=50   cov@.10=0.907 width=1.308 (39.7s)
+[15/36] Variant II   split F=200  s=0 n_cal=100  cov@.10=0.969 width=1.335 (11.4s)
+[16/36] Variant II   cross F=100  s=0 n_cal=100  cov@.10=0.897 width=1.257 (43.1s)
+[17/36] Variant II   split F=100  s=1 n_cal=50   cov@.10=0.866 width=1.209 (9.8s)
+Exception occurred during _fit, retrying in 0.0 seconds... attempt 1: The read operation timed out
+Giving up _fit(...) after 2 tries (httpx.ConnectError: [Errno 8] nodename nor servname provided, or not known)
+_Fit method failed after 2 attempts. Giving up. Exception: [Errno 8] nodename nor servname provided, or not known
+[18/36] Variant II|cross|50|1: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[19/36] Variant II|split|200|1: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[20/36] Variant II|cross|100|1: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[21/36] Variant II|split|100|2: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[22/36] Variant II|cross|50|2: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[23/36] Variant II|split|200|2: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[24/36] Variant II|cross|100|2: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+Variant III: pool 758,328 rows (1.105% fraud), eval 241,672 (2,652 frauds)
+[25/36] Variant III|split|100|0: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[26/36] Variant III|cross|50|0: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[27/36] Variant III|split|200|0: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[28/36] Variant III|cross|100|0: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[29/36] Variant III|split|100|1: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[30/36] Variant III|cross|50|1: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[31/36] Variant III|split|200|1: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[32/36] Variant III|cross|100|1: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[33/36] Variant III|split|100|2: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[34/36] Variant III|cross|50|2: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[35/36] Variant III|split|200|2: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+[36/36] Variant III|cross|100|2: FAILED ConnectError: [Errno 8] nodename nor servname provided, or not known
+
+Written to results/e6.jsonl
+36 configurations across 3 variants
+estimated cost: 1,440,000 tokens (29% of the 5M daily cap)
+
+Variant II: pool 794,990 rows (1.025% fraud), eval 205,010 (2,878 frauds)

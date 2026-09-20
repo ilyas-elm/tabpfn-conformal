@@ -17,3 +17,11 @@ pool months (0, 1, 2, 3, 4, 5): 794,989 rows available
 [9/21] split ctx= 50,200 (0.40% fraud) s=2 cache=off cov@.05=0.958 width=1.439 fit=17.0s pred=13.0s
 [11/21] split ctx=100,200 (0.20% fraud) s=1 cache=off cov@.05=0.969 width=1.522 fit=30.6s pred=18.9s
 [12/21] split ctx=100,200 (0.20% fraud) s=2 cache=off cov@.05=0.941 width=1.435 fit=30.6s pred=13.9s
+[14/21] split ctx=200,200 (0.10% fraud) s=1 cache=off cov@.05=0.962 width=1.474 fit=80.8s pred=35.8s
+Exception occurred during _predict, retrying in 0.0 seconds... attempt 1: The read operation timed out
+[15/21] split ctx=200,200 (0.10% fraud) s=2 cache=off cov@.05=0.937 width=1.386 fit=410.4s pred=35.4s
+[19/21] cross ctx= 25,200 (0.79% fraud) s=0 cache=off cov@.05=0.951 width=1.427 fit=60.4s pred=6.5s
+[20/21] cross ctx= 25,200 (0.79% fraud) s=1 cache=off cov@.05=0.946 width=1.410 fit=59.1s pred=6.1s
+[21/21] cross ctx= 25,200 (0.79% fraud) s=2 cache=off cov@.05=0.960 width=1.450 fit=72.3s pred=6.7s
+
+Written to results/e5.jsonl
