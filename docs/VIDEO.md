@@ -56,7 +56,7 @@ thousand tokens is a quarter of one percent of a monthly budget."
 "Four hundred real TabPFN predictions. Singleton sets decide themselves —
 approve, block. Ambiguous ones need a human, and you only have so many.
 
-Watch the two numbers. Coverage sits at **94.2% against a 95% target** and does
+Watch the two numbers. Coverage sits at **94.2% against a 95.1% target** and does
 not move — the budget cannot change it, because that is the guarantee. Fraud
 *caught* moves from **49% to 94%** as the budget rises from zero to 200.
 

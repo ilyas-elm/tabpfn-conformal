@@ -206,7 +206,11 @@ else:
 
     cov, caught_lo = desk(committed, 0.05, 0)
     _, caught_hi = desk(committed, 0.05, 200)
+    # The page compares against the level actually targeted, not the nominal one.
+    n_f = len(committed["cal_fraud"])
+    eff = 100 * min(1.0, math.ceil((n_f + 1) * 0.95) / n_f)
     check("video demo coverage", in_video(r"Coverage sits at \*\*([\d.]+)% against"), cov, 0.05)
+    check("video demo target", in_video(r"against a ([\d.]+)% target"), eff, 0.05)
     check("video demo caught (K=0)",
           in_video(r"moves from \*\*(\d+)% to \d+%\*\*"), round(caught_lo), 0.5)
     check("video demo caught (K=200)",
