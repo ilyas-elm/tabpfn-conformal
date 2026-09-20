@@ -376,6 +376,38 @@ accurate — "never trains", "never a random split", "never clips silently" — 
 is why the real ones had survived several readings. Worth repeating before
 submission.
 
+## E6 — the replication narrows the headline
+
+**✗ "Narrower in five of six comparisons" was over-reading noise.** Re-running the
+matched-level comparison across Variants I–III gave a raw win count of 6 of 9,
+which looks like partial failure. It is neither a win nor a failure: the seeds
+are *paired* across strategies, so they have to be tested pairwise, and doing
+that dissolves almost all of it.
+
+| dataset | calib. positives | paired difference (split − cross) | verdict |
+|---|---:|---:|---|
+| Base | 25 | +0.1924 ± 0.0402 (n=5) | **cross narrower** |
+| Base | 50 | +0.0815 ± 0.0458 (n=5) | tie |
+| Base | 100 | +0.0322 ± 0.0274 (n=5) | tie |
+| Variant I | 50 | −0.0215 ± 0.0749 (n=3) | tie |
+| Variant I | 100 | −0.0005 ± 0.0379 (n=3) | tie |
+| Variant II | 50 | +0.0157 ± 0.0161 (n=3) | tie |
+| Variant II | 100 | +0.0109 ± 0.0363 (n=3) | tie |
+| Variant III | 50 | +0.0152 ± 0.0106 (n=2) | tie |
+
+**Significantly wider in 0 of 8; significantly narrower in 1.** The narrowing is
+real only where positives are scarcest — which is the regime the project is
+about, but it is not a general property.
+
+So the headline shrank, and improved: *the same guarantee from half the confirmed
+frauds, at no cost in set width*. The halving is what replicates. The narrowing
+is a Base-scarce-budget result and is now labelled as one.
+
+This is the third time in this project that a raw count or an unpaired
+comparison flattered a result and the paired test took it back (E2's cal_size
+optimum, E4's split@200 margin, now this). Worth making a habit: **when the
+seeds are shared, never compare means.**
+
 ## Scoreboard
 
 | | prediction, registered before the experiments ran | outcome |
