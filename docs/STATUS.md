@@ -10,7 +10,7 @@ Every deliverable exists in draft or better.
 
 | deliverable | state |
 |---|---|
-| Library (`src/tabpfn_conformal`) | complete — 99 tests, multiclass, verified against MAPIE |
+| Library (`src/tabpfn_conformal`) | complete — 110 tests, multiclass, verified against MAPIE |
 | E1 cross vs split | complete, 40/40 |
 | E2 budget allocation | complete, 80/80 |
 | E3 drift + ACI + Thinking | ⚠ **seed 2 running** — see below |
