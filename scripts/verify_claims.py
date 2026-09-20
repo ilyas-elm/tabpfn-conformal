@@ -262,6 +262,42 @@ if e5:
         check("E5 cache cached s", in_readme(r"[\d.]+ s → ([\d.]+) s"),
               cached[big]["predict_seconds"], 0.05)
 
+# ---- 5d. E6: the paired replication count ---------------------------------
+# The README carried "0 of 8" in two places while its own detail table said 9.
+# Mirrors analyze_e6: the Base dataset comes from E1, the variants from E6, at
+# alpha = 0.1, with a two-sided t against the small-n critical value.
+_paired: dict = defaultdict(dict)
+for _path, _vkey in (("e1.jsonl", None), ("e6.jsonl", "variant")):
+    for r in load(_path):
+        a = r.get("alphas", {}).get("0.1")
+        if a is None:
+            continue
+        v = r[_vkey] if _vkey else "Base"
+        _paired[(v, r["n_cal_fraud"])].setdefault(r["strategy"], {})[r["seed"]] = a["set_size"]
+
+_CRIT = {2: 12.71, 3: 4.30, 4: 3.18, 5: 2.78}
+_tally = {"narrower": 0, "tie": 0, "wider": 0}
+for pr in _paired.values():
+    seeds = sorted(set(pr.get("split", {})) & set(pr.get("cross", {})))
+    if len(seeds) < 2:
+        continue
+    d = np.array([pr["split"][s] - pr["cross"][s] for s in seeds], dtype=float)
+    se = float(d.std(ddof=1) / np.sqrt(len(d)))
+    t = d.mean() / se if se > 0 else np.inf
+    if abs(t) < _CRIT.get(len(d), 2.0):
+        _tally["tie"] += 1
+    else:
+        _tally["narrower" if d.mean() > 0 else "wider"] += 1
+
+_total = sum(_tally.values())
+if _total:
+    check("E6 paired comparisons", in_readme(r"0 of (\d+) paired tests"), float(_total), 0.5)
+    check("E6 detail-table count", in_readme(r"wider in 0 of (\d+)\."), float(_total), 0.5)
+    checks.append(("E6 significantly wider is zero", _tally["wider"] == 0,
+                   f'computed {_tally["wider"]} significantly wider, README says 0'))
+    check("E6 significantly narrower",
+          in_readme(r"Significantly narrower in (\d+)\*\*"), float(_tally["narrower"]), 0.5)
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",
