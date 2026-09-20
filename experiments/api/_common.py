@@ -177,3 +177,54 @@ def time_limit(seconds: int):
     finally:
         signal.alarm(0)
         signal.signal(signal.SIGALRM, previous)
+
+
+class BatchedPredictProba:
+    """Wrap an estimator so ``predict_proba`` goes out in bounded chunks.
+
+    The managed API caps a cached predict at 10,000 test rows per call
+    (``HTTP 422`` otherwise), which is not a limitation so much as the shape the
+    KV cache assumes: encode the context once, then stream batches through it.
+    Conformal is exactly that workload -- one fixed context, scored first for
+    calibration and then for evaluation -- so the batching belongs here rather
+    than being worked around.
+
+    Kept in the experiments, not the library: it is a property of this API, not
+    of conformal prediction.
+    """
+
+    _CHUNK = 10_000
+
+    def __init__(self, estimator, chunk: int | None = None):
+        self.estimator = estimator
+        self.chunk = chunk or self._CHUNK
+        self.n_calls_ = 0
+
+    def fit(self, X, y):
+        self.estimator.fit(X, y)
+        self.classes_ = self.estimator.classes_
+        return self
+
+    def predict_proba(self, X):
+        n = len(X)
+        if n <= self.chunk:
+            self.n_calls_ += 1
+            return self.estimator.predict_proba(X)
+        out = []
+        for start in range(0, n, self.chunk):
+            part = X.iloc[start:start + self.chunk] if hasattr(X, "iloc") \
+                else X[start:start + self.chunk]
+            out.append(self.estimator.predict_proba(part))
+            self.n_calls_ += 1
+        return np.vstack(out)
+
+    def predict(self, X):
+        return self.classes_[np.argmax(self.predict_proba(X), axis=1)]
+
+    def get_params(self, deep=True):
+        return {"estimator": self.estimator, "chunk": self.chunk}
+
+    def set_params(self, **p):
+        for k, v in p.items():
+            setattr(self, k, v)
+        return self
