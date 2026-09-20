@@ -17,6 +17,27 @@ _METHODS = ("marginal", "mondrian")
 _STRATEGIES = ("split", "cross")
 
 
+def _check_finite(proba, where: str) -> np.ndarray:
+    """Reject non-finite probabilities instead of turning them into empty sets.
+
+    A NaN probability becomes a NaN score, and ``score <= threshold`` is False
+    for NaN, so every prediction set comes back *empty* with no error. An empty
+    set is not a neutral outcome here: it means the model ruled out every label,
+    and :func:`tabpfn_conformal.decision.route` gives it the highest priority
+    for human review. A broken base estimator would therefore route the entire
+    batch to an analyst while looking like a meaningful signal.
+    """
+    proba = np.asarray(proba, dtype=float)
+    if not np.isfinite(proba).all():
+        bad = int((~np.isfinite(proba)).sum())
+        raise ValueError(
+            f"{where} produced {bad} non-finite probability value(s). Conformal "
+            "scores of NaN yield silently empty prediction sets, so this is "
+            "rejected rather than propagated."
+        )
+    return proba
+
+
 class ConformalClassifier(BaseEstimator, ClassifierMixin):
     """Wrap any ``predict_proba`` classifier in a coverage guarantee.
 
@@ -159,6 +180,7 @@ class ConformalClassifier(BaseEstimator, ClassifierMixin):
         return self
 
     def _store_calibration(self, cal_proba, cal_idx):
+        cal_proba = _check_finite(cal_proba, "The base estimator's predict_proba")
         scores_all = np.asarray(self.score_fn_(cal_proba), dtype=float)
         if scores_all.shape != cal_proba.shape:
             raise ValueError(
@@ -216,8 +238,11 @@ class ConformalClassifier(BaseEstimator, ClassifierMixin):
         proba = np.asarray(proba, dtype=float)
         if proba.ndim != 2 or proba.shape[1] != self.n_classes_:
             raise ValueError(
-                f"proba must have shape (n, {self.n_classes_}), got {proba.shape}."
+                f"proba must have shape (n, {self.n_classes_}), got {proba.shape}. "
+                f"This wrapper was calibrated on {self.n_classes_} class(es): "
+                f"{list(self.classes_)}."
             )
+        proba = _check_finite(proba, "predict_set")
 
         scores = np.asarray(self.score_fn_(proba), dtype=float)
         q = self.quantiles(alpha)

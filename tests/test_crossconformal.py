@@ -150,3 +150,22 @@ def test_aligned_proba_zero_fills_a_class_the_fold_never_saw():
 
     out = aligned_proba(MajorityOnly(), np.zeros((2, 2)), np.array([0, 1]))
     np.testing.assert_allclose(out, np.tile([1.0, 0.0], (2, 1)))
+
+
+def test_the_final_model_is_fitted_on_every_row():
+    """Cross-conformal's second promise: no label is spent.
+
+    Every row calibrates *and* every row stays in the context. The first half is
+    asserted by `test_cross_uses_all_labels_for_calibration`; without this, the
+    final estimator could be fitted on a subset and the whole suite would still
+    pass, which is the difference between "no label is spent" and "half of them
+    are".
+    """
+    X, y = make_imbalanced(n_samples=600, minority_rate=0.1, seed=0)
+    cc = ConformalClassifier(
+        _Memoriser(), strategy="cross", n_folds=5, random_state=0
+    ).fit(X, y)
+
+    seen = cc.estimator_.predict_proba(X)
+    # The memoriser answers 1.0 on the true class of any row it was fitted on.
+    np.testing.assert_allclose(seen[np.arange(len(y)), y], 1.0)

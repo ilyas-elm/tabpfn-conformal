@@ -178,3 +178,36 @@ def test_per_class_alpha_must_cover_every_class():
     ).fit(X, y)
     with pytest.raises(ValueError, match="missing class indices"):
         cc.quantiles({0: 0.1})
+
+
+def test_non_finite_probabilities_are_rejected_not_turned_into_empty_sets():
+    """NaN in, error out -- never a silently empty prediction set.
+
+    `score <= threshold` is False for NaN, so a base estimator returning NaN
+    produced empty sets for every row and no warning. Empty is not neutral: it
+    means the model ruled out both labels, and `decision.route` gives it the
+    highest priority for review, so a broken estimator would quietly route the
+    whole batch to an analyst while looking like a finding.
+    """
+    from sklearn.base import BaseEstimator, ClassifierMixin
+
+    class NaNEstimator(BaseEstimator, ClassifierMixin):
+        classes_ = np.array([0, 1])
+
+        def predict_proba(self, X):
+            return np.full((len(X), 2), np.nan)
+
+    X, y = make_imbalanced(n_samples=200, minority_rate=0.2, seed=0)
+    with pytest.raises(ValueError, match="non-finite"):
+        ConformalClassifier(NaNEstimator(), prefit=True).fit(X, y)
+
+    # And on the prediction side, where calibration was clean.
+    class Sane(BaseEstimator, ClassifierMixin):
+        classes_ = np.array([0, 1])
+
+        def predict_proba(self, X):
+            return np.tile([0.5, 0.5], (len(X), 1))
+
+    cc = ConformalClassifier(Sane(), prefit=True).fit(X, y)
+    with pytest.raises(ValueError, match="non-finite"):
+        cc.predict_set_from_proba(np.full((5, 2), np.inf), 0.1)
