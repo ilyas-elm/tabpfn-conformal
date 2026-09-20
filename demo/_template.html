@@ -41,6 +41,8 @@ h2{font:500 20px/1.25 Newsreader,Georgia,serif;margin:0;text-wrap:balance}
 input[type=range]{width:100%;accent-color:var(--accent);height:22px}
 input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.trio{grid-template-columns:repeat(3,1fr)}
+@media(max-width:700px){.trio{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.pair{grid-template-columns:1fr}}
 .stat{border:1px solid var(--line);border-radius:5px;padding:14px 16px;background:var(--ground)}
 .stat.lead{border-color:var(--accent);background:var(--accent-soft)}
@@ -157,11 +159,13 @@ code{font:400 12.5px/1 "IBM Plex Mono",monospace}
         <div class="s" id="caughtSub">blocked or reviewed</div></div>
     </div>
     <p class="note" id="gapNote"></p>
-    <div class="pair">
+    <div class="pair trio">
       <div class="stat"><div class="k">Review queue</div>
         <div class="v" id="queue">&mdash;</div><div class="s" id="queueSub">&mdash;</div></div>
       <div class="stat"><div class="k">Fraud missed</div>
         <div class="v" id="missed">&mdash;</div><div class="s">approved without review</div></div>
+      <div class="stat"><div class="k">Legitimate blocked</div>
+        <div class="v" id="fp">&mdash;</div><div class="s" id="fpSub">the cost of the same threshold</div></div>
     </div>
     <p class="note" id="deskNote"></p>
   </section>
@@ -259,15 +263,25 @@ function desk(){
   // Catching also needs a free analyst, which is a separate constraint.
   const covered = fraud.filter(r => (1 - r.p) <= qF).length;
   $("cov").textContent = (100 * covered / fraud.length).toFixed(1) + "%";
-  $("covSub").textContent = "target " + (100 * (1 - alpha)).toFixed(0)
-    + "% \u2014 " + (covered / fraud.length >= 1 - alpha ? "met" : "below target");
+  // The level actually targeted is ceil((n+1)(1-alpha))/n, not 1-alpha -- the
+  // index rounds up. Compare against that, and say how wide one sample of this
+  // size scatters, so a draw below the line is not misread as a broken promise.
+  const nF = D.cal_fraud.length;
+  const eff = Math.min(1, Math.ceil((nF + 1) * (1 - alpha)) / nF);
+  const sd = 100 * Math.sqrt(eff * (1 - eff) / fraud.length);
+  $("covSub").textContent = "target " + (100 * eff).toFixed(1) + "% \u2014 "
+    + (covered / fraud.length >= eff ? "met" : "below")
+    + ", \u00b1" + sd.toFixed(1) + " pt on " + fraud.length + " frauds";
   $("caught").textContent = (100 * caught / fraud.length).toFixed(1) + "%";
   $("caughtSub").textContent = caught + " of " + fraud.length + " frauds";
   $("missed").textContent = fraud.length - caught;
   $("queue").textContent = reviewed;
   $("queueSub").textContent = K === 0 ? "no budget \u2014 model decides alone"
     : amb.length + " ambiguous, budget " + K;
-  $("fp").textContent = legit.filter(r => r.act === "block").length;
+  const fp = legit.filter(r => r.act === "block").length;
+  $("fp").textContent = fp;
+  $("fpSub").textContent = fp + " of " + legit.length + " legitimate customers ("
+    + (100 * fp / legit.length).toFixed(1) + "%)";
   const gap = covered - caught;
   $("gapNote").innerHTML = gap <= 0
     ? "Every covered fraud reached a decision that catches it."
