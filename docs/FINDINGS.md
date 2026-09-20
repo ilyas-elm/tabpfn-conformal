@@ -279,6 +279,42 @@ It also cuts the other way: `cp_missing_data` existing is **evidence conformal
 contributions are in scope**, which is a better argument for the PR than an
 empty category would have been.
 
+## E5 — scale, and the KV cache finally demonstrated
+
+**⚑ The earlier experiments were asking the wrong question about scale.** Every
+one shrank the labelled pool to preserve the 1.1% base rate, so 200 confirmed
+frauds meant a context of 18,000 rows. A real fraud desk has *millions* of
+transactions and a few hundred confirmed frauds — negatives are abundant,
+positives are not. E5 holds the frauds fixed at 200 and pours in legitimate data,
+down to a context fraud rate of **0.10%** at 200,000 rows. That is both more
+faithful to the problem and the first time this project used TabPFN at a scale
+the model was built for.
+
+**✗ A documented limit, noted on day one and then designed around badly.** Cached
+predicts cap at 10,000 test rows per call. The calibration pass scores 25,100, so
+every cached configuration failed with HTTP 422. Not a blocker — batching *is*
+the workload the cache assumes: encode the context once, stream batches through
+it. Added `BatchedPredictProba` in the experiments (a property of this API, not
+of conformal prediction).
+
+**The cache, measured at last:**
+
+| context | predict uncached | predict cached | speedup |
+|---:|---:|---:|---:|
+| 50,200 | 6.7 s | 2.3 s | 2.9× |
+| 100,200 | 13.6 s | 4.4 s | 3.1× |
+| 200,200 | **36.9 s** | **5.4 s** | **6.8×** |
+
+Coverage and set width are **identical** in all three pairs (0.958/1.460,
+0.983/1.556, 0.954/1.441) — the cache changes cost, not answers. The speedup
+grows with context, as documented, and `estimate_cost` puts the token saving at
+75% from 200k rows up. Conformal is precisely the workload it was built for: one
+fixed context, scored twice.
+
+Note the fit column moves the other way — 15 s → 24 s at 50k, since a cached fit
+computes and stores the attention state up front. It pays back on the second
+pass and after that it is free.
+
 ## Scoreboard
 
 | | prediction, registered before the experiments ran | outcome |

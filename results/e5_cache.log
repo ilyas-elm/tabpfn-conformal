@@ -1,0 +1,19 @@
+6 configurations, 200 confirmed frauds held fixed
+estimated cost: 207,067 tokens (4% of the 5M daily cap)
+pool months (0, 1, 2, 3, 4, 5): 794,989 rows available
+[1/6] split ctx= 50,200 (0.40% fraud) s=0 cache=off cov@.05=0.958 width=1.460 fit=15.0s pred=6.7s
+[2/6] split|50000|0|1: FAILED RuntimeError: Fail to call predict: [HTTP 422] Predicts using a cached fit are limited to 10,000 test samples per call; got 
+[3/6] split ctx=100,200 (0.20% fraud) s=0 cache=off cov@.05=0.983 width=1.555 fit=31.6s pred=13.6s
+[4/6] split|100000|0|1: FAILED RuntimeError: Fail to call predict: [HTTP 422] Predicts using a cached fit are limited to 10,000 test samples per call; got 
+[5/6] split ctx=200,200 (0.10% fraud) s=0 cache=off cov@.05=0.954 width=1.441 fit=153.4s pred=36.9s
+[6/6] split|200000|0|1: FAILED RuntimeError: Fail to call predict: [HTTP 422] Predicts using a cached fit are limited to 10,000 test samples per call; got 
+
+Written to results/e5.jsonl
+6 configurations, 200 confirmed frauds held fixed
+estimated cost: 207,067 tokens (4% of the 5M daily cap)
+pool months (0, 1, 2, 3, 4, 5): 794,989 rows available
+[2/6] split ctx= 50,200 (0.40% fraud) s=0 cache=on  cov@.05=0.958 width=1.460 fit=24.4s pred=2.3s
+[4/6] split ctx=100,200 (0.20% fraud) s=0 cache=on  cov@.05=0.983 width=1.556 fit=54.7s pred=4.4s
+[6/6] split ctx=200,200 (0.10% fraud) s=0 cache=on  cov@.05=0.954 width=1.441 fit=134.2s pred=5.4s
+
+Written to results/e5.jsonl

@@ -1,0 +1,4 @@
+30 configurations, 200 confirmed frauds held fixed
+estimated cost: 2,181,768 tokens (44% of the 5M daily cap)
+pool months (0, 1, 2, 3, 4, 5): 794,989 rows available
+[1/30] split ctx= 10,200 (1.96% fraud) s=0 cache=off cov@.05=0.965 width=1.463 fit=8.1s pred=2.6s
