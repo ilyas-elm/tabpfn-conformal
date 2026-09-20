@@ -47,7 +47,7 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 
 | | measured | where |
 |---|---|---|
-| Cross-conformal reaches the same guarantee from **half the confirmed frauds** | never significantly wider (0 of 8 paired tests); narrower where labels are scarcest | [E1](#2-measured-the-same-guarantee-from-half-the-labels) · [E6](#does-it-replicate-four-datasets) |
+| Cross-conformal reaches the same guarantee from **half the confirmed frauds** | never significantly wider (0 of 9 paired tests); narrower where labels are scarcest | [E1](#2-measured-the-same-guarantee-from-half-the-labels) · [E6](#does-it-replicate-four-datasets) |
 | TabPFN gives **narrower prediction sets than LightGBM** at an identical targeted level | 6.9–12.4% narrower, 4 of 4 comparisons | [E4](#against-the-baselines-tabpfn-wins-where-it-counts) |
 | TabPFN's **calibration error is 74–86% lower** — the mechanism behind the above | ECE 0.0019–0.0037 vs 0.0129–0.0141 | [calibration](#why-tabpfn-wins-calibration-measured-rather-than-cited) |
 | Under drift, Thinking loses coverage less often than base | 3 of 15 seed-months below target vs 9 of 15; never worse on any seed, better on 2 of 3 — **directional, t ≈ 1.7 at n=3** | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
@@ -100,7 +100,7 @@ guarantee. On Base the sets are also narrower, and most so where labels are
 scarcest — 12.9% at 25 calibration positives.
 
 **Tested across four datasets, the robust claim is the halving, not the
-narrowing.** See [below](#does-it-replicate-four-datasets): in eight paired
+narrowing.** See [below](#does-it-replicate-four-datasets): in nine paired
 comparisons cross-conformal is significantly wider in **zero**, and
 significantly narrower in one — the scarcest budget. The rest are ties. Half the
 labels, free.

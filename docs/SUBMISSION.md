@@ -40,7 +40,10 @@ split at budget 2F and cross at budget F calibrate on the same number of
 positives, so they compare directly with no confound:
 
 **Cross-conformal reaches the same guarantee from half the confirmed frauds**,
-with narrower prediction sets in five of six comparisons.
+at no cost in set width. Across four datasets and nine paired comparisons it is
+significantly wider in **zero** and significantly narrower in one — the scarcest
+label budget, which is the regime that matters. The raw win count is 6 of 9, but
+the seeds are shared, so the paired test is the one we report.
 
 Three supporting results:
 

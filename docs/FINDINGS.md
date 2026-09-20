@@ -399,6 +399,15 @@ that dissolves almost all of it.
 real only where positives are scarcest — which is the regime the project is
 about, but it is not a general property.
 
+**Completed 20 Sept at 36/36.** Variant III finished its second budget, so the
+table above is the partial run and the final count is **nine** comparisons, not
+eight: still significantly wider in **0**, still significantly narrower in **1**,
+same conclusion. The raw win count is 6 of 9 — which is exactly the number the
+paired test exists to discount. `analyze_e6` prints both, in that order, so the
+weaker framing cannot be quoted without the stronger one next to it. The README
+carried "0 of 8" in its summary and intro for a while after the run finished
+while its own detail section said 9; `verify_claims` now recomputes the count.
+
 So the headline shrank, and improved: *the same guarantee from half the confirmed
 frauds, at no cost in set width*. The halving is what replicates. The narrowing
 is a Base-scarce-budget result and is now labelled as one.
