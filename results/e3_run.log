@@ -39,3 +39,7 @@ refit   thinking month 6  fraud_cov=0.979 width=1.513 alpha_fraud=0.0500 (3.5s)
 refit   thinking month 7  fraud_cov=0.985 width=1.523 alpha_fraud=0.0500 (5.0s)
 
 Written to results/e3.jsonl
+1 arm(s) x 5 months with Thinking
+estimated cost: 189,905 tokens (~0.9% of the monthly budget)
+Thinking fits: 6 (rate limit is 30/hour -- fine)
+context months (0, 1, 2): 20,000 rows, 218 frauds | calibration: 5,000 rows, 48 frauds

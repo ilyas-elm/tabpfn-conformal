@@ -67,3 +67,10 @@ Variant III: pool 758,328 rows (1.105% fraud), eval 241,672 (2,652 frauds)
 [29/36] Variant III  split F=100  s=1 n_cal=50   cov@.10=0.868 width=1.081 (10.2s)
 [30/36] Variant III  cross F=50   s=1 n_cal=50   cov@.10=0.848 width=1.076 (41.0s)
 [31/36] Variant III  split F=200  s=1 n_cal=100  cov@.10=0.905 width=1.089 (11.5s)
+[32/36] Variant III  cross F=100  s=1 n_cal=100  cov@.10=0.930 width=1.145 (137.7s)
+[33/36] Variant III  split F=100  s=2 n_cal=50   cov@.10=0.940 width=1.148 (10.1s)
+[34/36] Variant III  cross F=50   s=2 n_cal=50   cov@.10=0.885 width=1.141 (41.6s)
+[35/36] Variant III  split F=200  s=2 n_cal=100  cov@.10=0.917 width=1.117 (11.8s)
+[36/36] Variant III  cross F=100  s=2 n_cal=100  cov@.10=0.966 width=1.178 (45.6s)
+
+Written to results/e6.jsonl
