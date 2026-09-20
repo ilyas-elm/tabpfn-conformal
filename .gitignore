@@ -11,3 +11,6 @@ data/
 *.csv
 !results/*.csv
 .env
+
+# generated from demo/_template.html + figures/demo_data.json
+demo/index.html

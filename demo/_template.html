@@ -1,0 +1,296 @@
+<title>Calibrated Fraud Desk</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#f4f6f9; --panel:#ffffff; --ink:#111620; --ink-2:#4d5566; --ink-3:#798294;
+  --line:#dde2ea; --line-2:#c9d1dd;
+  --accent:#2a4d8f; --accent-soft:#e8edf6;
+  --approve:#1d7a58; --review:#8f5c0d; --block:#a32b2b;
+  --approve-bg:#e2f0ea; --review-bg:#f6ecda; --block-bg:#f6e3e3;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --ground:#0e1117; --panel:#161b24; --ink:#eef1f6; --ink-2:#a8b1c1; --ink-3:#79839a;
+  --line:#252c38; --line-2:#333c4c;
+  --accent:#7ba3e0; --accent-soft:#1b2537;
+  --approve:#4fbf92; --review:#dba64a; --block:#e07a7a;
+  --approve-bg:#15281f; --review-bg:#2a2214; --block-bg:#2b1a1a;
+}}
+:root[data-theme="dark"]{
+  --ground:#0e1117; --panel:#161b24; --ink:#eef1f6; --ink-2:#a8b1c1; --ink-3:#79839a;
+  --line:#252c38; --line-2:#333c4c;
+  --accent:#7ba3e0; --accent-soft:#1b2537;
+  --approve:#4fbf92; --review:#dba64a; --block:#e07a7a;
+  --approve-bg:#15281f; --review-bg:#2a2214; --block-bg:#2b1a1a;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);
+  font:400 15px/1.55 "IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  padding-block:40px 64px;padding-left:16px;padding-right:16px;}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:34px}
+h1{font:500 30px/1.2 Newsreader,Georgia,serif;margin:0;text-wrap:balance;letter-spacing:-0.01em}
+h2{font:500 20px/1.25 Newsreader,Georgia,serif;margin:0;text-wrap:balance}
+.lede{color:var(--ink-2);margin:10px 0 0;max-width:62ch}
+.eyebrow{font:500 11px/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:22px}
+.note{color:var(--ink-3);font-size:13px;margin:12px 0 0;max-width:64ch}
+.ctl{display:flex;flex-direction:column;gap:6px;margin-top:18px}
+.ctl-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.ctl label{font:500 13px/1.3 "IBM Plex Sans",sans-serif;color:var(--ink-2)}
+.ctl output{font:500 15px/1 "IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent);height:22px}
+input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+@media(max-width:520px){.pair{grid-template-columns:1fr}}
+.stat{border:1px solid var(--line);border-radius:5px;padding:14px 16px;background:var(--ground)}
+.stat.lead{border-color:var(--accent);background:var(--accent-soft)}
+.stat .k{font:500 11px/1 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.stat .v{font:500 27px/1.1 "IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;margin-top:7px;letter-spacing:-0.02em}
+.stat .s{font-size:12.5px;color:var(--ink-2);margin-top:5px}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:5px;overflow:hidden;margin-top:16px}
+.seg button{font:500 13px/1 "IBM Plex Sans",sans-serif;padding:9px 15px;border:0;cursor:pointer;
+  background:var(--panel);color:var(--ink-2)}
+.seg button[aria-pressed=true]{background:var(--accent);color:#fff}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.grid{display:grid;grid-template-columns:repeat(40,1fr);gap:2px;margin-top:18px}
+@media(max-width:520px){.grid{grid-template-columns:repeat(25,1fr)}}
+.cell{aspect-ratio:1;border-radius:1px;background:var(--approve-bg);color:var(--approve)}
+.cell.block{background:var(--block-bg);color:var(--block)}
+.cell.review{background:var(--review-bg);color:var(--review)}
+.cell.f{outline:1.5px solid currentColor;outline-offset:-1.5px}
+.key{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;font-size:12.5px;color:var(--ink-2)}
+.key i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13.5px}
+th,td{text-align:right;padding:8px 6px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font:500 11px/1.3 "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+td{font-variant-numeric:tabular-nums;font-family:"IBM Plex Mono",monospace}
+td:first-child{font-family:"IBM Plex Sans",sans-serif}
+.win{color:var(--approve);font-weight:500}
+footer{color:var(--ink-3);font-size:12.5px;border-top:1px solid var(--line);padding-top:16px}
+a{color:var(--accent)}
+code{font:400 12.5px/1 "IBM Plex Mono",monospace}
+@media(prefers-reduced-motion:no-preference){.cell{transition:background .18s ease}}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">TabPFN-3.5 &middot; Bank Account Fraud</p>
+    <h1>What can you actually promise a regulator?</h1>
+    <p class="lede">A fraud model gives you a probability. A risk committee needs a
+    guarantee. Conformal prediction converts one into the other &mdash; but only as far
+    as your confirmed fraud labels allow. Every figure below is computed live from
+    real TabPFN-3.5 predictions.</p>
+  </header>
+
+  <section class="panel">
+    <p class="eyebrow">01 &middot; The ceiling</p>
+    <h2>Your label budget sets a hard limit</h2>
+    <p class="note">A calibration set of size <em>n</em> can only certify
+    &alpha;&nbsp;&ge;&nbsp;1/(n+1) &mdash; the threshold is the
+    &lceil;(n+1)(1&minus;&alpha;)&rceil;-th smallest score, and that index cannot exceed
+    <em>n</em>. Split conformal spends half your positives on calibration.
+    Cross-conformal spends none.</p>
+    <div class="ctl">
+      <div class="ctl-top"><label for="budget">Confirmed fraud labels</label>
+        <output id="budgetOut" for="budget">200</output></div>
+      <input type="range" id="budget" min="20" max="800" step="10" value="200">
+    </div>
+    <div class="pair">
+      <div class="stat"><div class="k">Split conformal</div>
+        <div class="v" id="splitCeil">&mdash;</div>
+        <div class="s" id="splitSub">&mdash;</div></div>
+      <div class="stat lead"><div class="k">Cross-conformal</div>
+        <div class="v" id="crossCeil">&mdash;</div>
+        <div class="s" id="crossSub">&mdash;</div></div>
+    </div>
+    <p class="note" id="ceilNote"></p>
+  </section>
+
+  <section class="panel">
+    <p class="eyebrow">02 &middot; Measured</p>
+    <h2>The same guarantee from half the labels</h2>
+    <p class="note">Split conformal at a budget of 2F calibrates on F positives,
+    exactly as cross-conformal at F does &mdash; identical calibration size, identical
+    targeted level. So these compare directly. Bank Account Fraud, five seeds.</p>
+    <div class="seg" role="group" aria-label="Miscoverage level">
+      <button type="button" data-a="0.05" aria-pressed="false">&alpha; = 0.05</button>
+      <button type="button" data-a="0.1" aria-pressed="true">&alpha; = 0.10</button>
+    </div>
+    <div style="overflow-x:auto"><table id="matched">
+      <thead><tr><th>Targeted level</th><th>Split needs</th><th>Set size</th>
+      <th>Cross needs</th><th>Set size</th></tr></thead><tbody></tbody></table></div>
+    <p class="note">Set size is how many labels the model refuses to rule out &mdash;
+    lower means fewer cases reaching a human.</p>
+  </section>
+
+  <section class="panel">
+    <p class="eyebrow">03 &middot; The desk</p>
+    <h2>400 real transactions, routed live</h2>
+    <p class="note">Singleton prediction sets decide themselves: legitimate is
+    approved, fraud is blocked. Anything ambiguous needs a human &mdash; and you only
+    have so many. The empty set, where the model rules out <em>both</em> labels, goes
+    to the front of the queue.</p>
+    <div class="ctl">
+      <div class="ctl-top"><label for="alpha">Miscoverage &alpha; &mdash; how much fraud you accept missing</label>
+        <output id="alphaOut" for="alpha">0.05</output></div>
+      <input type="range" id="alpha" min="1" max="30" step="1" value="5">
+    </div>
+    <div class="ctl">
+      <div class="ctl-top"><label for="k">Analyst review budget</label>
+        <output id="kOut" for="k">60</output></div>
+      <input type="range" id="k" min="0" max="200" step="5" value="60">
+    </div>
+    <div class="grid" id="grid" aria-hidden="true"></div>
+    <div class="key">
+      <span><i style="background:var(--approve-bg)"></i>Approved</span>
+      <span><i style="background:var(--review-bg)"></i>Sent to review</span>
+      <span><i style="background:var(--block-bg)"></i>Blocked</span>
+      <span><i style="border:1.5px solid var(--ink-2)"></i>Actually fraud</span>
+    </div>
+    <div class="pair">
+      <div class="stat lead"><div class="k">Fraud coverage &mdash; the guarantee</div>
+        <div class="v" id="cov">&mdash;</div>
+        <div class="s" id="covSub">&mdash;</div></div>
+      <div class="stat"><div class="k">Fraud caught &mdash; the outcome</div>
+        <div class="v" id="caught">&mdash;</div>
+        <div class="s" id="caughtSub">blocked or reviewed</div></div>
+    </div>
+    <p class="note" id="gapNote"></p>
+    <div class="pair">
+      <div class="stat"><div class="k">Review queue</div>
+        <div class="v" id="queue">&mdash;</div><div class="s" id="queueSub">&mdash;</div></div>
+      <div class="stat"><div class="k">Fraud missed</div>
+        <div class="v" id="missed">&mdash;</div><div class="s">approved without review</div></div>
+    </div>
+    <p class="note" id="deskNote"></p>
+  </section>
+
+  <footer>
+    Live figures from <code>tabpfn_cross_200_0</code> &mdash; TabPFN-3.5 via the Prior
+    Labs API on Bank Account Fraud (Jesus et al., NeurIPS 2022), months 6&ndash;7.
+    Calibration and displayed cases are disjoint halves of one held-out set.
+    Cross-conformal is approximately valid rather than exactly valid.
+    <a href="https://github.com/ilyas-elm/tabpfn-conformal">Source and full results</a>.
+  </footer>
+</div>
+
+<script id="demo-data" type="application/json">__DEMO_DATA__</script>
+<script>
+const D = JSON.parse(document.getElementById("demo-data").textContent);
+const $ = id => document.getElementById(id);
+
+// The conformal index: the k-th smallest calibration score, k = ceil((n+1)(1-alpha)).
+// Infinity when alpha cannot be certified at this n -- the trivial all-labels set.
+function q(sorted, alpha){
+  const n = sorted.length;
+  if(!n) return Infinity;
+  const k = Math.ceil((n + 1) * (1 - alpha));
+  if(k > n) return Infinity;
+  if(k <= 0) return -Infinity;
+  return sorted[k - 1];
+}
+const pct = x => (100 * x).toFixed(x >= 0.999 ? 2 : 1) + "%";
+
+/* 01 -- the feasibility ceiling, pure arithmetic */
+function ceiling(){
+  const F = +$("budget").value;
+  $("budgetOut").textContent = F;
+  const split = 1 - 2 / (F + 2), cross = 1 - 1 / (F + 1);
+  $("splitCeil").textContent = pct(split);
+  $("crossCeil").textContent = pct(cross);
+  $("splitSub").textContent = "calibrates on " + Math.floor(F / 2) + " positives";
+  $("crossSub").textContent = "calibrates on all " + F;
+  const need = Math.ceil(1 / 0.01 - 1);
+  $("ceilNote").innerHTML = "To promise <strong>99%</strong> fraud coverage you need "
+    + need + " calibration positives &mdash; " + (2 * need) + " confirmed frauds under "
+    + "split conformal, " + need + " under cross. At " + F + " labels split tops out at "
+    + pct(split) + "; cross reaches " + pct(cross) + ".";
+}
+
+/* 02 -- measured widths at matched calibration size */
+function matched(){
+  const a = +document.querySelector(".seg button[aria-pressed=true]").dataset.a;
+  const byN = {};
+  D.e1.filter(r => Math.abs(r.a - a) < 1e-9).forEach(r => {
+    if(!byN[r.ncal]) byN[r.ncal] = {};
+    byN[r.ncal][r.s] = r;
+  });
+  const body = $("matched").tBodies[0];
+  body.innerHTML = "";
+  Object.keys(byN).map(Number).sort((x, y) => x - y).forEach(n => {
+    const p = byN[n];
+    if(!p.split || !p.cross) return;
+    const k = Math.ceil((n + 1) * (1 - a));
+    const lvl = k > n ? "not certifiable" : (100 * k / n).toFixed(1) + "%";
+    const better = p.cross.w < p.split.w;
+    body.insertAdjacentHTML("beforeend",
+      "<tr><td>" + lvl + "</td><td>" + p.split.f + "</td><td>" + p.split.w.toFixed(3)
+      + "</td><td><strong>" + p.cross.f + "</strong></td><td class=\"" + (better ? "win" : "")
+      + "\">" + p.cross.w.toFixed(3) + "</td></tr>");
+  });
+}
+
+/* 03 -- route real cases under a review budget */
+function desk(){
+  const alpha = +$("alpha").value / 100, K = +$("k").value;
+  $("alphaOut").textContent = alpha.toFixed(2);
+  $("kOut").textContent = K;
+
+  const qF = q(D.cal_fraud, alpha), qL = q(D.cal_legit, alpha);
+  const rows = D.cases.map((c, i) => {
+    const inFraud = (1 - c.p) <= qF, inLegit = c.p <= qL;
+    const size = (inFraud ? 1 : 0) + (inLegit ? 1 : 0);
+    return {i: i, p: c.p, y: c.y, size: size,
+            act: size === 1 ? (inFraud ? "block" : "approve") : null};
+  });
+  // Ambiguous cases compete for the budget; the empty set outranks everything.
+  const amb = rows.filter(r => r.act === null)
+                  .sort((x, y) => ((y.size === 0) - (x.size === 0)) || (y.p - x.p));
+  amb.forEach((r, j) => { r.act = j < K ? "review" : (r.p >= 0.5 ? "block" : "approve"); });
+
+  $("grid").innerHTML = rows.map(r =>
+    "<div class=\"cell " + r.act + (r.y ? " f" : "") + "\"></div>").join("");
+
+  const fraud = rows.filter(r => r.y === 1), legit = rows.filter(r => r.y === 0);
+  const caught = fraud.filter(r => r.act !== "approve").length;
+  const reviewed = rows.filter(r => r.act === "review").length;
+  // Coverage is what conformal guarantees: the true label is in the set.
+  // Catching also needs a free analyst, which is a separate constraint.
+  const covered = fraud.filter(r => (1 - r.p) <= qF).length;
+  $("cov").textContent = (100 * covered / fraud.length).toFixed(1) + "%";
+  $("covSub").textContent = "target " + (100 * (1 - alpha)).toFixed(0)
+    + "% \u2014 " + (covered / fraud.length >= 1 - alpha ? "met" : "below target");
+  $("caught").textContent = (100 * caught / fraud.length).toFixed(1) + "%";
+  $("caughtSub").textContent = caught + " of " + fraud.length + " frauds";
+  $("missed").textContent = fraud.length - caught;
+  $("queue").textContent = reviewed;
+  $("queueSub").textContent = K === 0 ? "no budget \u2014 model decides alone"
+    : amb.length + " ambiguous, budget " + K;
+  $("fp").textContent = legit.filter(r => r.act === "block").length;
+  const gap = covered - caught;
+  $("gapNote").innerHTML = gap <= 0
+    ? "Every covered fraud reached a decision that catches it."
+    : "<strong>" + gap + " frauds are covered by the guarantee but not caught.</strong> "
+      + "Conformal promises the true label is in the set; acting on an ambiguous set "
+      + "still needs a free analyst. Raise the budget and the gap closes \u2014 that is "
+      + "the trade the guarantee makes visible, and an uncalibrated probability hides.";
+  $("deskNote").innerHTML = qF === Infinity
+    ? "<strong>&alpha; = " + alpha.toFixed(2) + " cannot be certified</strong> from "
+      + D.cal_fraud.length + " calibration positives, so every case keeps both labels "
+      + "and the desk learns nothing. That is the ceiling in panel 01, reached."
+    : amb.length + " of " + rows.length + " cases are ambiguous at &alpha; = "
+      + alpha.toFixed(2) + "; " + reviewed + " fit the budget. The rest fall back on "
+      + "the model's own call, which is what an unaided desk does anyway.";
+}
+
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".seg button").forEach(o =>
+    o.setAttribute("aria-pressed", String(o === b)));
+  matched();
+}));
+$("budget").addEventListener("input", ceiling);
+$("alpha").addEventListener("input", desk);
+$("k").addEventListener("input", desk);
+ceiling(); matched(); desk();
+</script>
