@@ -53,9 +53,13 @@ def check(label: str, claimed, actual, tol=TOL):
 
 
 def in_readme(pattern: str):
-    """First capture group of `pattern` as a float, or None if absent."""
+    """First capture group of `pattern` as a float, or None if absent.
+
+    The prose uses a typographic minus (U+2212), which float() rejects, so the
+    captured text is normalised before conversion.
+    """
     m = re.search(pattern, README)
-    return float(m.group(1)) if m else None
+    return float(m.group(1).replace("\u2212", "-")) if m else None
 
 
 # ---- 1. The feasibility table is pure arithmetic -------------------------
@@ -153,6 +157,110 @@ if e3:
         check("E3 paired mean", in_readme(r"([\d.]+) ± [\d.]+ months"), float(d.mean()), 0.05)
         check("E3 paired stderr", in_readme(r"[\d.]+ ± ([\d.]+) months"), float(se), 0.05)
         check("E3 paired t", in_readme(r"t ≈ ([\d.]+), n = 3"), float(d.mean() / se), 0.05)
+
+# ---- 5b. The calibration (ECE) table, recomputed from the saved probabilities
+# The "74-86% lower calibration error" line is quoted in the README, the
+# submission and the video, and was the only headline claim with no check.
+def _weights(y, true_rate=0.0141):
+    y = np.asarray(y, dtype=float)
+    n_pos, n_neg = y.sum(), (1 - y).sum()
+    w = np.where(y == 1, true_rate / max(n_pos, 1), (1 - true_rate) / max(n_neg, 1))
+    return w / w.sum()
+
+
+def _ece(p, y, w, bins=15):
+    edges = np.linspace(0.0, 1.0, bins + 1)
+    idx = np.clip(np.digitize(p, edges[1:-1]), 0, bins - 1)
+    total = 0.0
+    for b in range(bins):
+        m = idx == b
+        if not m.any():
+            continue
+        wb = w[m].sum()
+        if wb <= 0:
+            continue
+        total += wb * abs(np.average(p[m], weights=w[m]) - np.average(y[m], weights=w[m]))
+    return float(total)
+
+
+proba_dir = REPO / "results/proba/e4"
+if proba_dir.exists():
+    from collections import defaultdict as _dd
+    ece = _dd(list)
+    for f in sorted(proba_dir.glob("*.npz")):
+        rest, budget, _seed = f.stem.rsplit("_", 2)
+        model, strategy = rest.rsplit("_", 1)
+        d = np.load(f)
+        pr, yy = d["proba"][:, 1].astype(float), d["y_true"].astype(float)
+        ece[(model, strategy, int(budget))].append(_ece(pr, yy, _weights(yy)))
+    for strategy in ("split", "cross"):
+        for budget in (100, 200):
+            t = ece.get(("tabpfn", strategy, budget))
+            g = ece.get(("lightgbm", strategy, budget))
+            if not (t and g):
+                continue
+            tm, gm = float(np.mean(t)), float(np.mean(g))
+            row = (rf"\| {strategy} \| {budget} \| \*\*([\d.]+)\*\* \| ([\d.]+) \| "
+                   rf"\*\*(\d+)%\*\* \|")
+            m = re.search(row, README)
+            check(f"ECE {strategy}@{budget} TabPFN",
+                  float(m.group(1)) if m else None, tm, 0.0001)
+            check(f"ECE {strategy}@{budget} LightGBM",
+                  float(m.group(2)) if m else None, gm, 0.0001)
+            check(f"ECE {strategy}@{budget} reduction %",
+                  float(m.group(3)) if m else None, round(100 * (1 - tm / gm)), 0.5)
+
+# ---- 5c. E4 "narrower by", and the E5 scale + cache numbers ---------------
+if e4:
+    pct = []
+    for strategy in ("split", "cross"):
+        for budget in (100, 200):
+            t = e4.get((f"tabpfn_{strategy}", budget))
+            g = e4.get((f"lightgbm_{strategy}", budget))
+            if not (t and g):
+                continue
+            tw, gw = float(np.mean(t["width"])), float(np.mean(g["width"]))
+            pct.append(100 * (1 - tw / gw))
+    if pct:
+        check("E4 narrower-by low", in_readme(r"([\d.]+)–[\d.]+% narrower"), min(pct), 0.05)
+        check("E4 narrower-by high", in_readme(r"[\d.]+–([\d.]+)% narrower"), max(pct), 0.05)
+        check("E4 comparisons won",
+              in_readme(r"narrower, (\d+) of \d+ comparisons"),
+              float(sum(x > 0 for x in pct)), 0.5)
+
+e5 = load("e5.jsonl")
+if e5:
+    # Slope of set size against log10 context, split only -- the arms are not
+    # replicated equally (cross stops at 25k), so mixing them would repeat the
+    # analyze_e3 mistake.
+    from collections import defaultdict as _dd2
+    by_ctx = _dd2(list)
+    for r in e5:
+        a = r.get("alphas", {}).get("0.05")
+        if a and r["strategy"] == "split" and not r["cache"]:
+            by_ctx[r["n_context"]].append(a["set_size"])
+    if len(by_ctx) > 2:
+        xs = np.array(sorted(by_ctx), dtype=float)
+        ys = np.array([np.mean(by_ctx[x]) for x in sorted(by_ctx)])
+        sd = float(np.mean([np.std(by_ctx[x], ddof=1) for x in sorted(by_ctx)
+                            if len(by_ctx[x]) > 1]))
+        slope = float(np.polyfit(np.log10(xs), ys, 1)[0])
+        check("E5 slope",
+              in_readme(r"Slope (\u2212?[\d.]+) set size per 10\u00d7 context"),
+              slope, 0.0006)
+        check("E5 seed SD", in_readme(r"seed standard deviation\nof ([\d.]+)"), sd, 0.0006)
+
+    cached = {r["n_context"]: r for r in e5 if r["cache"]}
+    plain = {r["n_context"]: r for r in e5 if not r["cache"] and r["seed"] == 0
+             and r["strategy"] == "split"}
+    big = max(cached) if cached else None
+    if big and big in plain:
+        speed = plain[big]["predict_seconds"] / cached[big]["predict_seconds"]
+        check("E5 cache speedup", in_readme(r"\*\*([\d.]+)× faster\*\* at 200k"), speed, 0.05)
+        check("E5 cache uncached s", in_readme(r"([\d.]+) s → [\d.]+ s"),
+              plain[big]["predict_seconds"], 0.05)
+        check("E5 cache cached s", in_readme(r"[\d.]+ s → ([\d.]+) s"),
+              cached[big]["predict_seconds"], 0.05)
 
 # ---- 6. Test count --------------------------------------------------------
 import subprocess

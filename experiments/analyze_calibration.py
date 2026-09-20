@@ -68,7 +68,12 @@ def main() -> int:
 
     agg = defaultdict(list)
     for f in files:
-        model, strategy, budget, _seed = pathlib.Path(f).stem.split("_")
+        # rsplit from the right: save_proba() sanitises "|" to "_", so a family
+        # whose name already contains one (tabpfn_balanced) would split into five
+        # parts and raise here. Parsing from the right keeps that working.
+        stem = pathlib.Path(f).stem
+        rest, budget, _seed = stem.rsplit("_", 2)
+        model, strategy = rest.rsplit("_", 1)
         d = np.load(f)
         p = d["proba"][:, 1].astype(float)
         y = d["y_true"].astype(float)

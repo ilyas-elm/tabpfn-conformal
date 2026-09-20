@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
-authors = [{ name = "TODO: your name", email = "TODO@example.com" }]
+authors = [{ name = "Ilyas El Maazouzi", email = "ilyaselmaazouzi9@gmail.com" }]
 keywords = ["conformal-prediction", "tabpfn", "uncertainty", "fraud-detection", "tabular"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -34,7 +34,8 @@ dev = ["pytest>=7.0", "mapie>=0.8", "matplotlib>=3.7"]
 experiments = ["tabpfn-client", "matplotlib>=3.7", "lightgbm", "pyarrow", "kagglehub"]
 
 [project.urls]
-Homepage = "https://github.com/TODO/tabpfn-conformal"
+Homepage = "https://github.com/ilyas-elm/tabpfn-conformal"
+Issues = "https://github.com/ilyas-elm/tabpfn-conformal/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tabpfn_conformal"]
