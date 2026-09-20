@@ -39,7 +39,7 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 `strategy="split"` → `"cross"` is the whole diff.
 
 > **Work in progress** for the Prior Labs TabPFN-3.5 Hackathon (deadline 6 Oct
-> 2026). The library and its 114 tests are complete and run on CPU in a few
+> 2026). The library and its 117 tests are complete and run on CPU in a few
 > second. Experiments are running; every number below is measured and the
 > results files are committed. Two of our own pre-registered predictions have
 > already been falsified and are reported as such — see
@@ -403,11 +403,11 @@ and labels are the resource that is actually scarce.
 
 ```bash
 pip install -e ".[dev]"   # tests, plus everything needed to redraw the figures
-pytest                    # 114 tests, CPU, ~3s warm (~10s on a cold clone)
+pytest                    # 117 tests, CPU, ~3s warm (~10s on a cold clone)
 ```
 
 The core depends on **numpy, pandas and scikit-learn only** — no torch, no
-`tabpfn`, no GPU. 114 tests in about three seconds on a laptop. TabPFN appears in
+`tabpfn`, no GPU. 117 tests in about three seconds on a laptop. TabPFN appears in
 `experiments/` and is never imported by `src/`.
 
 For the experiments you additionally need a free Prior Labs account:

@@ -102,3 +102,16 @@ def test_shape_mismatch_raises():
         route(SETS, PROBA[:3], budget_k=1)
     with pytest.raises(ValueError, match="must align"):
         decision_summary(np.array([APPROVE]), [0, 1])
+
+
+@pytest.mark.parametrize("bad", [2, -1, 99])
+def test_route_rejects_an_out_of_range_positive_idx(bad):
+    """Every other argument reports its own mistake; this one used to not.
+
+    `negative_idx` is derived as `1 - positive_idx`, so a bad value surfaced as
+    "index 2 is out of bounds for axis 1 with size 2" from deep inside numpy.
+    """
+    sets = np.array([[True, False], [False, True]])
+    proba = np.array([[0.9, 0.1], [0.2, 0.8]])
+    with pytest.raises(ValueError, match="positive_idx must be 0 or 1"):
+        route(sets, proba, budget_k=1, positive_idx=bad)
