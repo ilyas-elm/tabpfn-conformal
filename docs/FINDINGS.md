@@ -408,7 +408,34 @@ comparison flattered a result and the paired test took it back (E2's cal_size
 optimum, E4's split@200 margin, now this). Worth making a habit: **when the
 seeds are shared, never compare means.**
 
-## The Thinking drift result does not replicate cleanly
+## The Thinking drift result, settled at three seeds
+
+**✗ The single-seed headline was an artifact. What survives is much weaker, and
+is now stated that way.**
+
+| model | seed 0 | seed 1 | seed 2 | total |
+|---|---:|---:|---:|---:|
+| base | 4 of 5 below | 0 of 5 | 5 of 5 | 9 of 15 |
+| Thinking | 0 of 5 | 0 of 5 | 3 of 5 | 3 of 15 |
+
+Seed 0 looked decisive. Seed 1 has base holding comfortably. Seed 2 has Thinking
+failing three months itself. Paired by seed the gap is 2.0 ± 1.2 months,
+t ≈ 1.7 at n = 3 — **directional, not established**.
+
+What can honestly be said: Thinking was never worse than base on any seed and
+strictly better on two of three, at about 5% wider sets.
+
+How close this came to shipping is the point. It was found, written up, and
+promoted to the README summary table **on one seed**, because it was the
+cleanest TabPFN-specific result in the project and it matched what Prior Labs
+documents about Thinking on temporal data. Two things saved it: the pre-committed
+decision to replicate before submitting, and fixing `analyze_e3` to aggregate
+over seeds first — keyed on month alone, it would have silently kept only the
+last seed and shown an unchanged table.
+
+**Wanting a result to be true is exactly when replication matters.**
+
+## (superseded) The Thinking drift result does not replicate cleanly
 
 **✗ The strongest TabPFN-specific claim in the project was a single-seed
 artifact, at least in part.**

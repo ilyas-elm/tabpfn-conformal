@@ -50,7 +50,7 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 | Cross-conformal reaches the same guarantee from **half the confirmed frauds** | never significantly wider (0 of 8 paired tests); narrower where labels are scarcest | [E1](#2-measured-the-same-guarantee-from-half-the-labels) · [E6](#does-it-replicate-four-datasets) |
 | TabPFN gives **narrower prediction sets than LightGBM** at an identical targeted level | 4.6–12.4% narrower, 4 of 4 comparisons | [E4](#against-the-baselines-tabpfn-wins-where-it-counts) |
 | TabPFN's **calibration error is 74–86% lower** — the mechanism behind the above | ECE 0.0019–0.0037 vs 0.0129–0.0141 | [calibration](#why-tabpfn-wins-calibration-measured-rather-than-cited) |
-| Under drift, Thinking never fell below its promised level; base sometimes did | 0 of 10 seed-months vs 4 of 10 — but all four from one seed, so **directional only** | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
+| Under drift, Thinking loses coverage less often than base | 3 of 15 seed-months below target vs 9 of 15; never worse on any seed, better on 2 of 3 — **directional, t ≈ 1.7 at n=3** | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
 | The **KV cache** makes the evaluation pass **6.8× faster** at 200k context, identical sets | 36.9 s → 5.4 s | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
 | **Abundant data does not substitute for confirmed positives** — 20× more context changes nothing | slope −0.017 vs seed SD 0.046 | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
 | Where a scarce label budget should go: **nowhere — don't split it** | no detectable optimum; cross beats every ratio | [E2](#where-should-a-scarce-label-budget-go-mostly-nowhere) |
@@ -286,24 +286,24 @@ at γ ∈ {0.05, 0.2} it is *numerically identical* to doing nothing, and at
 
 ![Coverage by month under drift](figures/e3_drift_base.png)
 
-**TabPFN-3.5-Thinking may fix it, but the evidence is weaker than one seed
-suggested.** Measured against the level actually targeted (97.83% with 46
-calibration positives, not 95% — the index rounds up):
+**TabPFN-3.5-Thinking reduces the problem but does not remove it.** Measured
+against the level actually targeted (97.83% with 46 calibration positives, not
+95% — the index rounds up), three seeds:
 
-| model | seed 0 | seed 1 | seed-months below target |
-|---|---:|---:|---:|
-| base TabPFN-3.5 | 4 of 5 below | **0 of 5** | 4 of 10 |
-| TabPFN-3.5-Thinking | 0 of 5 | 0 of 5 | **0 of 10** |
+| model | seed 0 | seed 1 | seed 2 | seed-months below target | mean set size |
+|---|---:|---:|---:|---:|---:|
+| base TabPFN-3.5 | 4 of 5 | 0 of 5 | 5 of 5 | **9 of 15** | 1.427 |
+| TabPFN-3.5-Thinking | 0 of 5 | 0 of 5 | 3 of 5 | **3 of 15** | 1.502 |
 
-The first seed looked decisive — base failing 4 months out of 5, Thinking none.
-**It does not replicate cleanly: on seed 1 the base model holds comfortably.**
-All four failures come from a single seed.
+The first seed looked decisive — base failing four months, Thinking none — and
+**it did not hold up**. Seed 1 has base holding comfortably; seed 2 has Thinking
+failing three months of its own.
 
-So the honest statement is directional, not established. Thinking has not fallen
-below its promised level in any of ten seed-months; base has in four, all from
-one draw. A third seed is running, and this claim will be settled or dropped
-before submission rather than shipped on n=2. Thinking costs about 8% wider sets
-either way.
+What survives three seeds, stated at the strength the data supports:
+**Thinking was never worse than base on any seed, and strictly better on two of
+three**, for about 5% wider sets. Paired by seed the difference is
+2.0 ± 1.2 months (t ≈ 1.7, n = 3) — **directional, not statistically
+established.** Settling it properly needs more seeds than this project has spent.
 
 This matches what Prior Labs documents — Thinking is stronger on temporal and grouped data — and
 Thinking has **no local weights**, so this result is only reachable through the
