@@ -54,3 +54,14 @@ Written to results/e3.jsonl
 estimated cost: 60,000 tokens (~0.3% of the monthly budget)
 context months (0, 1, 2): 20,000 rows, 218 frauds | calibration: 5,000 rows, 48 frauds
 frozen  base     month 3  fraud_cov=0.996 width=1.493 alpha_fraud=0.0500 (4.9s)
+frozen  base     month 4  fraud_cov=0.996 width=1.501 alpha_fraud=0.0500 (4.8s)
+frozen  base     month 5  fraud_cov=0.987 width=1.553 alpha_fraud=0.0500 (5.1s)
+frozen  base     month 6  fraud_cov=0.983 width=1.551 alpha_fraud=0.0500 (5.0s)
+frozen  base     month 7  fraud_cov=0.979 width=1.534 alpha_fraud=0.0500 (5.1s)
+
+Written to results/e3.jsonl
+1 arm(s) x 5 months with Thinking
+estimated cost: 189,905 tokens (~0.9% of the monthly budget)
+Thinking fits: 6 (rate limit is 30/hour -- fine)
+context months (0, 1, 2): 20,000 rows, 198 frauds | calibration: 5,000 rows, 40 frauds
+Exception occurred during _fit, retrying in 0.0 seconds... attempt 1: The read operation timed out
