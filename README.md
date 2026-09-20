@@ -205,7 +205,22 @@ at γ ∈ {0.05, 0.2} it is *numerically identical* to doing nothing, and at
 
 ![Coverage by month under drift](figures/e3_drift_base.png)
 
-The reason is the same scarcity as everywhere else in this project. With `n`
+**TabPFN-3.5-Thinking does fix it.** Measured against the level actually
+targeted (97.83% with 46 calibration positives, not 95% — the index rounds up):
+
+| arm | months below the promised level | mean set size |
+|---|---:|---:|
+| base TabPFN-3.5 | 4 of 5 | 1.422 |
+| **TabPFN-3.5-Thinking** | **0 of 5** | 1.536 |
+
+The base model falls below its own promise from month 4 onward as the fraud rate
+climbs; Thinking never does, at a cost of about 8% wider sets. This matches what
+Prior Labs documents — Thinking is stronger on temporal and grouped data — and
+Thinking has **no local weights**, so this result is only reachable through the
+managed API. It also passes `time_col`, which the base model rejects outright,
+so it compares recommended usage rather than isolating the checkpoint. One seed.
+
+The reason ACI cannot help is the same scarcity as everywhere else in this project. With `n`
 calibration positives only `n` distinct thresholds exist, so α must move far
 enough to change which order statistic is selected before anything changes at
 all. At the 46 positives available here that step is **0.0139**; ACI moves α by

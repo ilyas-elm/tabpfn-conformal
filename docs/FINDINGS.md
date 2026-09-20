@@ -279,6 +279,41 @@ It also cuts the other way: `cp_missing_data` existing is **evidence conformal
 contributions are in scope**, which is a better argument for the PR than an
 empty category would have been.
 
+## The Thinking arm — and a metric that hid its own result
+
+**⚑ TabPFN-3.5-Thinking holds the guarantee under drift; the base model does not.**
+
+| arm | months below the promised level | mean set size |
+|---|---:|---:|
+| base, frozen thresholds | 4 of 5 | 1.422 |
+| base, ACI | 4 of 5 | 1.424 |
+| **Thinking, frozen thresholds** | **0 of 5** | 1.536 |
+| **Thinking, ACI** | **0 of 5** | 1.542 |
+
+Measured against the level actually *targeted* — 97.83% with 46 calibration
+positives at α=0.05, not 95%, because the conformal index rounds up. Base falls
+below its own promise from month 4 onward as the fraud rate climbs. Thinking
+never does.
+
+This is the clearest TabPFN-3.5-specific result in the project, and it matches
+what Prior Labs documents: Thinking is stronger on temporal and grouped data.
+Here that shows up in the unit that matters — whether the guarantee survives
+drift.
+
+Three caveats that must travel with it. Thinking also passes `time_col`, which
+base cannot (it is rejected outside thinking mode), so this compares *recommended
+usage* rather than isolating the checkpoint. It costs about 8% wider sets —
+1.536 against 1.422 — which is the price of not breaking the promise. And it is
+one seed.
+
+**✗ The metric was hiding this.** `analyze_e3` reported mean absolute deviation
+from target, which penalises over-coverage exactly as hard as under-coverage. On
+that metric Thinking scored **worse** (0.0375 vs base's 0.0143) — precisely
+backwards, because Thinking's "error" is over-delivering. For a guarantee the two
+directions are not symmetric: under-coverage breaks the promise, over-coverage
+only costs set width. The table now reports months-below-target first and width
+as the cost, which is the question a risk function actually asks.
+
 ## E5 — scale, and the KV cache finally demonstrated
 
 **⚑ The earlier experiments were asking the wrong question about scale.** Every

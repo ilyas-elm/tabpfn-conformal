@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import pathlib
 from collections import defaultdict
 
@@ -156,11 +157,24 @@ def table(by_arm):
         )
         print(f"| {m} | {rate:.2%} | {cells} |")
 
-    print("\n**Mean absolute deviation from target across the walk:**\n")
+    # Deviation from target treats over- and under-coverage alike, which is wrong
+    # for a guarantee: under-coverage breaks the promise, over-coverage only costs
+    # width. Report the promise first, then what it cost.
+    n_cal = 46  # calibration positives available in this setup
+    print("\n**Did the guarantee hold?**\n")
+    print("The level actually targeted is ceil((n+1)(1-alpha))/n, not 1-alpha. With")
+    print(f"{n_cal} calibration positives at alpha=0.05 that is "
+          f"{math.ceil((n_cal + 1) * 0.95) / n_cal:.3%}.\n")
+    print("| arm | months below the promised level | mean set size |")
+    print("|---|---:|---:|")
     for a in by_arm:
-        target = 1 - next(iter(by_arm[a].values()))["alpha_target"]
-        dev = np.mean([abs(r["coverage_fraud"] - target) for r in by_arm[a].values()])
-        print(f"- {ARM_STYLE[a][1]}: {dev:.4f}")
+        alpha = next(iter(by_arm[a].values()))["alpha_target"]
+        target = math.ceil((n_cal + 1) * (1 - alpha)) / n_cal
+        rs = list(by_arm[a].values())
+        below = sum(1 for r in rs if r["coverage_fraud"] < target)
+        flag = "**" if below == 0 else ""
+        print(f"| {ARM_STYLE[a][1]} | {flag}{below} of {len(rs)}{flag} | "
+              f"{np.mean([r['set_size'] for r in rs]):.3f} |")
 
 
 def main() -> int:
