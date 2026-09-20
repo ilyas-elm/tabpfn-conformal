@@ -1,7 +1,7 @@
 # tabpfn-conformal
 
 **Cross-conformal reaches the same coverage guarantee from half the confirmed
-frauds — and that is only affordable because TabPFN never trains.**
+frauds — and on TabPFN-3.5 it costs zero training runs to get there.**
 
 With a hundred confirmed frauds, the 99% guarantee a regulator asks for is
 mathematically unavailable to standard practice. This makes it available.
@@ -16,6 +16,14 @@ That trade only ever made sense because the alternative meant retraining.
 **TabPFN-3.5 has no training step** — `fit` swaps the in-context set and takes no
 gradient — so K-fold cross-conformal is K forward passes, and every fraud label
 can be both context *and* calibration.
+
+Being precise about cost, because an earlier draft of this README overclaimed
+it: cross-conformal is **exactly K× the API cost of split conformal** — measured,
+2.0× at K=2 and 20.0× at K=20 — and it is **not** the case that only TabPFN can
+afford it. In our own baselines LightGBM cross-conformal finished in about six
+seconds. What TabPFN removes is the training: **0 gradient-trained fits against
+LightGBM's 6**. That is the hardware-independent number, and the one that scales
+when the pool does.
 
 ```python
 from tabpfn_conformal import ConformalClassifier
@@ -214,7 +222,8 @@ targeted (97.83% with 46 calibration positives, not 95% — the index rounds up)
 | **TabPFN-3.5-Thinking** | **0 of 5** | 1.536 |
 
 The base model falls below its own promise from month 4 onward as the fraud rate
-climbs; Thinking never does, at a cost of about 8% wider sets. This matches what
+climbs; Thinking stays above it in all five, at a cost of about 8% wider sets.
+(Five months, one seed — clean but thin, and being replicated.) This matches what
 Prior Labs documents — Thinking is stronger on temporal and grouped data — and
 Thinking has **no local weights**, so this result is only reachable through the
 managed API. It also passes `time_col`, which the base model rejects outright,

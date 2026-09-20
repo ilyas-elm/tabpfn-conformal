@@ -350,6 +350,32 @@ Note the fit column moves the other way — 15 s → 24 s at 50k, since a cached
 computes and stores the attention state up front. It pays back on the second
 pass and after that it is free.
 
+## 20 September — an overstatement in our own headline
+
+**✗ "Only affordable because TabPFN never trains" was false, and our own data
+said so.** It was the README's first line. E4 measured LightGBM cross-conformal
+at about **six seconds** — cross-conformal is entirely affordable with a
+gradient-boosted model at this scale, which is exactly what falsifying P5
+established. A judge could have disproved the headline from our own results
+table two screens further down.
+
+Corrected to what is measured: the same guarantee from half the labels, and on
+TabPFN **0 gradient-trained fits against LightGBM's 6** — hardware-independent,
+and the number that scales.
+
+**✗ The K× cost caveat had been silently deleted.** An earlier edit to the README
+overwrote the paragraph stating that cross-conformal costs exactly K×. So the
+document was making the affordability claim while no longer carrying the
+correction that qualifies it. Restored.
+
+**✗ "Thinking never does" on five months of one seed.** Softened, with the sample
+size stated inline rather than three sentences later.
+
+Found by grepping the public docs for absolutes and superlatives. Most hits were
+accurate — "never trains", "never a random split", "never clips silently" — which
+is why the real ones had survived several readings. Worth repeating before
+submission.
+
 ## Scoreboard
 
 | | prediction, registered before the experiments ran | outcome |
