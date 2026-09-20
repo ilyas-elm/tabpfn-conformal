@@ -25,26 +25,14 @@ Every deliverable exists in draft or better.
 | Extensions PR | generated and tested, **not opened** |
 | Submission text | drafted |
 
-## The one open question
+## The one open question — SETTLED 20 Sept
 
-**The Thinking drift result does not replicate cleanly on two seeds.** Base
-fails 4 of 5 months on seed 0 and 0 of 5 on seed 1; Thinking is 0 of 5 on both.
-A third seed is running via `chain_thinking.sh`.
-
-When it lands:
-
-```bash
-python experiments/analyze_e3.py --model base
-python experiments/analyze_e3.py --model thinking
-python scripts/verify_claims.py
-```
-
-Then **settle or drop the claim**. If seed 2 has base failing again, it is two
-of three and worth stating as directional. If base holds again, the honest
-conclusion is that base's failure was a single bad draw and the claim should
-come out of the README summary table entirely.
-
-Do not ship it on n=2.
+The Thinking drift claim was replicated across three seeds and **weakened**:
+base is below target in 9 of 15 seed-months, Thinking in 3 of 15. Thinking is
+never worse on any seed and strictly better on two of three, but paired by seed
+the difference is 2.0 ± 1.2 months (t ≈ 1.7, n=3) — directional, not
+established. README and FINDINGS state it at that strength. No further action
+needed unless more seeds are wanted.
 
 ## What is left to do, in order
 
