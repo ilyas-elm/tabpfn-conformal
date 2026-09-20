@@ -63,3 +63,44 @@ def test_mondrian_splits_by_class():
 def test_mondrian_rejects_misaligned_inputs():
     with pytest.raises(ValueError, match="must align"):
         mondrian_thresholds(np.zeros(5), np.zeros(4), n_classes=2, alpha=0.1)
+
+
+def test_a_score_exactly_on_the_threshold_is_inside_the_set():
+    """Membership is ``score <= threshold``, inclusive.
+
+    With continuous probabilities exact ties never occur, so a ``<`` would pass
+    every statistical coverage test in this suite while quietly dropping the
+    boundary point. Discrete scores -- a coarse model, or a tree voting in
+    fractions of K -- make ties routine, and there the strict comparison loses
+    the guarantee. Asserted on an exact tie rather than left to chance.
+    """
+    from sklearn.base import BaseEstimator, ClassifierMixin
+
+    from tabpfn_conformal import ConformalClassifier
+
+    # Ten calibration rows of each class, scores on a 0.1 grid.
+    grid = np.round(np.arange(1, 11) * 0.1, 2)          # 0.1 ... 1.0
+
+    class Grid(BaseEstimator, ClassifierMixin):
+        classes_ = np.array([0, 1])
+
+        def predict_proba(self, X):
+            p1 = np.asarray(X, dtype=float).ravel()
+            return np.column_stack([1.0 - p1, p1])
+
+    # Row i of class 1 gets p(class 1) = 1 - grid[i], so its score is grid[i].
+    X_cal = np.concatenate([1.0 - grid, grid]).reshape(-1, 1)
+    y_cal = np.array([1] * 10 + [0] * 10)
+
+    cc = ConformalClassifier(Grid(), method="mondrian", prefit=True).fit(X_cal, y_cal)
+
+    # n=10, alpha=0.2 -> k = ceil(11 * 0.8) = 9 -> the 9th smallest score = 0.9.
+    t = cc.quantiles(0.2)[1]
+    assert t == pytest.approx(0.9)
+
+    # A test row whose score is exactly 0.9 must keep the fraud label.
+    on_the_line = np.array([[1.0 - 0.9]])
+    assert cc.predict_set(on_the_line, 0.2)[0, 1], "score == threshold must be covered"
+
+    # And one just above it must not, so the test pins both sides.
+    assert not cc.predict_set(np.array([[1.0 - 0.95]]), 0.2)[0, 1]
