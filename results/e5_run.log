@@ -2,3 +2,9 @@
 estimated cost: 2,181,768 tokens (44% of the 5M daily cap)
 pool months (0, 1, 2, 3, 4, 5): 794,989 rows available
 [1/30] split ctx= 10,200 (1.96% fraud) s=0 cache=off cov@.05=0.965 width=1.463 fit=8.1s pred=2.6s
+[2/30] cross ctx= 10,200 (1.96% fraud) s=0 cache=off cov@.05=0.931 width=1.382 fit=39.8s pred=4.3s
+[3/30] split ctx= 10,200 (1.96% fraud) s=1 cache=off cov@.05=0.962 width=1.454 fit=78.6s pred=4.2s
+[4/30] cross ctx= 10,200 (1.96% fraud) s=1 cache=off cov@.05=0.962 width=1.453 fit=41.7s pred=4.6s
+[5/30] split ctx= 10,200 (1.96% fraud) s=2 cache=off cov@.05=0.980 width=1.555 fit=6.7s pred=3.6s
+[6/30] cross ctx= 10,200 (1.96% fraud) s=2 cache=off cov@.05=0.957 width=1.420 fit=38.8s pred=3.2s
+[7/30] split ctx= 25,200 (0.79% fraud) s=0 cache=off cov@.05=0.931 width=1.382 fit=9.1s pred=3.9s
