@@ -460,6 +460,49 @@ TabPFN-specific finding in the project and it matched what Prior Labs documents
 about Thinking on temporal data. Wanting a result to be true is exactly when
 replication matters most.
 
+## Pre-submission audit — 20 September
+
+A sweep over everything a judge would actually open, after the experiments were
+done. Four real defects, none of them in the library.
+
+**The video script and the submission text still carried the falsified drift
+claim.** Both said base fails "four of five months" and Thinking "zero" — the
+single-seed version, corrected in the README days earlier but not in the two
+documents a judge reads and hears. A video is the worst place to leave a stale
+number, because it cannot be edited after the fact and it is checkable against
+the README in thirty seconds. Both now state 9 of 15 versus 3 of 15, directional
+at n = 3, and the do-not-say list names the old phrasing explicitly.
+
+**`analyze_e3` compared arms averaged over different seed sets.** `frozen` had
+three seeds, `aci` and `refit` one. Aggregating each over whatever it happened
+to have and plotting them together drew ACI as a line that visibly diverged from
+frozen — the opposite of the project's own finding that at 46 calibration
+positives ACI cannot move the threshold at all. The figure would have contradicted
+the paragraph beneath it. Arms are now restricted to the seeds they all share,
+and the caption states which. This is the same standing rule as before, in a new
+disguise: *do not compare means across different seed sets.*
+
+**Running `analyze_e3` with no `--model` pooled base and Thinking into one set of
+lines and wrote them out as `e3_drift_base`.** Two different models averaged into
+a figure labelled as one of them. It now reports each model separately.
+
+**The demo had no committed generator.** `figures/demo_data.json` and
+`demo/index.html` were both produced by a script that was never committed, so a
+clean clone could not rebuild the demo and nothing checked its numbers against
+`results/`. `scripts/build_demo.py` now rebuilds both, and `verify_claims.py`
+fails if the committed data differs from what the generator produces. Recovering
+the recipe confirmed the data was honest — the calibration scores and the E1
+block reproduce bit-for-bit — but "honest and unverifiable" is not the standard
+the rest of the repository is held to.
+
+Also corrected: a stale test count in four documents (86 → 99), an "installs in
+one second" claim that measured 16 seconds on a clean environment, and a table
+row that had escaped its table in the README.
+
+The README's headline three-seed table was recomputed by hand in the session
+that produced it. It is now printed by `analyze_e3` and checked by
+`verify_claims.py`, which went from 30 verified claims to 49.
+
 ## Scoreboard
 
 | | prediction, registered before the experiments ran | outcome |

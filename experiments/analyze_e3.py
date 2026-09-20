@@ -41,6 +41,21 @@ def load(model_tag: str | None):
     rows = [json.loads(l) for l in RESULTS.read_text().splitlines() if l.strip()]
     if model_tag:
         rows = [r for r in rows if r.get("model") == model_tag]
+
+    # The arms are not replicated equally -- `frozen` ran on three seeds, `aci`
+    # and `refit` on one. Averaging each over whatever it happens to have and
+    # then plotting them together compares a 3-seed mean against a 1-seed
+    # point, which made ACI look like it moved coverage when at a shared seed
+    # it does not. Restrict every arm to the seeds they ALL have, so the
+    # comparison is paired. (The unrestricted per-arm seed counts are still
+    # reported by the drift table below.)
+    seeds_by_arm = defaultdict(set)
+    for r in rows:
+        seeds_by_arm[r["arm"]].add(r["seed"])
+    common = set.intersection(*seeds_by_arm.values()) if seeds_by_arm else set()
+    dropped = {a: sorted(s - common) for a, s in seeds_by_arm.items() if s - common}
+    rows = [r for r in rows if r["seed"] in common]
+
     # Group by (arm, month) and AGGREGATE over seeds. Keying on month alone
     # silently kept only the last seed, which would have quietly discarded a
     # replication rather than reporting it.
@@ -59,10 +74,10 @@ def load(model_tag: str | None):
                 "coverage_min": float(np.min([x["coverage_fraud"] for x in rs])),
                 "seeds": sorted({x["seed"] for x in rs}),
             }
-    return by_arm, rows
+    return by_arm, rows, sorted(common), dropped
 
 
-def figure(by_arm, rows, path: pathlib.Path):
+def figure(by_arm, rows, path: pathlib.Path, common, dropped):
     alpha = rows[0]["alpha_target"]
     months_all = sorted({m for a in by_arm for m in by_arm[a]})
 
@@ -146,10 +161,14 @@ def figure(by_arm, rows, path: pathlib.Path):
     fig.legend(handles, lab, frameon=False, fontsize=9, labelcolor=INK_2,
                loc="lower center", bbox_to_anchor=(0.42, 0.075), ncol=2,
                handlelength=1.4, columnspacing=2.0)
+    seed_note = (f"All arms shown on seed{'s' if len(common) > 1 else ''} "
+                 f"{', '.join(map(str, common))}"
+                 + (f"; {', '.join(f'{a} has extra seeds {s}' for a, s in dropped.items())} "
+                    "excluded so the arms stay paired" if dropped else "") + ".")
     fig.text(0.012, 0.012,
              f"Bank Account Fraud, {rows[0]['model']} TabPFN-3.5 via the Prior Labs API. "
              "Thresholds calibrated on months 0\u20132, then months revealed one at a time;\n"
-             "ACI sees each month's labels only after predicting it.",
+             "ACI sees each month's labels only after predicting it. " + seed_note,
              fontsize=7.5, color=INK_MUTED, linespacing=1.5, va="bottom")
     fig.subplots_adjust(left=0.09, right=0.72, top=0.92, bottom=0.21)
     FIGS.mkdir(exist_ok=True)
@@ -200,17 +219,97 @@ def table(by_arm):
         print("do not, the mean is hiding a bad draw.")
 
 
+def seed_table():
+    """The three-seed drift replication behind the README's headline table.
+
+    Uses the `frozen` arm, which is the only one replicated past seed 0, and
+    reports each model's seed-months below the level actually targeted. This
+    is the claim that looked decisive on one seed and did not hold, so it is
+    computed here rather than by hand.
+    """
+    rows = [json.loads(l) for l in RESULTS.read_text().splitlines() if l.strip()]
+    rows = [r for r in rows if r["arm"] == "frozen"]
+    if not rows:
+        return
+    n_cal, alpha = 46, rows[0]["alpha_target"]
+    target = math.ceil((n_cal + 1) * (1 - alpha)) / n_cal
+    models = sorted({r["model"] for r in rows})
+    seeds = sorted({r["seed"] for r in rows})
+
+    print("\n### Drift replication across seeds (frozen thresholds)\n")
+    print(f"Target level {target:.5%} from {n_cal} calibration positives at "
+          f"alpha={alpha:g}.\n")
+    print("| model | " + " | ".join(f"seed {s}" for s in seeds)
+          + " | seed-months below target | mean set size |")
+    print("|---|" + "---:|" * (len(seeds) + 2))
+
+    summary = {}
+    for model in models:
+        cells, below_tot, tot, sizes = [], 0, 0, []
+        for s in seeds:
+            rs = [r for r in rows if r["model"] == model and r["seed"] == s]
+            if not rs:
+                cells.append("—")
+                continue
+            b = sum(1 for r in rs if r["coverage_fraud"] < target)
+            cells.append(f"{b} of {len(rs)}")
+            below_tot += b
+            tot += len(rs)
+            sizes += [r["set_size"] for r in rs]
+        summary[model] = (below_tot, tot, float(np.mean(sizes)))
+        print(f"| {model} | " + " | ".join(cells)
+              + f" | **{below_tot} of {tot}** | {np.mean(sizes):.3f} |")
+
+    # Paired by seed: the arms share seeds, so compare differences, not means.
+    if len(models) == 2 and len(seeds) > 1:
+        a, b = models
+        diffs = []
+        for s in seeds:
+            fa = [r for r in rows if r["model"] == a and r["seed"] == s]
+            fb = [r for r in rows if r["model"] == b and r["seed"] == s]
+            if fa and fb:
+                diffs.append(sum(r["coverage_fraud"] < target for r in fa)
+                             - sum(r["coverage_fraud"] < target for r in fb))
+        if len(diffs) > 1:
+            d = np.array(diffs, dtype=float)
+            se = d.std(ddof=1) / np.sqrt(len(d))
+            t = d.mean() / se if se else float("inf")
+            print(f"\nPaired by seed ({a} minus {b}): {d.mean():.1f} "
+                  f"\u00b1 {se:.1f} months (standard error; SD {d.std(ddof=1):.1f}), "
+                  f"t \u2248 {t:.1f} at n={len(d)} "
+                  "\u2014 directional, not statistically established.")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default=None, choices=["base", "thinking"])
+    ap.add_argument("--model", default=None, choices=["base", "thinking"],
+                    help="default: report every model present, one figure each")
     args = ap.parse_args()
-    by_arm, rows = load(args.model)
-    if not rows:
-        raise SystemExit("No matching results.")
-    tag = args.model or rows[0]["model"]
-    print(f"{len(rows)} result rows, arms {sorted(by_arm)}")
-    figure(by_arm, rows, FIGS / f"e3_drift_{tag}")
-    table(by_arm)
+
+    # Without a filter this used to pool base and Thinking into one set of
+    # lines and write them out as `e3_drift_base`, silently averaging two
+    # different models. Run each model separately instead.
+    all_rows = [json.loads(l) for l in RESULTS.read_text().splitlines() if l.strip()] \
+        if RESULTS.exists() else []
+    models = [args.model] if args.model else sorted({r["model"] for r in all_rows})
+    if not models:
+        raise SystemExit(f"No {RESULTS.relative_to(REPO)} -- run E3 first.")
+
+    for i, model in enumerate(models):
+        by_arm, rows, common, dropped = load(model)
+        if not rows:
+            continue
+        if i:
+            print()
+        print(f"## {model}")
+        print(f"{len(rows)} result rows, arms {sorted(by_arm)}, paired on seeds {common}")
+        for arm, extra in dropped.items():
+            print(f"  note: {arm} also has seeds {extra}, excluded from the arm comparison")
+        figure(by_arm, rows, FIGS / f"e3_drift_{model}", common, dropped)
+        table(by_arm)
+
+    if not args.model:
+        seed_table()
     return 0
 
 
