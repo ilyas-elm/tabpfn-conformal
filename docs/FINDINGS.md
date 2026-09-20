@@ -75,6 +75,13 @@ linearly. "Fits are unbilled" is true and irrelevant: the predicts are what cost
 The original "K folds cost about the same as one" framing was wrong and a judge
 could have disproved it with one free call.
 
+**Reproduced and committed 20 Sept.** These numbers lived only in a session
+transcript for most of the project — the headline correction of an overclaim,
+itself unbacked by any artifact. `experiments/api/cost_kfold.py` now re-quotes
+them and writes `results/cost_kfold.json`: ratio equals K in 6 of 6 quotes,
+across K ∈ {2, 5, 20} and pools of 10k and 100k. `verify_claims` reads the
+committed file, so it needs no token.
+
 **⚙ `time_col` is rejected outside thinking mode.** `group_col`,
 `time_col`, `group_time_col` — all Thinking-only. So native temporal handling is
 not a freebie; it is a capability with no local weights. This *strengthened* the

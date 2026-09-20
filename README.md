@@ -20,7 +20,9 @@ can be both context *and* calibration.
 
 Being precise about cost, because an earlier draft of this README overclaimed
 it: cross-conformal is **exactly K× the API cost of split conformal** — measured,
-2.0× at K=2 and 20.0× at K=20 — and it is **not** the case that only TabPFN can
+2.0× at K=2 and 20.0× at K=20, at both 10k and 100k pools
+([`cost_kfold.py`](experiments/api/cost_kfold.py), free: `estimate_cost` sends
+dimensions only) — and it is **not** the case that only TabPFN can
 afford it. In our own baselines LightGBM cross-conformal finished in about six
 seconds. What TabPFN removes is the training: **0 gradient-trained fits against
 LightGBM's 6**. That is the hardware-independent number, and the one that scales
@@ -51,7 +53,7 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 | TabPFN gives **narrower prediction sets than LightGBM** at an identical targeted level | 6.9–12.4% narrower, 4 of 4 comparisons | [E4](#against-the-baselines-tabpfn-wins-where-it-counts) |
 | TabPFN's **calibration error is 74–86% lower** — the mechanism behind the above | ECE 0.0019–0.0037 vs 0.0129–0.0141 | [calibration](#why-tabpfn-wins-calibration-measured-rather-than-cited) |
 | Under drift, Thinking loses coverage less often than base | 3 of 15 seed-months below target vs 9 of 15; never worse on any seed, better on 2 of 3 — **directional, t ≈ 1.7 at n=3** | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
-| The **KV cache** makes the evaluation pass **6.8× faster** at 200k context, identical sets | 36.9 s → 5.4 s | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
+| The **KV cache** makes the evaluation pass **6.8× faster** at 200k context, same answer to 4 decimals | 36.9 s → 5.4 s | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
 | **Abundant data does not substitute for confirmed positives** — 20× more context changes nothing | slope −0.017 vs seed SD 0.046 | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
 | Where a scarce label budget should go: **nowhere — don't split it** | no detectable optimum; cross beats every ratio | [E2](#where-should-a-scarce-label-budget-go-mostly-nowhere) |
 | **Four of five pre-registered predictions were falsified** | including two of our own about cost | [scoreboard](#what-we-predicted-and-what-happened) |
@@ -259,11 +261,17 @@ been hours per configuration. A wall-clock limit, not a result.)*
 **What the KV cache is worth**, at the same contexts — `fit_mode="fit_with_cache"`,
 same seed, same rows:
 
-| context | predict uncached | predict cached | speedup | fit uncached | fit cached | same sets? |
-|---:|---:|---:|---:|---:|---:|:--:|
-| 50,200 | 6.7 s | **2.3 s** | 2.9× | 15.0 s | 24.4 s | yes |
-| 100,200 | 13.6 s | **4.4 s** | 3.1× | 31.6 s | 54.7 s | yes |
-| 200,200 | 36.9 s | **5.4 s** | **6.8×** | 153.4 s | 134.2 s | yes |
+| context | predict uncached | predict cached | speedup | fit uncached | fit cached | max \|Δp\| |
+|---:|---:|---:|---:|---:|---:|---:|
+| 50,200 | 6.7 s | **2.3 s** | 2.9× | 15.0 s | 24.4 s | 3.6e-04 |
+| 100,200 | 13.6 s | **4.4 s** | 3.1× | 31.6 s | 54.7 s | 4.3e-04 |
+| 200,200 | 36.9 s | **5.4 s** | **6.8×** | 153.4 s | 134.2 s | 7.0e-04 |
+
+The cached and uncached runs are **not bit-identical** — the probabilities differ
+in the fourth decimal on nearly every row, which is two orders of magnitude below
+the seed-to-seed spread and does not move any conclusion. An earlier version of
+this table claimed "same sets: yes"; it was comparing *mean* set size within
+5e-3, which two different set assignments can share.
 
 **The cache is not free**: it front-loads the attention state, so `fit` gets
 *slower* at 50k and 100k and only the prediction pass gets faster. At 50,200 the
