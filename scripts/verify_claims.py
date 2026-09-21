@@ -659,6 +659,35 @@ for _e in (1, 2, 3, 4, 5, 6):
         checks.append((f"method.md seed count for E{_e}", _n == _claim,
                        f"E{_e} has {_n} seeds; method.md says {_claim}"))
 
+# ---- 5s. SUBMISSION.md agrees with the README ------------------------------
+# It is the text that actually gets submitted, and it drifted twice: "five
+# experiments" when there are six, and "identical prediction sets" for the KV
+# cache after the README had been corrected to "same answer to four decimals".
+_sub = (REPO / "docs/SUBMISSION.md").read_text()
+_n_experiments = len([f for f in (REPO / "results").glob("e[0-9].jsonl")])
+_m = re.search(r"plus (\w+) experiments", _sub)
+check("SUBMISSION experiment count",
+      float({"six": 6, "five": 5, "four": 4}.get(_m.group(1), -1)) if _m else None,
+      float(_n_experiments), 0.5)
+
+# Headline figures, compared as literal strings so a different sentence shape in
+# either document cannot make the check pass or fail for the wrong reason.
+for _label, _literal in (
+    ("narrower-by range", "6.9\u201312.4%"),
+    ("ECE reduction", "74\u201386%"),
+    ("drift, base", "9 of 15"),
+    ("drift, Thinking", "3 of 15"),
+    ("paired drift gap", "2.0 \u00b1 1.2 months"),
+):
+    checks.append((f"SUBMISSION and README agree: {_label}",
+                   _literal in README and _literal in _sub,
+                   f"{_literal!r} in README={_literal in README}, "
+                   f"in SUBMISSION={_literal in _sub}"))
+
+checks.append(("SUBMISSION does not claim identical cache sets",
+               "identical prediction sets" not in _sub,
+               "SUBMISSION.md says the KV cache gives identical sets; it does not"))
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",
