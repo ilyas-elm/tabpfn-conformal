@@ -49,6 +49,10 @@ def load(alpha: str):
             cell["coverage"].append(a["coverage_fraud"])
             cell["width"].append(a["set_size"])
             cell["feasible"].append(a["feasible"])
+            # Keyed by seed as well as appended. E2 was resumed part-way, so the
+            # rows for two settings are in a rotated seed order, and anything
+            # that pairs settings by list position pairs different seeds.
+            cell["seeds"].append(r["seed"])
     return split, cross, len(rows)
 
 
@@ -151,17 +155,43 @@ def table(split, cross, alpha: str):
         means = {c: float(np.mean(v["width"])) for c, v in feasible.items()}
         best, worst = min(means, key=means.get), max(means, key=means.get)
 
-        # The seeds are paired across cal_size settings -- the same five pools --
-        # so compare them pairwise rather than against pooled scatter. With five
-        # seeds this has little power, which is itself worth reporting.
-        nb, nw = len(feasible[best]["width"]), len(feasible[worst]["width"])
-        if nb == nw and nb > 1:
-            diff = np.array(feasible[worst]["width"]) - np.array(feasible[best]["width"])
-            se = float(np.std(diff, ddof=1) / np.sqrt(len(diff)))
-            t = float(np.mean(diff) / se) if se > 0 else float("inf")
-            verdict = (f"paired difference {np.mean(diff):+.3f} ± {se:.3f} (t={t:.1f}, n={nb}) → "
-                       + ("**a real optimum**" if abs(t) > 2.78  # t crit, 4 df, two-sided 0.05
-                          else "**not distinguishable from noise**"))
+        # `best` and `worst` are the extremes of several cal_size settings, so a
+        # plain paired t between them is testing a pair chosen *because* it is
+        # extreme -- that inflates significance, and an earlier version of this
+        # called 200 frauds "a real optimum" on t=3.6 against a critical value
+        # for one pre-specified comparison.
+        #
+        # Permute instead. The seeds are paired (the same pools at every
+        # cal_size), so under the null that cal_size does not matter the widths
+        # within a seed are exchangeable across settings. Shuffling within seed
+        # and re-taking max-minus-min builds the null distribution of the
+        # statistic actually being reported, selection included. Exact-ish,
+        # assumption-light, and needs nothing beyond numpy.
+        sizes = sorted(feasible)
+        common = (set.intersection(*(set(feasible[c]["seeds"]) for c in sizes))
+                  if sizes else set())
+        if len(sizes) > 1 and len(common) > 1:
+            # Align on seed, never on position: see the note in load().
+            seeds = sorted(common)
+            W = np.array([[dict(zip(feasible[c]["seeds"], feasible[c]["width"]))[s]
+                           for s in seeds] for c in sizes])       # (settings, seeds)
+            observed = float(W.mean(axis=1).max() - W.mean(axis=1).min())
+            rng = np.random.default_rng(0)
+            null = np.empty(20_000)
+            for i in range(null.size):
+                # An independent permutation of the settings within each seed.
+                order = np.argsort(rng.random(W.shape), axis=0)
+                m = np.take_along_axis(W, order, axis=0).mean(axis=1)
+                null[i] = m.max() - m.min()
+            pval = float((np.count_nonzero(null >= observed) + 1) / (null.size + 1))
+            # "the settings differ", not "there is an optimum": the test says the
+            # spread is larger than chance, and says nothing about *which*
+            # setting is best -- picking that out of seven is the selection
+            # problem this test exists to avoid.
+            verdict = (f"spread {observed:.3f} across {len(sizes)} settings, "
+                       f"permutation p={pval:.3f} (n={W.shape[1]} paired seeds) → "
+                       + ("**the settings differ** (but which is best is not resolved)"
+                          if pval < 0.05 else "**not distinguishable from noise**"))
         else:
             verdict = "unequal seed counts; no paired test"
         print(f"- **{b} frauds**: best cal_size {best:.1f} ({means[best]:.3f}), "

@@ -200,6 +200,42 @@ substitute.
 optimum. **Cross-conformal beats every split setting at both budgets and both
 alphas, 4/4.**
 
+**✗ Corrected 21 Sept — two compounding errors, pulling opposite ways.**
+
+*First, the selection.* `best` and `worst` are the extremes of seven `cal_size`
+settings, and the paired t compared that pair against a critical value for *one
+pre-specified* comparison. Choosing a pair because it is extreme is what inflates
+it. `analyze_e2` now permutes the settings within each seed — the seeds are
+paired, so they are exchangeable under the null — rebuilding the null
+distribution of the max-minus-min statistic actually reported.
+
+*Second, the pairing was broken anyway.* E2 was resumed part-way, so
+`results/e2.jsonl` holds two settings whose rows are in a rotated seed order
+(`cal_size=0.2` at 100 frauds, `cal_size=0.4` at 200). `analyze_e2` paired
+settings by **list position**, so for those two it differenced one seed against
+another. The means, and therefore the figure and every width in the README, were
+never affected — means do not care about order. The paired statistic did.
+
+Aligning on seed and permuting:
+
+| budget | spread | p (file order, wrong) | p (seed-paired) |
+|---:|---:|---:|---:|
+| 100 | 0.089 | 0.059 | **0.042** |
+| 200 | 0.055 | 0.788 | 0.618 |
+
+So the honest finding moved in *both* directions: the 200-fraud "real optimum"
+(t = 3.6) evaporates, and the 100-fraud "no detectable optimum" becomes a real
+spread. Stable — p ∈ [0.0416, 0.0458] across 12 permutation seeds at 100, and
+[0.611, 0.623] at 200, so this is not Monte-Carlo noise.
+
+What survives is better than what it replaced: at 100 frauds the allocation does
+matter, and **it still is not worth choosing**, because the best split setting
+(1.505) loses to cross-conformal (1.463). The verdict string no longer says "a
+real optimum" either — the test shows the settings differ, not which is best.
+
+The permutation machinery was checked against ground truth before being trusted:
+0 of 40 false positives on pure noise, and p = 0.001 on a planted effect of 0.30.
+
 **✗ Nearly shipped a coin flip as a finding.** The first verdict compared the
 best-worst gap to pooled seed scatter and called F=100 "a real optimum" on a
 margin of 0.089 versus 0.088. The seeds are *paired* across `cal_size` settings,

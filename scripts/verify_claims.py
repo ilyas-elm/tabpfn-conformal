@@ -403,6 +403,53 @@ if _cost.exists():
             check(f"README cost ratio at K={_k}",
                   in_readme(rf"([\d.]+)× at K={_k}"), float(_got[0]), 0.05)
 
+# ---- 5h. E2: the permutation test behind "don't split it" -----------------
+# Mirrors analyze_e2 exactly: feasible settings only, aligned on SEED (E2 was
+# resumed, so two settings sit in a rotated order and pairing by list position
+# differences the wrong seeds), 20,000 permutations from default_rng(0).
+e2 = load("e2.jsonl")
+if e2:
+    from collections import defaultdict as _dd4
+    _cells = _dd4(lambda: _dd4(dict))
+    _feas = _dd4(lambda: _dd4(list))
+    _cross = _dd4(list)
+    for r in e2:
+        a = r.get("alphas", {}).get("0.05")
+        if not a:
+            continue
+        if r["strategy"] == "cross":
+            _cross[r["n_frauds"]].append(a["set_size"])
+        elif r.get("cal_size") is not None:
+            _cells[r["n_frauds"]][r["cal_size"]][r["seed"]] = a["set_size"]
+            _feas[r["n_frauds"]][r["cal_size"]].append(a["feasible"])
+
+    for _budget in (100, 200):
+        sizes = sorted(c for c in _cells[_budget] if all(_feas[_budget][c]))
+        if len(sizes) < 2:
+            continue
+        seeds = sorted(set.intersection(*(set(_cells[_budget][c]) for c in sizes)))
+        W = np.array([[_cells[_budget][c][s] for s in seeds] for c in sizes])
+        means = W.mean(axis=1)
+        observed = float(means.max() - means.min())
+        rng = np.random.default_rng(0)
+        null = np.empty(20_000)
+        for j in range(null.size):
+            order = np.argsort(rng.random(W.shape), axis=0)
+            m = np.take_along_axis(W, order, axis=0).mean(axis=1)
+            null[j] = m.max() - m.min()
+        pval = float((np.count_nonzero(null >= observed) + 1) / (null.size + 1))
+
+        row = rf"\| {_budget} frauds \| ([\d.]+) \| \*{{0,2}}([\d.]+)\*{{0,2}} \|"
+        m2 = re.search(row, README)
+        check(f"E2 spread @{_budget}", float(m2.group(1)) if m2 else None, observed, 0.001)
+        check(f"E2 permutation p @{_budget}", float(m2.group(2)) if m2 else None, pval, 0.002)
+        # The claim that actually matters: not splitting beats every split ratio.
+        if _cross.get(_budget):
+            cw = float(np.mean(_cross[_budget]))
+            checks.append((f"E2 cross beats every split @{_budget}",
+                           bool(cw < means.min()),
+                           f"cross {cw:.4f} vs best split {means.min():.4f}"))
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",
