@@ -528,6 +528,21 @@ if e4:
                    all(v == 0 for k, v in _fits.items() if k.startswith("tabpfn")),
                    f"{ {k: v for k, v in _fits.items() if k.startswith('tabpfn')} }"))
 
+# ---- 5l. Package metadata agrees with pyproject ---------------------------
+try:
+    import tomllib
+    _pj = tomllib.loads((REPO / "pyproject.toml").read_text())["project"]
+    sys.path.insert(0, str(REPO / "src"))
+    import tabpfn_conformal as _pkg
+    checks.append(("package version matches pyproject",
+                   _pkg.__version__ == _pj["version"],
+                   f'__version__ {_pkg.__version__} vs pyproject {_pj["version"]}'))
+    checks.append(("no TODO left in package metadata",
+                   "TODO" not in json.dumps(_pj),
+                   "pyproject [project] still contains TODO"))
+except Exception as exc:                                      # pragma: no cover
+    checks.append(("package metadata", None, f"not checkable: {exc}"))
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",

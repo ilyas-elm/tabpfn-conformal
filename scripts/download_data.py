@@ -116,7 +116,9 @@ def verify() -> int:
         ok = False
 
     if time_col in df.columns:
-        months = sorted(df[time_col].unique())
+        # .tolist() so numpy 2 does not print np.int64(0) at a reader on
+        # the first command in the reproduction instructions.
+        months = sorted(df[time_col].unique().tolist())
         print(f"  {time_col:<18}  {str(months):>12}")
         if label in df.columns:
             print(f"\n  fraud rate by {time_col} (the drift E3 depends on):")
