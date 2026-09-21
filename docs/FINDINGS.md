@@ -515,6 +515,40 @@ TabPFN-specific finding in the project and it matched what Prior Labs documents
 about Thinking on temporal data. Wanting a result to be true is exactly when
 replication matters most.
 
+## Third audit — 21 September
+
+Prompted by a question with an obvious answer and a non-obvious cause: *why are
+there empty folders?*
+
+`experiments/kaggle/` was the tier-2 wall-clock table from §12 of the plan. It
+was never built, so it sat as an empty directory in the working copy — and since
+git does not track empty directories, it never existed in a clone at all. Two
+readers of this repository would have seen different trees. Removed.
+
+Checking it against the plan turned up that **§12 "Repository layout" described a
+repository that does not exist**: it listed `src/tabpfn_conformal/budget.py`,
+which was folded into the `cal_size` constructor argument back on 19 Sept and
+never written; it omitted `metrics.py`, which is shipped; it listed three files
+under `docs/` where there are seven; and it had no `demo/` or `contrib/` at all,
+which are two of the four deliverables. A judge reading the plan and then the
+tree would have found four mismatches. Rewritten as built, with the two
+never-built items named as never-built, and `verify_claims` now walks the
+diagram and asserts every path exists — plus the reverse, that no shipped module
+is missing from it. Both directions confirmed to fail on the exact errors that
+were there.
+
+**The P5 confound was not in `limitations.md`.** It is tagged on all 36 rows of
+`results/e4.jsonl`, described in `STATUS.md`, and named in the P5 scoreboard row
+— but absent from the document titled *Limitations*, which is where a reader
+goes looking for it. Added, with the comparable number (0 gradient fits against
+6) separated from the incomparable one (6 s against 50 s, remote versus local).
+
+While writing that entry I put "no wall-clock claim is made anywhere in the
+README" into it, then checked: the README quotes those seconds twice. The
+scoreboard row said "confounded"; the opening cost paragraph only implied it, by
+calling the fit count "the hardware-independent number". Now it says so outright.
+Writing the caveat is what exposed the gap in the thing being caveated.
+
 ## Second audit — 21 September
 
 Three more, all of the same family: a statistic that was not measuring what its

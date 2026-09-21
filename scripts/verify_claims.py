@@ -476,6 +476,58 @@ if _sweep.exists():
               float(_m.group(3)) if _m else None,
               float(np.mean([t["set_size"] for t in _tr])), 0.001)
 
+# ---- 5j. The documented repository layout matches the repository -----------
+# Section 12 of the cahier des charges listed budget.py (never built), omitted
+# metrics.py, and showed an experiments/kaggle/ that was an empty directory.
+_plan = REPO / "docs/CAHIER-DES-CHARGES.md"
+if _plan.exists():
+    _txt = _plan.read_text()
+    _m = re.search(r"## 12\. Repository layout.*?```\n(.*?)```", _txt, re.S)
+    if _m:
+        missing, stack = [], []
+        for line in _m.group(1).splitlines():
+            if not line.strip() or line.startswith("tabpfn-conformal/"):
+                continue
+            depth = (len(line) - len(line.lstrip("│ "))) // 4
+            name = re.sub(r"^[│ ]*[├└]──\s*", "", line).split("#")[0].strip()
+            if not name:
+                continue
+            name = name.rstrip("/")
+            stack = stack[:depth] + [name]
+            path = REPO / "/".join(stack)
+            # A wildcard entry stands for a family of files.
+            if "*" in name:
+                if not list(path.parent.glob(name)):
+                    missing.append("/".join(stack))
+            elif not path.exists():
+                missing.append("/".join(stack))
+        checks.append(("documented layout exists", not missing,
+                       "listed but absent: " + ", ".join(missing[:6])))
+
+        # And the other direction, for the package itself: every shipped module
+        # must appear in the diagram.
+        listed = set(re.findall(r"([a-z_]+\.py)", _m.group(1)))
+        shipped = {f.name for f in (REPO / "src/tabpfn_conformal").glob("*.py")}
+        undocumented = sorted(shipped - listed)
+        checks.append(("every src module is documented", not undocumented,
+                       "in src/ but not in the layout: " + ", ".join(undocumented)))
+
+# ---- 5k. The wall-clock confound is flagged on every row it applies to ----
+if e4:
+    _rows = load("e4.jsonl")
+    _flagged = sum(1 for r in _rows if r.get("wallclock_comparable") is False)
+    checks.append(("E4 wall-clock confound flagged on every row",
+                   _flagged == len(_rows),
+                   f"{_flagged} of {len(_rows)} rows carry wallclock_comparable: false"))
+    # The count that IS hardware-independent, quoted in the README's opening.
+    _fits = {r["arm"]: r.get("n_grad_fits") for r in _rows}
+    check("README gradient fits, LightGBM cross",
+          in_readme(r"0 gradient-trained fits against\nLightGBM's (\d+)"),
+          float(_fits.get("lightgbm_cross", -1)), 0.5)
+    checks.append(("TabPFN arms do zero gradient fits",
+                   all(v == 0 for k, v in _fits.items() if k.startswith("tabpfn")),
+                   f"{ {k: v for k, v in _fits.items() if k.startswith('tabpfn')} }"))
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",

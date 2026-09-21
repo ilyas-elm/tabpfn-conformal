@@ -76,6 +76,23 @@ and uncached calls; the documented 75% saving only appears from about 200k rows
 up. At very small contexts the cache is actively slower — 9.7s versus 1.8s for a
 repeat prediction on a 200-row context.
 
+**The LightGBM wall-clock comparison is confounded, and we did not settle it.**
+P5 predicted LightGBM cross-conformal would cost far more wall-clock than
+TabPFN's. It measured the other way — about 6 s against TabPFN's 50 s at the same
+budget — but the two are not comparable: **TabPFN runs remotely on Prior Labs'
+GPUs, over the network, and LightGBM runs locally on this laptop's CPU.** The
+TabPFN figure is dominated by upload and round-trip, not by inference. Every one
+of the 36 rows in `results/e4.jsonl` carries `wallclock_comparable: false` for
+this reason. The README quotes these numbers in exactly two places — the opening
+cost paragraph and the P5 scoreboard row — and both say the comparison is
+confounded rather than resting a claim on it.
+
+What *is* comparable, because it is a count rather than a duration, is gradient
+fits: **0 for TabPFN against 6 for LightGBM cross-conformal** at K=5, and 1 for
+LightGBM split. Settling the timing properly needs both models on one machine
+with one accelerator — the tier-2 Kaggle run in §12 of the cahier des charges,
+which was planned and never done. It is the only unfinished item from the plan.
+
 **The KV cache and Thinking mode are mutually exclusive** on the managed API,
 server-enforced: `HTTP 422 — FIT_WITH_CACHE fit mode is not compatible with
 thinking mode`. So cache economics and Thinking results cannot appear in the
