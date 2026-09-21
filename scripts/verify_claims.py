@@ -357,7 +357,7 @@ if _mc.exists():
 
 # ---- 5f. The extensions payload is the code we actually tested --------------
 # contrib/ is generated from src/ and ships to another repository. The payload
-# carries 9 tests; the 111 that matter run against src/, so the two must be the
+# carries 18 tests; the full suite runs against src/, so the two must be the
 # same code or the PR is backed by a suite that never saw it.
 def _logic(path, rename=False):
     import ast
@@ -586,6 +586,23 @@ _figs = set(re.findall(r"\(figures/([\w.]+\.png)\)", README))
 _gone = sorted(f for f in _figs if not (REPO / "figures" / f).exists())
 checks.append(("every figure the README shows exists", not _gone,
                "referenced but absent: " + ", ".join(_gone)))
+
+# ---- 5o. The extensions payload is PR-ready ------------------------------
+# Their check-changelog workflow fails any PR without a towncrier fragment, and
+# their CI runs `pytest tests/`, so the payload has to carry its own tests.
+_pay = REPO / "contrib/tabpfn-extensions"
+if _pay.exists():
+    _frag = sorted((_pay / "changelog").glob("*.added.md")) if (_pay / "changelog").exists() else []
+    checks.append(("extensions payload has a changelog fragment", bool(_frag),
+                   "PriorLabs/tabpfn-extensions fails any PR without changelog/<PR>.<type>.md"))
+    _tf = _pay / "tests/test_conformal.py"
+    if _tf.exists():
+        _n = len(re.findall(r"^def test_", _tf.read_text(), re.M))
+        check("PR.md states the payload test count",
+              float(re.search(r"\*\*Tests:\*\* (\d+) tests",
+                              (_pay / "PR.md").read_text()).group(1))
+              if re.search(r"\*\*Tests:\*\* (\d+) tests", (_pay / "PR.md").read_text())
+              else None, float(_n), 0.5)
 
 # ---- 6. Test count --------------------------------------------------------
 import subprocess

@@ -22,3 +22,20 @@ jobs:
       - name: Run tests
         # CPU only, no GPU, no TabPFN: the core package must stay this light.
         run: pytest -q
+
+      - name: Verify every numeric claim in the README
+        # The signature check of this project: recomputes each figure in the
+        # README from results/ and exits non-zero on any drift. Needs no API
+        # key and no dataset -- it reads committed results only.
+        run: python scripts/verify_claims.py
+
+      - name: Check the extensions payload still matches src/
+        run: |
+          python scripts/build_extension_pr.py
+          git diff --exit-code contrib/
+
+      - name: Run the extensions payload's own tests
+        env:
+          FAST_TEST_MODE: "1"
+          PYTHONPATH: contrib/tabpfn-extensions/src
+        run: pytest -q contrib/tabpfn-extensions/tests

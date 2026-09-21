@@ -44,7 +44,7 @@ needed unless more seeds are wanted.
    the payload; [`../contrib/tabpfn-extensions/ISSUE.md`](../contrib/tabpfn-extensions/ISSUE.md)
    is the issue to post first (their CONTRIBUTING asks for an issue before a PR),
    and `PR.md` is the description. Verified: imports as
-   `tabpfn_extensions.conformal`, 9 tests pass under `FAST_TEST_MODE=1`
+   `tabpfn_extensions.conformal`, 18 tests pass under `FAST_TEST_MODE=1`
    (locally: `FAST_TEST_MODE=1 PYTHONPATH=contrib/tabpfn-extensions/src pytest
    contrib/tabpfn-extensions/tests`).
 3. **Record the video** — [`VIDEO.md`](VIDEO.md) has the script and a list of
