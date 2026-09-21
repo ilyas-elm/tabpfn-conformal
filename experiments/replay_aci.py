@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import pathlib
 import sys
 
@@ -101,20 +102,38 @@ def main() -> int:
     print("calibration: " + ("exact (months 0-2, persisted)" if exact
           else "APPROXIMATE (recovered from month 3; rerun E3 to persist it)") + "\n")
 
-    target = 1 - args.alpha
+    # The level actually targeted is ceil((n+1)(1-alpha))/n, not 1-alpha: the
+    # index rounds up. And months BELOW it are the failure -- mean absolute
+    # deviation punishes over-coverage just as hard, which is the metric that
+    # once scored a model worse for holding its guarantee (see docs/FINDINGS.md,
+    # "the drift metric hid its own result"). analyze_e3 was fixed for both;
+    # this script had kept the old reporting.
+    n_cal_fraud = int(np.count_nonzero(cal_y == 1))
+    target = min(1.0, math.ceil((n_cal_fraud + 1) * (1 - args.alpha)) / n_cal_fraud)
+
     rows = [("frozen", walk(months, cal_scores, cal_y, args.alpha, None))]
     rows += [(f"gamma={g:g}", walk(months, cal_scores, cal_y, args.alpha, g))
              for g in args.gammas]
 
-    hdr = "| arm | " + " | ".join(f"m{t['month']}" for t in rows[0][1]) + " | mean |dev| |"
+    hdr = ("| arm | " + " | ".join(f"m{t['month']}" for t in rows[0][1])
+           + " | months below target | swing | mean set size |")
     print(hdr)
-    print("|---|" + "---:|" * (len(rows[0][1]) + 1))
+    print("|---|" + "---:|" * (len(rows[0][1]) + 3))
     for name, trace in rows:
         cov = [t["coverage_fraud"] for t in trace]
-        dev = float(np.mean([abs(c - target) for c in cov]))
-        print(f"| {name} | " + " | ".join(f"{c:.3f}" for c in cov) + f" | **{dev:.4f}** |")
+        below = sum(1 for c in cov if c < target)
+        # Month-to-month range. High gamma does not track the drift, it
+        # oscillates the level; that shows up here and not in a mean.
+        swing = max(cov) - min(cov)
+        width = float(np.mean([t["set_size"] for t in trace]))
+        flag = "**" if below == 0 else ""
+        print(f"| {name} | " + " | ".join(f"{c:.3f}" for c in cov)
+              + f" | {flag}{below} of {len(cov)}{flag} | {swing:.3f} | {width:.3f} |")
 
-    print(f"\nTarget {target:.0%}. Lower mean |dev| is better.")
+    print(f"\nTarget {target:.3%} — the level {n_cal_fraud} calibration positives "
+          f"actually certify at alpha={args.alpha:g}, not the nominal "
+          f"{1 - args.alpha:.0%}. Fewer months below is better; over-coverage is "
+          "not a failure, it is width paid for nothing.")
     if not exact:
         print("Note: months 0-2 calibration was not persisted for this run, so "
               "thresholds are recovered from month 3.\nThe comparison across gammas "
