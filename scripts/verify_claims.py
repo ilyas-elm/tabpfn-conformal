@@ -562,6 +562,22 @@ _no_dry = [f.name for f in _runners if '"--dry-run"' not in f.read_text()]
 checks.append(("every experiment supports --dry-run", not _no_dry,
                "missing --dry-run: " + ", ".join(_no_dry)))
 
+# ---- 5n. The drift figure draws the certified level, not the nominal one ---
+# Both E3 figures drew their target at 1-alpha = 0.95. Every point in both sat
+# above it, so the figure read "the guarantee always holds" directly above a
+# table saying base misses it in 4 months of 5.
+_e3src = (REPO / "experiments/analyze_e3.py").read_text()
+checks.append(("E3 figure targets the certified level",
+               "ax_c.axhline(effective" in _e3src
+               and "ax_c.axhline(1 - alpha" not in _e3src,
+               "analyze_e3 draws the coverage target at the nominal 1-alpha"))
+
+# And every figure the README shows must exist.
+_figs = set(re.findall(r"\(figures/([\w.]+\.png)\)", README))
+_gone = sorted(f for f in _figs if not (REPO / "figures" / f).exists())
+checks.append(("every figure the README shows exists", not _gone,
+               "referenced but absent: " + ", ".join(_gone)))
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",

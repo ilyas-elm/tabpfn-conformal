@@ -93,7 +93,7 @@ def figure(by_arm, rows, path: pathlib.Path, common, dropped):
         drawn.pop("aci")
 
     fig, (ax_c, ax_a) = plt.subplots(
-        2, 1, figsize=(8.4, 6.6), sharex=True,
+        2, 1, figsize=(8.4, 7.1), sharex=True,
         gridspec_kw={"height_ratios": [1.4, 1], "hspace": 0.16},
     )
     fig.patch.set_facecolor(SURFACE)
@@ -107,10 +107,20 @@ def figure(by_arm, rows, path: pathlib.Path, common, dropped):
             ax.spines[side].set_color("#d8d7d1")
         ax.tick_params(colors=INK_2, labelsize=9, length=0)
 
-    ax_c.axhline(1 - alpha, color=INK_MUTED, linewidth=1.4, linestyle=(0, (4, 3)), zorder=1)
-    ax_c.annotate(f"target {1 - alpha:.0%}", xy=(months_all[0], 1 - alpha),
+    # The line has to be the level actually targeted, ceil((n+1)(1-alpha))/n,
+    # not the nominal 1-alpha. Drawn at 0.95 every point in both figures sat
+    # above it, so the figure read "the guarantee always holds" directly above a
+    # table saying base misses it in 4 months of 5. The index rounds up; the
+    # promise is 97.83%, and that is the line a month has to clear.
+    n_cal = 46            # calibration positives in this setup
+    effective = min(1.0, math.ceil((n_cal + 1) * (1 - alpha)) / n_cal)
+    ax_c.axhline(effective, color=INK_MUTED, linewidth=1.4, linestyle=(0, (4, 3)),
+                 zorder=1)
+    # Short tag sitting on the line itself; the explanation goes in the footer,
+    # where it cannot collide with the data at any y-limit.
+    ax_c.annotate(f"target {effective:.2%}", xy=(months_all[0], effective),
                   xytext=(2, 4), textcoords="offset points",
-                  fontsize=8.5, color=INK_2, va="bottom")
+                  fontsize=8.5, color=INK_2, va="bottom", ha="left")
 
     labels = []
     for arm, (colour, label) in drawn.items():
@@ -159,7 +169,7 @@ def figure(by_arm, rows, path: pathlib.Path, common, dropped):
     # in-plot legend would only duplicate them and collide with the target line.
     handles, lab = ax_c.get_legend_handles_labels()
     fig.legend(handles, lab, frameon=False, fontsize=9, labelcolor=INK_2,
-               loc="lower center", bbox_to_anchor=(0.42, 0.075), ncol=2,
+               loc="lower center", bbox_to_anchor=(0.42, 0.135), ncol=2,
                handlelength=1.4, columnspacing=2.0)
     seed_note = (f"All arms shown on seed{'s' if len(common) > 1 else ''} "
                  f"{', '.join(map(str, common))}"
@@ -168,9 +178,12 @@ def figure(by_arm, rows, path: pathlib.Path, common, dropped):
     fig.text(0.012, 0.012,
              f"Bank Account Fraud, {rows[0]['model']} TabPFN-3.5 via the Prior Labs API. "
              "Thresholds calibrated on months 0\u20132, then months revealed one at a time;\n"
-             "ACI sees each month's labels only after predicting it. " + seed_note,
+             "ACI sees each month's labels only after predicting it.\n"
+             f"Target is the level {n_cal} calibration positives actually certify "
+             f"\u2014 ceil((n+1)(1-\u03b1))/n = {effective:.2%}, not the nominal "
+             f"{1 - alpha:.0%}, because the index rounds up.\n" + seed_note,
              fontsize=7.5, color=INK_MUTED, linespacing=1.5, va="bottom")
-    fig.subplots_adjust(left=0.09, right=0.72, top=0.92, bottom=0.21)
+    fig.subplots_adjust(left=0.09, right=0.72, top=0.92, bottom=0.26)
     FIGS.mkdir(exist_ok=True)
     for ext in ("png", "svg"):
         fig.savefig(path.with_suffix(f".{ext}"), dpi=200, facecolor=SURFACE)
