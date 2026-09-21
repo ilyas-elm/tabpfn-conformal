@@ -24,7 +24,9 @@ it: cross-conformal is **exactly K× the API cost of split conformal** — measu
 ([`cost_kfold.py`](experiments/api/cost_kfold.py), free: `estimate_cost` sends
 dimensions only) — and it is **not** the case that only TabPFN can
 afford it. In our own baselines LightGBM cross-conformal finished in about six
-seconds. What TabPFN removes is the training: **0 gradient-trained fits against
+seconds — though that is not a fair race, since TabPFN runs remotely over the
+network and LightGBM runs on this laptop's CPU ([limitations](docs/limitations.md)).
+What TabPFN removes is the training: **0 gradient-trained fits against
 LightGBM's 6**. That is the hardware-independent number, and the one that scales
 when the pool does.
 

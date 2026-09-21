@@ -509,10 +509,13 @@ Items 6–8 are the ones to sacrifice. **Never sacrifice 1–4.**
 
 ## 12. Repository layout
 
+As built, 21 Sept. `scripts/verify_claims.py` asserts every path below exists,
+so this cannot drift from the repository again.
+
 ```
 tabpfn-conformal/
 ├── LICENSE                     # Apache 2.0, verbatim
-├── README.md                   # headline, Figure 1, repro, positioning, licence note
+├── README.md                   # headline, results, repro, positioning
 ├── pyproject.toml              # core deps: numpy, pandas, scikit-learn ONLY
 ├── src/tabpfn_conformal/
 │   ├── __init__.py
@@ -521,20 +524,38 @@ tabpfn-conformal/
 │   ├── crossconformal.py
 │   ├── adaptive.py
 │   ├── decision.py
-│   ├── budget.py
+│   ├── metrics.py
 │   └── wrapper.py
-├── tests/                      # CPU-only, sklearn models, <60 s
+├── tests/                      # CPU-only, sklearn models, a few seconds
 ├── experiments/                # TabPFN lives HERE and nowhere else
-│   ├── api/                    # tier T1 — reproducible, no GPU
-│   └── kaggle/                 # tier T2 — wall-clock cost table
-├── scripts/download_data.py
-├── results/                    # committed JSON/CSV — judges can replot without running
+│   ├── api/                    # the six experiments, against the Prior Labs API
+│   └── analyze_*.py            # read committed results; no API key needed
+├── scripts/
+│   ├── download_data.py
+│   ├── build_demo.py           # demo/index.html + figures/demo_data.json
+│   ├── build_extension_pr.py   # generates the whole contrib/ payload
+│   └── verify_claims.py        # recomputes every numeric claim in the README
+├── results/                    # committed JSON/NPZ — judges can replot without running
 ├── figures/
+├── demo/                       # _template.html; index.html is generated
+├── contrib/tabpfn-extensions/  # the PR payload, generated from src/
 └── docs/
-    ├── CAHIER-DES-CHARGES.md   # this file
+    ├── CAHIER-DES-CHARGES.md   # this file — the plan, kept as written
+    ├── FINDINGS.md             # chronological log of results and corrections
+    ├── STATUS.md               # handoff: what is left, in order
+    ├── SUBMISSION.md           # the submission description
+    ├── VIDEO.md                # the demo script, read aloud
     ├── method.md
     └── limitations.md
 ```
+
+**Two things in the original plan were never built**, and the diagram above no
+longer pretends otherwise. `src/tabpfn_conformal/budget.py` was folded into the
+`cal_size` constructor argument (Q1, approved 19 Sept) rather than becoming its
+own module. `experiments/kaggle/` was the tier-2 wall-clock table; it stayed an
+empty directory, which is why P5 is still reported as confounded — see
+[`limitations.md`](limitations.md). The empty folder was removed on 21 Sept;
+git never carried it, since git does not track empty directories.
 
 ---
 
