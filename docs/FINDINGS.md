@@ -515,6 +515,35 @@ TabPFN-specific finding in the project and it matched what Prior Labs documents
 about Thinking on temporal data. Wanting a result to be true is exactly when
 replication matters most.
 
+## Second audit — 21 September
+
+Three more, all of the same family: a statistic that was not measuring what its
+label said.
+
+**`replay_aci` still used the metric this project had already rejected.** Mean
+absolute deviation from the *nominal* 95%, which punishes over-coverage exactly
+as hard as under-coverage — the metric that once scored Thinking worse for
+holding its guarantee, fixed in `analyze_e3` and never fixed here. It also
+compared against 95% rather than the 97.83% that 46 calibration positives
+actually certify. Both corrected, and the script now cross-checks against E3:
+frozen replays to 4 of 5 months below target at mean set size 1.422, which is
+`analyze_e3`'s base row to three decimals.
+
+That correction cost a claim. "At γ ∈ {0.5, 1.0} ACI is worse" was a
+mean-|dev| statement; under months-below-target γ=0.5 ties frozen and γ=1.0 is
+nominally *better*, 3 of 5 against 4. What is actually true is instability: the
+month-to-month coverage swing goes 0.023 → 0.074 → **0.106** as γ rises, and
+γ=1.0 buys its one extra month with the widest sets and a 0.894-then-1.000
+oscillation. The README now reports the swing column instead of asserting
+"worse", and `verify_claims` reads the sweep table cell by cell.
+
+**`e6_variants` carried its own copy of `make_eval`** — the duplication
+`_common.py` exists to prevent, and E6 is exactly where it would bite, since its
+headline pairs variants against a Base row computed by E1 from the shared
+function. Proven identical on four datasets × three seeds, then deleted.
+
+See also the E2 entry above, corrected the same day.
+
 ## Pre-submission audit — 20 September
 
 A sweep over everything a judge would actually open, after the experiments were

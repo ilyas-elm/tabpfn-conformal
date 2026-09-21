@@ -450,6 +450,32 @@ if e2:
                            bool(cw < means.min()),
                            f"cross {cw:.4f} vs best split {means.min():.4f}"))
 
+# ---- 5i. The ACI gamma sweep table ----------------------------------------
+# Written from results/aci_gamma_sweep.json, which replay_aci.py regenerates
+# from saved probabilities with no API calls.
+_sweep = REPO / "results/aci_gamma_sweep.json"
+if _sweep.exists():
+    _arms = json.loads(_sweep.read_text())
+    _ncal = 46
+    _target = min(1.0, math.ceil((_ncal + 1) * 0.95) / _ncal)
+    for _name, _label in (("frozen", "frozen"), ("gamma=0.05", r"0\.05"),
+                          ("gamma=0.2", r"0\.2"), ("gamma=0.5", r"0\.5"),
+                          ("gamma=1", r"1\.0")):
+        _tr = _arms.get(_name)
+        if not _tr:
+            continue
+        _cov = [t["coverage_fraud"] for t in _tr]
+        _row = rf"\| {_label} \| (\d+) of \d+ \| ([\d.]+) \| ([\d.]+) \|"
+        _m = re.search(_row, README)
+        check(f"ACI {_name} months below",
+              float(_m.group(1)) if _m else None,
+              float(sum(1 for c in _cov if c < _target)), 0.5)
+        check(f"ACI {_name} swing",
+              float(_m.group(2)) if _m else None, float(max(_cov) - min(_cov)), 0.001)
+        check(f"ACI {_name} set size",
+              float(_m.group(3)) if _m else None,
+              float(np.mean([t["set_size"] for t in _tr])), 0.001)
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",

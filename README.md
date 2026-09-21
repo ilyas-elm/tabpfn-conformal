@@ -312,9 +312,24 @@ python experiments/analyze_calibration.py
 ### Drift: adaptive calibration cannot help at this label budget
 
 Across months 3–7 the fraud rate climbs 0.92% → 1.47% and frozen thresholds lose
-about 2 points of coverage. Adaptive conformal inference **does not recover it** —
-at γ ∈ {0.05, 0.2} it is *numerically identical* to doing nothing, and at
-γ ∈ {0.5, 1.0} it is worse.
+about 2 points of coverage. Adaptive conformal inference **does not recover it**.
+Replayed from the saved probabilities at five γ, against the level 46 calibration
+positives actually certify (97.83%, not 95%):
+
+| γ | months below target | month-to-month swing | mean set size |
+|---|---:|---:|---:|
+| frozen | 4 of 5 | 0.023 | 1.422 |
+| 0.05 | 4 of 5 | 0.023 | 1.424 |
+| 0.2 | 4 of 5 | 0.023 | 1.432 |
+| 0.5 | 4 of 5 | 0.074 | 1.390 |
+| 1.0 | 3 of 5 | 0.106 | 1.452 |
+
+At usable γ it is *numerically identical* to doing nothing. Turn γ up far enough
+to move the threshold and it stops tracking the drift and starts oscillating:
+the month-to-month swing goes from 0.023 to **0.106**, four and a half times
+wider, on a single seed. The one row with fewer months below target, γ = 1.0,
+buys that with the widest sets and the wildest swing — 0.894 one month and 1.000
+the next. That is not adaptation.
 
 ![Coverage by month under drift](figures/e3_drift_base.png)
 
