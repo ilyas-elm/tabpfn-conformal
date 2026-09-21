@@ -116,10 +116,15 @@ def figure(agg, alpha: float, path: pathlib.Path):
             fontsize=8, color=INK_2, ha="left", va="bottom", linespacing=1.4,
         )
 
-    ax_c.axhline(target, color=INK_MUTED, linewidth=1.4, linestyle=(0, (4, 3)), zorder=1)
+    # The nominal level is a reference, not the target: what a point has to
+    # clear is ceil((n_cal+1)(1-alpha))/n_cal, which differs per strategy and
+    # per budget and is drawn below as the dotted curves. Labelling this flat
+    # line "target" put the emphasis on the wrong one.
+    ax_c.axhline(target, color="#cfcec9", linewidth=1.0, linestyle=(0, (2, 4)),
+                 zorder=1)
     ax_c.annotate(
-        f"target {target:.0%}", xy=(0.5, target), xycoords=("axes fraction", "data"),
-        ha="center", va="bottom", fontsize=8.5, color=INK_2,
+        f"nominal {target:.0%}", xy=(0.02, target), xycoords=("axes fraction", "data"),
+        ha="left", va="bottom", fontsize=8, color="#a9a8a3",
     )
 
     for strategy, colour, label in (
@@ -136,8 +141,8 @@ def figure(agg, alpha: float, path: pathlib.Path):
             ax.plot(x, mean, "o", color=colour, markersize=5.5,
                     markeredgecolor=SURFACE, markeredgewidth=2.0, zorder=4)
         xe, eff, *_ = _series(agg, strategy, "effective")
-        ax_c.plot(xe, eff, color=colour, linewidth=1.2, linestyle=(0, (1, 2)),
-                  zorder=2, alpha=0.85)
+        ax_c.plot(xe, eff, color=colour, linewidth=1.4, linestyle=(0, (4, 3)),
+                  zorder=2, alpha=0.8)
 
         # Direct label at the right end, in ink -- identity is never colour alone.
         x, mean, *_ = _series(agg, strategy, "coverage")
@@ -165,6 +170,8 @@ def figure(agg, alpha: float, path: pathlib.Path):
     )
     fig.text(
         0.012, 0.012,
+        "Dashed curves: the level each strategy actually certifies at that budget, "
+        "ceil((n_cal+1)(1-\u03b1))/n_cal \u2014 what a point has to clear.\n"
         "Bands span min\u2013max across seeds. In the shaded region split returns every label,\n"
         "so its coverage of 1.0 is vacuous \u2014 read it against set size below.\n"
         "Bank Account Fraud; months 0\u20135 pool, 6\u20137 evaluation; TabPFN-3.5 via the Prior Labs API.",

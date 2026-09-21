@@ -572,6 +572,15 @@ checks.append(("E3 figure targets the certified level",
                and "ax_c.axhline(1 - alpha" not in _e3src,
                "analyze_e3 draws the coverage target at the nominal 1-alpha"))
 
+# E1 and E2 draw the certified level as a curve, because it moves with n_cal;
+# the nominal line stays only as a faint reference and must not be labelled
+# "target". Both figures once were, and both read as passing when they were not.
+for _name, _src in (("E1", "analyze_e1.py"), ("E2", "analyze_e2.py")):
+    _txt = (REPO / "experiments" / _src).read_text()
+    checks.append((f"{_name} figure does not label the nominal as the target",
+                   'f"target {' not in _txt and '"target ' not in _txt,
+                   f"{_src} still labels a flat line 'target'"))
+
 # And every figure the README shows must exist.
 _figs = set(re.findall(r"\(figures/([\w.]+\.png)\)", README))
 _gone = sorted(f for f in _figs if not (REPO / "figures" / f).exists())
