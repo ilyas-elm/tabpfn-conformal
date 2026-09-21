@@ -43,12 +43,16 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 
 `strategy="split"` → `"cross"` is the whole diff.
 
-> **Work in progress** for the Prior Labs TabPFN-3.5 Hackathon (deadline 6 Oct
-> 2026). The library and its 119 tests are complete and run on CPU in a few
-> second. Experiments are running; every number below is measured and the
-> results files are committed. Two of our own pre-registered predictions have
-> already been falsified and are reported as such — see
-> [Results](#results-so-far) and [`docs/limitations.md`](docs/limitations.md).
+> Built for the Prior Labs TabPFN-3.5 Hackathon. **All six experiments are
+> complete** and their results are committed, so every number below can be
+> recomputed without an API key: `python scripts/verify_claims.py` recomputes
+> 135 of them from `results/` and exits non-zero on any drift.
+> **Four of five pre-registered predictions were falsified**, including two of
+> our own about cost, and they are reported as such — see the
+> [scoreboard](#what-we-predicted-and-what-happened),
+> [`docs/limitations.md`](docs/limitations.md) and
+> [`docs/FINDINGS.md`](docs/FINDINGS.md), which logs every correction in the
+> order it was made.
 
 ## Everything measured, in one table
 
@@ -66,6 +70,35 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 **[▶ Try the interactive demo](https://claude.ai/artifact/RQdPAtjvKefEv1iUT1RB1q)** — drag
 the label budget and watch the certifiable ceiling move, then route 400 real
 TabPFN predictions through the decision layer under an analyst budget you set.
+
+## What of TabPFN-3.5 this actually uses
+
+Conformal prediction is model-agnostic, so it would be easy to claim TabPFN
+without leaning on it. Every row below is a specific capability, where it is
+exercised, and what it changed. Two of them are *incompatibilities* we ran into
+and had to design around.
+
+| capability | where | what it bought, or cost |
+|---|---|---|
+| `TabPFNClassifier()`, no training step | E1, E2, E4, E5, E6 | The premise. K-fold cross-conformal is K forward passes, **0 gradient-trained fits against LightGBM's 6** — the reason the headline result is affordable at all. |
+| `thinking_mode=True`, `thinking_effort="medium"` | E3 | Under drift, below target in **3 of 15 seed-months against base's 9**. Directional at n=3, not established — and reachable *only* through the API, since Thinking has no local weights. |
+| `time_col="month"` | E3 | Hands the temporal structure to the model natively instead of dropping it. |
+| `fit_mode="fit_with_cache"` | E5 | **6.8× faster evaluation pass** at 200k context, same answer to four decimals. Conformal is the workload it assumes: one fixed context, scored twice. |
+| `balance_probabilities=True` | E4 | TabPFN's own imbalance tooling, as the honest baseline to beat — it produces no coverage guarantee, and that is the comparison. |
+| `estimate_cost(...)` | every runner's `--dry-run`, and [`cost_kfold.py`](experiments/api/cost_kfold.py) | Prices a run from array *dimensions* before spending. It is how the K× cost overclaim got caught, for free. |
+| local weights (`tabpfn`) | [`experiments/kaggle/`](experiments/kaggle/README.md) | Takes the network out of the wall-clock comparison, which is the confound in P5. |
+| BAF Variants I–III | E6 | Replication across four datasets, which narrowed the headline from "narrower sets" to "same guarantee, half the labels". |
+
+**`time_col`, `group_col` and `group_time_col` are Thinking-only.** Passing
+`time_col` to the base model is rejected outright. So native temporal handling is
+not a free upgrade — it is a capability with no local weights behind it.
+
+**The KV cache and Thinking are mutually exclusive**, server-enforced:
+`HTTP 422 — FIT_WITH_CACHE fit mode is not compatible with thinking mode`. Cache
+economics and Thinking results therefore cannot appear in the same experiment,
+which is why E3 and E5 are separate. Both facts were settled by a
+[dimension-only probe](experiments/api/spike_s1_cache_thinking.py) before any
+experiment was designed around them.
 
 ## The argument
 
