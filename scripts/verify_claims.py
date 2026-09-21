@@ -688,6 +688,19 @@ checks.append(("SUBMISSION does not claim identical cache sets",
                "identical prediction sets" not in _sub,
                "SUBMISSION.md says the KV cache gives identical sets; it does not"))
 
+# ---- 5t. The handoff doc counts what the video script actually lists -------
+_status = (REPO / "docs/STATUS.md").read_text()
+_video = (REPO / "docs/VIDEO.md").read_text()
+_n_donts = len(re.findall(r"^- (?:Do \*\*not\*\*|Only say)", _video, re.M))
+_words = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight"}
+checks.append(("STATUS counts the do-not-say list correctly",
+               f"{_words.get(_n_donts, _n_donts)} claims not to make" in _status,
+               f"VIDEO.md lists {_n_donts}; STATUS.md says otherwise"))
+checks.append(("STATUS names the changelog rename step",
+               "PRNUMBER.added.md" in _status,
+               "their CI fails a PR without the towncrier fragment, and STATUS "
+               "does not say to rename it"))
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",
