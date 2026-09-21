@@ -163,3 +163,58 @@ def test_update_rounds_tracks_a_shift_in_difficulty():
 def test_update_round_rejects_bad_rate():
     with pytest.raises(ValueError, match="error_rate must lie"):
         ACI(alpha_target=0.05).update_round(0, error_rate=1.5)
+
+
+def test_alpha_dict_reports_the_adapted_levels_not_the_target():
+    """The handoff from ACI to `predict_set` must carry the adaptation.
+
+    `alpha_dict()` is what E3 feeds to `predict_set_from_proba` for the ACI arm.
+    If it returned `alpha_target` the adaptation would be computed and then
+    discarded, and every ACI result would collapse onto the frozen one —
+    indistinguishable from this project's actual finding that ACI cannot move
+    the threshold at 46 calibration positives. A null result has to be measured,
+    not produced by a bug.
+    """
+    aci = ACI(alpha_target=0.05, gamma=0.1, n_classes=2)
+    for _ in range(5):
+        aci.update_round(1, 0.9)          # sustained under-coverage on class 1
+
+    assert aci.alphas_[1] != pytest.approx(0.05), "fixture did not move the level"
+    d = aci.alpha_dict()
+    assert d[1] == pytest.approx(float(aci.alphas_[1]))
+    assert d[1] != pytest.approx(aci.alpha_target)
+    assert d[0] == pytest.approx(float(aci.alphas_[0]))
+    assert set(d) == {0, 1}
+
+
+def test_alpha_dict_drives_different_prediction_sets_than_the_target():
+    """End to end: an adapted level must change what `predict_set` returns."""
+    from sklearn.base import BaseEstimator, ClassifierMixin
+
+    from tabpfn_conformal import ConformalClassifier
+
+    class Grid(BaseEstimator, ClassifierMixin):
+        classes_ = np.array([0, 1])
+
+        def predict_proba(self, X):
+            p1 = np.asarray(X, dtype=float).ravel()
+            return np.column_stack([1.0 - p1, p1])
+
+    grid = np.round(np.arange(1, 21) * 0.05, 3)
+    X_cal = np.concatenate([1.0 - grid, grid]).reshape(-1, 1)
+    y_cal = np.array([1] * 20 + [0] * 20)
+    cc = ConformalClassifier(Grid(), method="mondrian", prefit=True).fit(X_cal, y_cal)
+
+    # Drive the level UP, on observed over-coverage. Downward is the direction
+    # that cannot show anything here: at 20 calibration points, alpha 0.05 and
+    # alpha 0.0001 both land past the last order statistic, so the sets are
+    # identical -- the quantization this project measures in E3, reproduced in
+    # miniature.
+    aci = ACI(alpha_target=0.40, gamma=0.5, n_classes=2)
+    for _ in range(6):
+        aci.update_round(1, 0.0)          # observed no errors at all
+
+    assert aci.alpha_dict()[1] > 0.05
+    X_test = np.linspace(0.05, 0.95, 19).reshape(-1, 1)
+    assert not np.array_equal(cc.predict_set(X_test, aci.alpha_dict()),
+                              cc.predict_set(X_test, 0.05))
