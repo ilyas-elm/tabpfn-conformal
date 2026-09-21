@@ -440,15 +440,22 @@ The core depends on **numpy, pandas and scikit-learn only** — no torch, no
 `tabpfn`, no GPU. 119 tests in about three seconds on a laptop. TabPFN appears in
 `experiments/` and is never imported by `src/`.
 
-For the experiments you additionally need a free Prior Labs account:
+For the experiments you additionally need the dataset and a free Prior Labs
+account. Bank Account Fraud is distributed through Kaggle only and is not in
+this repository — `data/` is gitignored, since it is a million rows:
 
 ```bash
 pip install -e ".[experiments]"
+python scripts/download_data.py           # Kaggle credentials; prints a manual fallback
 python -c "import tabpfn_client; tabpfn_client.init()"
 ```
 
+`download_data.py` verifies what arrived rather than assuming it — row count,
+column count, fraud rate and the per-month drift — and prints them.
+
 See [`experiments/api/README.md`](experiments/api/README.md) for the token,
-budget discipline and rate limits.
+budget discipline and rate limits. Every experiment takes `--dry-run`, which
+prices the run through `estimate_cost` without spending anything.
 
 Everything downstream of the results is rebuildable without an API key:
 

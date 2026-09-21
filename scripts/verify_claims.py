@@ -543,6 +543,25 @@ try:
 except Exception as exc:                                      # pragma: no cover
     checks.append(("package metadata", None, f"not checkable: {exc}"))
 
+# ---- 5m. Every command the README tells a reader to run must exist ---------
+# The README documented the experiment path without the data download step for
+# most of the project; the script it never named is the one that fetches a
+# dataset the repository cannot ship.
+_cmds = set(re.findall(r"python (scripts/[\w/]+\.py|experiments/[\w/]+\.py)", README))
+_absent = sorted(c for c in _cmds if not (REPO / c).exists())
+checks.append(("every script the README runs exists", not _absent,
+               "named but absent: " + ", ".join(_absent)))
+checks.append(("README documents the data download",
+               "scripts/download_data.py" in _cmds,
+               "the experiments need data/ and the README never fetches it"))
+
+# The README says every experiment takes --dry-run; that is a promise about
+# spending money, so it is checked rather than trusted.
+_runners = sorted((REPO / "experiments/api").glob("e[0-9]_*.py"))
+_no_dry = [f.name for f in _runners if '"--dry-run"' not in f.read_text()]
+checks.append(("every experiment supports --dry-run", not _no_dry,
+               "missing --dry-run: " + ", ".join(_no_dry)))
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",

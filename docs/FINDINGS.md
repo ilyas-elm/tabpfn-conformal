@@ -549,6 +549,20 @@ scoreboard row said "confounded"; the opening cost paragraph only implied it, by
 calling the fit count "the hardware-independent number". Now it says so outright.
 Writing the caveat is what exposed the gap in the thing being caveated.
 
+**The README never told anyone to download the data.** Its experiment block
+installs `[experiments]` and initialises the TabPFN client, and stops — while
+every runner needs `data/Base.csv`, which is gitignored because it is a million
+rows. The step existed in `docs/method.md` and in the error message
+`_common.load_frames` raises, but not on the path a reader actually follows.
+Someone reproducing the experiments would have hit a missing file and had to be
+rescued by an exception string. Added, along with the `--dry-run` note, since
+pricing a run before spending on it is the thing a reader most wants to know.
+
+`verify_claims` now extracts every `python path/to/script.py` the README
+instructs a reader to run and asserts it exists, asserts the data download is
+among them, and checks that all six experiments really do accept `--dry-run` —
+a promise about not spending money should not be taken on trust.
+
 ## Second audit — 21 September
 
 Three more, all of the same family: a statistic that was not measuring what its
