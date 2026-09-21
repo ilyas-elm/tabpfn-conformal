@@ -55,13 +55,21 @@ needed unless more seeds are wanted.
    `scripts/verify_claims.py`, so re-run that before recording.
 4. **Submit** — [`SUBMISSION.md`](SUBMISSION.md) is the description field.
 
-Optional, if time allows: **P5 on fair hardware.** The wall-clock comparison
-against LightGBM is confounded (TabPFN remote, LightGBM local) and all 36 E4
-rows are tagged `wallclock_comparable: false`. The run that settles it is now
-written and tested end to end —
-[`../experiments/kaggle/README.md`](../experiments/kaggle/README.md) has the
-exact Kaggle cell — and takes about fifteen minutes in one GPU session. Until it
-is actually run, P5 stays open and `docs/limitations.md` says so.
+**Optional, and only after the four above: P5 on fair hardware.** The wall-clock
+comparison against LightGBM is confounded (TabPFN remote, LightGBM local) and all
+36 E4 rows are tagged `wallclock_comparable: false`.
+
+The run that settles it is written and tested; what it needs is a GPU, which this
+laptop does not have. It is a **Kaggle notebook** — a free Jupyter notebook that
+runs on Kaggle's machines — and it needs a free Kaggle account with **phone
+verification**, which is what unlocks the GPU. About fifteen minutes.
+[`../experiments/kaggle/README.md`](../experiments/kaggle/README.md) is the
+step-by-step, written for someone who has never opened Kaggle.
+
+The repository has to be public first (step 1), because the notebook clones it.
+
+Until it is actually run, P5 stays open and `docs/limitations.md` says so. The
+submission does not depend on it.
 
 ## Standing rules learned the hard way
 
