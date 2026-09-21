@@ -39,6 +39,9 @@ Issues = "https://github.com/ilyas-elm/tabpfn-conformal/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tabpfn_conformal"]
+# PEP 561: without this marker the package is fully annotated and type checkers
+# still treat it as untyped, so downstream users get nothing from the hints.
+artifacts = ["src/tabpfn_conformal/py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

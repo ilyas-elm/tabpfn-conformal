@@ -515,6 +515,7 @@ so this cannot drift from the repository again.
 ```
 tabpfn-conformal/
 ├── LICENSE                     # Apache 2.0, verbatim
+├── CHANGELOG.md                # library changes; results live in docs/FINDINGS.md
 ├── README.md                   # headline, results, repro, positioning
 ├── pyproject.toml              # core deps: numpy, pandas, scikit-learn ONLY
 ├── src/tabpfn_conformal/
@@ -525,7 +526,8 @@ tabpfn-conformal/
 │   ├── adaptive.py
 │   ├── decision.py
 │   ├── metrics.py
-│   └── wrapper.py
+│   ├── wrapper.py
+│   └── py.typed                # PEP 561, so downstream type checkers see us
 ├── tests/                      # CPU-only, sklearn models, a few seconds
 ├── experiments/                # TabPFN lives HERE and nowhere else
 │   ├── api/                    # the six experiments, against the Prior Labs API
