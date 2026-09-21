@@ -1,5 +1,8 @@
 # tabpfn-conformal
 
+[![tests](https://github.com/ilyas-elm/tabpfn-conformal/actions/workflows/tests.yml/badge.svg)](https://github.com/ilyas-elm/tabpfn-conformal/actions/workflows/tests.yml)
+[![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 **Cross-conformal reaches the same coverage guarantee from half the confirmed
 frauds, at no cost in set width — and on TabPFN-3.5 it costs zero training runs
 to get there.**

@@ -21,6 +21,8 @@ cd tabpfn-extensions && uv sync
 cp -R <this-repo>/contrib/tabpfn-extensions/src/tabpfn_extensions/conformal src/tabpfn_extensions/
 cp <this-repo>/contrib/tabpfn-extensions/tests/test_conformal.py tests/
 cp -R <this-repo>/contrib/tabpfn-extensions/examples/conformal examples/
+# their check-changelog workflow fails a PR without this; rename it to the PR number
+cp <this-repo>/contrib/tabpfn-extensions/changelog/PRNUMBER.added.md changelog/<PR>.added.md
 FAST_TEST_MODE=1 pytest tests/test_conformal.py -v
 ```
 
@@ -54,18 +56,26 @@ GPU.
 > TabPFN has no training step, so it costs K forward passes. Measured on Bank
 > Account Fraud (NeurIPS 2022) with TabPFN-3.5, comparing at an identical targeted
 > coverage level, cross-conformal reached the same level from **half the confirmed
-> fraud labels**, with narrower prediction sets in five of six comparisons.
+> fraud labels** at no cost in set width: across four datasets and nine paired
+> comparisons it was significantly wider in **zero** and significantly narrower
+> in one, at the scarcest label budget.
 >
 > **Dependencies:** none beyond numpy and scikit-learn. Nothing in the module
 > imports TabPFN, so it adds nothing to the base install.
 >
-> **Tests:** 9 tests, CPU only, `FAST_TEST_MODE` aware, under a second. They use
+> **Tests:** 18 tests, CPU only, `FAST_TEST_MODE` aware, about a second. They use
 > scikit-learn estimators rather than TabPFN, since the machinery is model-agnostic
 > and testing against TabPFN would slow the suite without covering anything extra.
 >
+> Nine are regression guards, each written after a deliberate mutation of the
+> library slipped past the rest: a fold leak in cross-conformal, `<` in place of
+> `<=` at the threshold, a class remapping ignored inside a fold, an off-by-one
+> in `average_set_size`, and the ACI level being discarded on handoff. Every one
+> was confirmed to fail on the mutation it guards.
+>
 > **Scope.** Prediction sets for any number of classes — `tests/test_multiclass.py`
 > covers 3 and 5, where the class-conditional argument is if anything stronger
-> (marginal leaves the worst class at 0.679 coverage against a 0.90 target;
+> (marginal leaves the worst class at 0.675 coverage against a 0.90 target;
 > Mondrian holds 0.890). Should compose with `ManyClassClassifier`. The
 > benchmarks here are binary, because the motivating problem is.
 >

@@ -1,0 +1,1 @@
+Add `tabpfn_extensions.conformal`: distribution-free prediction sets for classification, with class-conditional calibration and a cross-conformal strategy that spends no labelled positives on calibration.
