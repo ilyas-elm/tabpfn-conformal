@@ -37,8 +37,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 
 from _common import (  # noqa: E402
-    EVAL_LEGIT, EVAL_MONTHS, LABEL, POOL_MONTHS, REPO, TIME, load_token,
-    make_pool, resume_keys, set_client_timeouts, split_xy, time_limit,
+    EVAL_MONTHS, LABEL, POOL_MONTHS, REPO, TIME, load_token,
+    make_eval, make_pool, resume_keys, set_client_timeouts, time_limit,
 )
 
 OUT = REPO / "results" / "e6.jsonl"
@@ -59,14 +59,6 @@ def load_variant(name: str):
     df = pd.read_csv(path)
     return (df[df[TIME].isin(POOL_MONTHS)].reset_index(drop=True),
             df[df[TIME].isin(EVAL_MONTHS)].reset_index(drop=True))
-
-
-def make_eval_local(ev: pd.DataFrame, seed: int):
-    rng = np.random.default_rng(seed)
-    pos, neg = ev[ev[LABEL] == 1], ev[ev[LABEL] == 0]
-    neg = neg.iloc[rng.choice(len(neg), min(EVAL_LEGIT, len(neg)), replace=False)]
-    out = pd.concat([pos, neg]).sample(frac=1.0, random_state=seed).reset_index(drop=True)
-    return split_xy(out)
 
 
 def key(c) -> str:
@@ -123,7 +115,7 @@ def main() -> int:
         X_pool, y_pool = make_pool(pool_df, cfg["n_frauds"], cfg["seed"])
         if X_pool is None:
             continue
-        X_eval, y_eval = make_eval_local(eval_df, cfg["seed"])
+        X_eval, y_eval = make_eval(eval_df, cfg["seed"])
 
         cc = ConformalClassifier(
             TabPFNClassifier(), method="mondrian", strategy=cfg["strategy"],

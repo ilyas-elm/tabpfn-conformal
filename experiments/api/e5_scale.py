@@ -38,7 +38,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 
 from _common import (  # noqa: E402
-    LABEL, POOL_MONTHS, REPO, TIME, BatchedPredictProba, load_frames, load_token,
+    LABEL, POOL_MONTHS, REPO, BatchedPredictProba, load_frames, load_token,
     make_eval, resume_keys, save_proba, set_client_timeouts, split_xy, time_limit,
 )
 

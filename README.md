@@ -55,7 +55,7 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 | Under drift, Thinking loses coverage less often than base | 3 of 15 seed-months below target vs 9 of 15; never worse on any seed, better on 2 of 3 — **directional, t ≈ 1.7 at n=3** | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
 | The **KV cache** makes the evaluation pass **6.8× faster** at 200k context, same answer to 4 decimals | 36.9 s → 5.4 s | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
 | **Abundant data does not substitute for confirmed positives** — 20× more context changes nothing | slope −0.017 vs seed SD 0.046 | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
-| Where a scarce label budget should go: **nowhere — don't split it** | no detectable optimum; cross beats every ratio | [E2](#where-should-a-scarce-label-budget-go-mostly-nowhere) |
+| Where a scarce label budget should go: **nowhere — don't split it** | best split ratio still loses to cross at both budgets | [E2](#where-should-a-scarce-label-budget-go-mostly-nowhere) |
 | **Four of five pre-registered predictions were falsified** | including two of our own about cost | [scoreboard](#what-we-predicted-and-what-happened) |
 
 **[▶ Try the interactive demo](https://claude.ai/artifact/RQdPAtjvKefEv1iUT1RB1q)** — drag
@@ -355,10 +355,23 @@ cross-conformal doubles the calibration set and so doubles threshold resolution.
 ### Where should a scarce label budget go? Mostly, nowhere
 
 The question this project set out to measure. Sweeping `cal_size` from 0.2 to
-0.8 at both budgets: at 100 frauds there is **no detectable optimum** (paired
-best-vs-worst difference +0.089 ± 0.042, t=2.1, n=5). At 200 there is a real
-effect, but it is `cal_size=0.8` being *bad* — starving the model — rather than a
-sharp interior optimum.
+0.8 at both budgets, and testing the spread with a permutation that shuffles the
+settings within each seed — 20,000 permutations, so the selection of best-versus-
+worst is inside the null rather than ignored by it:
+
+| budget | spread, best to worst | permutation p | |
+|---:|---:|---:|---|
+| 100 frauds | 0.089 | **0.042** | the settings differ |
+| 200 frauds | 0.055 | 0.618 | nothing there |
+
+So at the smaller budget the allocation does matter — but **it does not matter
+enough to be worth choosing**, because the best split setting still loses to not
+splitting at all: 1.505 against cross-conformal's **1.463**. And the test says
+only that the seven settings differ; which one is best is a pick from seven on
+five seeds, which this data cannot resolve.
+
+**Cross-conformal beats every split setting, at both budgets and both alphas.**
+That is the answer to where the budget should go: nowhere.
 
 **Cross-conformal beats every split setting, at both budgets and both alphas.**
 
