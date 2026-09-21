@@ -604,6 +604,32 @@ if _pay.exists():
               if re.search(r"\*\*Tests:\*\* (\d+) tests", (_pay / "PR.md").read_text())
               else None, float(_n), 0.5)
 
+# ---- 5p. The TabPFN-3.5 capability table names things the code really uses --
+# This is the section that answers the "showcase" criterion, so it must not
+# claim a capability the experiments never touch.
+_api = " ".join(f.read_text() for f in sorted((REPO / "experiments").rglob("*.py")))
+_CAPABILITIES = {
+    "thinking_mode": "thinking_mode",
+    "time_col": 'time_col',
+    "fit_with_cache": 'fit_mode="fit_with_cache"',
+    "balance_probabilities": "balance_probabilities",
+    "estimate_cost": "estimate_cost",
+    "local weights": "from tabpfn import TabPFNClassifier",
+}
+_unused = sorted(k for k, needle in _CAPABILITIES.items() if needle not in _api)
+checks.append(("README capability table matches the code", not _unused,
+               "claimed in the README, absent from experiments/: "
+               + ", ".join(_unused)))
+
+# The 422 quoted in that section has to be the one the server actually returned.
+_spike = REPO / "results/spike_s1.json"
+if _spike.exists():
+    _txt = _spike.read_text()
+    checks.append(("the quoted HTTP 422 is the recorded one",
+                   "FIT_WITH_CACHE fit mode is not compatible with thinking mode" in _txt
+                   and "FIT_WITH_CACHE fit mode is not compatible with thinking mode" in README,
+                   "README quotes a server error not present in results/spike_s1.json"))
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",
