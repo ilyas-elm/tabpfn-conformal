@@ -630,6 +630,15 @@ if _spike.exists():
                    and "FIT_WITH_CACHE fit mode is not compatible with thinking mode" in README,
                    "README quotes a server error not present in results/spike_s1.json"))
 
+# ---- 5q. PEP 561 marker actually ships ------------------------------------
+# The package is fully annotated; without py.typed in the wheel, type checkers
+# treat it as untyped and downstream users get nothing from the hints.
+checks.append(("py.typed exists", (REPO / "src/tabpfn_conformal/py.typed").exists(),
+               "src/tabpfn_conformal/py.typed is missing"))
+checks.append(("py.typed is declared to the build backend",
+               "py.typed" in (REPO / "pyproject.toml").read_text(),
+               "pyproject does not list py.typed, so the wheel may drop it"))
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",
