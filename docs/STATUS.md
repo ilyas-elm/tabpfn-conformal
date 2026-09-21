@@ -43,12 +43,15 @@ needed unless more seeds are wanted.
 2. **Open the extensions PR.** `python scripts/build_extension_pr.py` regenerates
    the payload; [`../contrib/tabpfn-extensions/ISSUE.md`](../contrib/tabpfn-extensions/ISSUE.md)
    is the issue to post first (their CONTRIBUTING asks for an issue before a PR),
-   and `PR.md` is the description. Verified: imports as
+   and `PR.md` is the description. **Rename
+   `contrib/tabpfn-extensions/changelog/PRNUMBER.added.md` to the real PR number
+   before pushing** — their CI fails any PR without a towncrier fragment.
+   Verified: imports as
    `tabpfn_extensions.conformal`, 18 tests pass under `FAST_TEST_MODE=1`
    (locally: `FAST_TEST_MODE=1 PYTHONPATH=contrib/tabpfn-extensions/src pytest
    contrib/tabpfn-extensions/tests`).
 3. **Record the video** — [`VIDEO.md`](VIDEO.md) has the script and a list of
-   four claims not to make on camera. Its numbers are checked by
+   six claims not to make on camera. Its numbers are checked by
    `scripts/verify_claims.py`, so re-run that before recording.
 4. **Submit** — [`SUBMISSION.md`](SUBMISSION.md) is the description field.
 

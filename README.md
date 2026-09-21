@@ -189,7 +189,7 @@ mass is, so at a 1% base rate the fraud class can fall far below 1−α while th
 headline number looks healthy. Class-conditional (Mondrian) calibration is the
 fix, and it is the default here.
 
-## Results so far
+## Results
 
 Bank Account Fraud (Feedzai, NeurIPS 2022), 1,000,000 rows at a 1.1029% fraud
 rate. Temporal protocol: months 0–5 are the labelled pool, months 6–7 the
