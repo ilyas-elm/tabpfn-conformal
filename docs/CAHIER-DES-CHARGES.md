@@ -529,6 +529,7 @@ tabpfn-conformal/
 ├── tests/                      # CPU-only, sklearn models, a few seconds
 ├── experiments/                # TabPFN lives HERE and nowhere else
 │   ├── api/                    # the six experiments, against the Prior Labs API
+│   ├── kaggle/                 # tier T2 — the fair-hardware wall-clock run
 │   └── analyze_*.py            # read committed results; no API key needed
 ├── scripts/
 │   ├── download_data.py
@@ -549,13 +550,17 @@ tabpfn-conformal/
     └── limitations.md
 ```
 
-**Two things in the original plan were never built**, and the diagram above no
-longer pretends otherwise. `src/tabpfn_conformal/budget.py` was folded into the
-`cal_size` constructor argument (Q1, approved 19 Sept) rather than becoming its
-own module. `experiments/kaggle/` was the tier-2 wall-clock table; it stayed an
-empty directory, which is why P5 is still reported as confounded — see
-[`limitations.md`](limitations.md). The empty folder was removed on 21 Sept;
-git never carried it, since git does not track empty directories.
+**One thing in the original plan was never built.**
+`src/tabpfn_conformal/budget.py` was folded into the `cal_size` constructor
+argument (Q1, approved 19 Sept) rather than becoming its own module.
+
+`experiments/kaggle/` was an empty directory until 21 Sept — the tier-2
+wall-clock table, planned and never run, which is why P5 is still reported as
+confounded. It now holds a runnable script rather than nothing: `wallclock.py`
+puts both models on one accelerator with local TabPFN weights, and
+`experiments/analyze_kaggle.py` reads what it writes. The measurement still
+needs one GPU session; the code no longer does. See
+[`limitations.md`](limitations.md).
 
 ---
 

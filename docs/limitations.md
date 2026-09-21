@@ -90,8 +90,16 @@ confounded rather than resting a claim on it.
 What *is* comparable, because it is a count rather than a duration, is gradient
 fits: **0 for TabPFN against 6 for LightGBM cross-conformal** at K=5, and 1 for
 LightGBM split. Settling the timing properly needs both models on one machine
-with one accelerator — the tier-2 Kaggle run in §12 of the cahier des charges,
-which was planned and never done. It is the only unfinished item from the plan.
+with one accelerator.
+
+That run is now written and tested end to end —
+[`experiments/kaggle/wallclock.py`](../experiments/kaggle/wallclock.py), with
+[`analyze_kaggle.py`](../experiments/analyze_kaggle.py) to read it — but it has
+not been *run*, because it needs one GPU session. **So P5 remains open, and the
+numbers above remain the confounded ones.** The script refuses to pretend
+otherwise: on CPU it warns on stderr and the analysis says in its own output
+that the run settles nothing. It measures local TabPFN rather than the managed
+API, deliberately, since removing the network is the entire point.
 
 **The KV cache and Thinking mode are mutually exclusive** on the managed API,
 server-enforced: `HTTP 422 — FIT_WITH_CACHE fit mode is not compatible with
