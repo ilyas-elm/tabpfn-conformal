@@ -53,9 +53,12 @@ needed unless more seeds are wanted.
 4. **Submit** — [`SUBMISSION.md`](SUBMISSION.md) is the description field.
 
 Optional, if time allows: **P5 on fair hardware.** The wall-clock comparison
-against LightGBM is confounded (TabPFN remote, LightGBM local) and every E4 row
-is tagged `wallclock_comparable: false`. Settling it needs both models on one
-Kaggle GPU. It is the only explicitly unfinished item from the plan.
+against LightGBM is confounded (TabPFN remote, LightGBM local) and all 36 E4
+rows are tagged `wallclock_comparable: false`. The run that settles it is now
+written and tested end to end —
+[`../experiments/kaggle/README.md`](../experiments/kaggle/README.md) has the
+exact Kaggle cell — and takes about fifteen minutes in one GPU session. Until it
+is actually run, P5 stays open and `docs/limitations.md` says so.
 
 ## Standing rules learned the hard way
 

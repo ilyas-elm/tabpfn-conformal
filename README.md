@@ -416,7 +416,7 @@ before the experiments ran.
 | **P2** | cross-conformal costs under 2× split in API tokens | **falsified** — measured exactly K×: 2.0× at K=2, 20.0× at K=20. The API prices a call by total rows touched, so each fold is a full pass over the pool. |
 | **P3** | marginal CP under-covers the fraud class; Mondrian does not | holds (and was already published) |
 | **P4** | static thresholds decay under drift; ACI holds coverage | **falsified** — ACI is identical to frozen at usable γ, for the quantization reason above. |
-| **P5** | LightGBM cross-conformal costs far more wall-clock | **falsified** — ~6s against TabPFN's ~51s. Confounded (local vs remote), but the intuition was wrong: LightGBM trains on 9,000 rows in under a second. |
+| **P5** | LightGBM cross-conformal costs far more wall-clock | **falsified** — ~6s against TabPFN's ~51s. Confounded (local CPU vs remote GPU), but the intuition was wrong: LightGBM trains on 9,000 rows in under a second. The fair-hardware rerun is written and tested ([`experiments/kaggle/`](experiments/kaggle/README.md)); it needs one GPU session, so P5 is **still open**. |
 
 **Four of five failed.** What survives is sturdier for it: the feasibility
 ceiling and level fidelity are *deterministic* — checkable on paper, not
