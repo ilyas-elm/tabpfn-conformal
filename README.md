@@ -252,6 +252,8 @@ frauds. So: hold the frauds at **200** and grow the legitimate context from
 **No.** Slope −0.017 set size per 10× context, against a seed standard deviation
 of 0.046 — flat. Adding 190,000 legitimate rows buys nothing.
 
+![Set size against context size at a fixed 200 confirmed frauds; the curve is flat and sits inside one seed standard deviation](figures/e5_scale_alpha005.png)
+
 That is a negative result worth having, because it isolates the constraint: not
 data volume, not compute, but **confirmed positives**. Which is exactly the
 resource cross-conformal stops wasting.
@@ -333,7 +335,13 @@ wider, on a single seed. The one row with fewer months below target, γ = 1.0,
 buys that with the widest sets and the wildest swing — 0.894 one month and 1.000
 the next. That is not adaptation.
 
-![Coverage by month under drift](figures/e3_drift_base.png)
+![Coverage by month under drift, base TabPFN-3.5: frozen thresholds fall below the certified level from month 4 on](figures/e3_drift_base.png)
+
+The same walk with Thinking. Its frozen thresholds clear the certified level in
+all five months on this seed; re-encoding the context monthly — the green line —
+dips below it once, at month 5:
+
+![Coverage by month under drift, TabPFN-3.5-Thinking](figures/e3_drift_thinking.png)
 
 **TabPFN-3.5-Thinking reduces the problem but does not remove it.** Measured
 against the level actually targeted (97.83% with 46 calibration positives, not

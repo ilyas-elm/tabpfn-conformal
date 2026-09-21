@@ -515,6 +515,41 @@ TabPFN-specific finding in the project and it matched what Prior Labs documents
 about Thinking on temporal data. Wanting a result to be true is exactly when
 replication matters most.
 
+## Fourth audit — 21 September
+
+**The drift figure drew the wrong target line, and it is the figure in the
+README.** Both E3 figures put their dashed target at the nominal
+`1 - alpha = 0.95`. Every point in both sits above 0.95, so each figure read
+*the guarantee always holds* — printed directly above a table stating that base
+misses the level in 4 months of 5. The level a month actually has to clear is
+`ceil((n+1)(1-alpha))/n = 97.83%` at 46 calibration positives, which is the
+project's own central arithmetic, stated in the paragraph beneath the figure and
+in `analyze_e3`'s own table. The picture contradicted its caption.
+
+Redrawn at 97.83%. Base now visibly drops below the line from month 4 on, which
+is the 4-of-5 the table reports; Thinking's frozen arm clears it in all five
+months and its re-encoded arm dips once, which is the 0-of-5 and 1-of-5 the
+table reports. `verify_claims` fails if the axhline goes back to `1 - alpha`.
+
+Three smaller things fell out of looking at the figures at all — something none
+of the previous five passes had done.
+
+*Five of nine committed figures were never referenced anywhere.* Two deserved to
+be: `e5_scale_alpha005.png`, which asks its question in the title and answers
+"No" under the axes with the slope against the seed SD, for a section that had
+been making that argument in prose only; and `e3_drift_thinking.png`, for a
+claim that is entirely about base versus Thinking and was showing only base.
+Both added. The remaining three are alpha-variant alternates, which is fine.
+
+*The first caption I wrote for the Thinking figure was wrong.* "Clears the line
+in four months of five" describes the re-encoded arm; the frozen arm — the one a
+reader takes as the headline — clears all five. Checked against the data before
+it shipped, which is the only reason it did not.
+
+*The footer then collided with the legend*, and before that the target label
+collided with the data. Both caught by rendering the PNG and looking at it,
+not by reading the code that generates it.
+
 ## Third audit — 21 September
 
 Prompted by a question with an obvious answer and a non-obvious cause: *why are
