@@ -531,6 +531,22 @@ is the 4-of-5 the table reports; Thinking's frozen arm clears it in all five
 months and its re-encoded arm dips once, which is the 0-of-5 and 1-of-5 the
 table reports. `verify_claims` fails if the axhline goes back to `1 - alpha`.
 
+**E1 and E2 had the same bug**, and E2's was worse. There the target is not one
+number at all: the certified level is `ceil((n_cal+1)(1-alpha))/n_cal` and
+`n_cal` *is* the x-axis, so at 100 frauds it runs from **100% at cal_size 0.2
+down to 96.25% at 0.8**. A single flat line at 0.95 was wrong at every point and
+wrong by a different amount at each. At cal_size 0.2 the promise is 100% coverage
+and the measurement is 0.979 — below its own promise, while sitting three
+gridlines above the line drawn. Both figures now plot the certified level as a
+curve per budget, with the nominal demoted to a faint reference; E2's is now a
+considerably better figure than it was, because the moving target *is* the
+subject of that experiment.
+
+E2's footer also explained hollow markers — "the level cannot be certified at
+that split" — when every setting in the data is certifiable and no hollow marker
+is ever drawn. A reader would have gone looking for them among the white-ringed
+solid markers. The note is now printed only when one exists.
+
 Three smaller things fell out of looking at the figures at all — something none
 of the previous five passes had done.
 

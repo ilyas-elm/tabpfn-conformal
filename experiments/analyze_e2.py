@@ -53,10 +53,12 @@ def load(alpha: str):
             # rows for two settings are in a rotated seed order, and anything
             # that pairs settings by list position pairs different seeds.
             cell["seeds"].append(r["seed"])
+            cell["n_cal"].append(a.get("n_cal_fraud", r.get("n_cal_fraud")))
     return split, cross, len(rows)
 
 
 def figure(split, cross, alpha: float, path: pathlib.Path):
+    any_hollow = False
     fig, (ax_c, ax_w) = plt.subplots(
         2, 1, figsize=(7.6, 6.8), sharex=True,
         gridspec_kw={"height_ratios": [1.15, 1], "hspace": 0.16},
@@ -72,15 +74,23 @@ def figure(split, cross, alpha: float, path: pathlib.Path):
             ax.spines[side].set_color("#d8d7d1")
         ax.tick_params(colors=INK_2, labelsize=9, length=0)
 
-    ax_c.axhline(1 - alpha, color=INK_MUTED, linewidth=1.4, linestyle=(0, (4, 3)), zorder=1)
-    ax_c.annotate(f"target {1 - alpha:.0%}", xy=(0.5, 1 - alpha),
-                  xycoords=("axes fraction", "data"), ha="center", va="bottom",
-                  fontsize=8.5, color=INK_2)
+    # One flat line at 1-alpha is wrong here, and wrong by a different amount at
+    # every x. The level actually certified is ceil((n_cal+1)(1-alpha))/n_cal,
+    # and n_cal IS the x-axis: at 100 frauds it runs from 100% at cal_size 0.2
+    # down to 96.25% at 0.8. Drawn flat at 0.95, a point could sit well above
+    # the line while being below its own promise -- which is exactly what
+    # cal_size 0.2 does. So the target is drawn per budget, as a curve.
+    ax_c.axhline(1 - alpha, color="#cfcec9", linewidth=1.0, linestyle=(0, (2, 4)),
+                 zorder=1)
+    ax_c.annotate(f"nominal {1 - alpha:.0%}", xy=(0.02, 1 - alpha),
+                  xycoords=("axes fraction", "data"), ha="left", va="bottom",
+                  fontsize=8, color="#a9a8a3")
 
     for colour, budget in zip((C1, C2), sorted(split)):
         cal_sizes = sorted(split[budget])
         x = np.array(cal_sizes)
         feas = np.array([all(split[budget][c]["feasible"]) for c in cal_sizes])
+        any_hollow = any_hollow or bool((~feas).any())
 
         for ax, metric in ((ax_c, "coverage"), (ax_w, "width")):
             mean = np.array([np.mean(split[budget][c][metric]) for c in cal_sizes])
@@ -94,6 +104,15 @@ def figure(split, cross, alpha: float, path: pathlib.Path):
                     markeredgecolor=SURFACE, markeredgewidth=2.0, zorder=4)
             ax.plot(x[~feas], mean[~feas], "o", color=SURFACE, markersize=6,
                     markeredgecolor=colour, markeredgewidth=1.8, zorder=4)
+
+        # The level this budget actually certifies at each cal_size.
+        n_cal = np.array([int(np.median(split[budget][c]["n_cal"])) for c in cal_sizes])
+        target = np.minimum(1.0, np.ceil((n_cal + 1) * (1 - alpha)) / n_cal)
+        ax_c.plot(x, target, color=colour, linewidth=1.3, linestyle=(0, (4, 3)),
+                  zorder=2, alpha=0.75)
+        ax_c.annotate("certified", xy=(x[-1], target[-1]), xytext=(5, 0),
+                      textcoords="offset points", fontsize=8, color=colour,
+                      va="center")
 
         if budget in cross:
             ax_w.axhline(np.mean(cross[budget]["width"]), color=colour, linewidth=1.3,
@@ -114,15 +133,25 @@ def figure(split, cross, alpha: float, path: pathlib.Path):
     )
     ax_c.legend(frameon=False, fontsize=9, loc="lower right", labelcolor=INK_2, ncol=2,
                 handlelength=1.6, columnspacing=1.4)
-    fig.text(
-        0.012, 0.012,
-        "Hollow markers: the level cannot be certified at that split "
-        "(n_cal too small, so every label is returned).\n"
-        "Dashed horizontal lines: cross-conformal, which spends no labels on calibration at all.\n"
-        "Bands span min–max across seeds. Bank Account Fraud; TabPFN-3.5 via the Prior Labs API.",
-        fontsize=7.5, color=INK_MUTED, linespacing=1.5, va="bottom",
-    )
-    fig.subplots_adjust(left=0.10, right=0.97, top=0.92, bottom=0.18)
+    # Only explain hollow markers when some were drawn. Every setting here is
+    # certifiable, so the note used to describe something not on the chart and
+    # sent a reader hunting for it among the white-ringed solid markers.
+    notes = []
+    if any_hollow:
+        notes.append("Hollow markers: the level cannot be certified at that split "
+                     "(n_cal too small, so every label is returned).")
+    notes += [
+        "Dashed curves: the level each budget actually certifies, "
+        "ceil((n_cal+1)(1-\u03b1))/n_cal, which moves with n_cal and is what a "
+        "point has to clear.",
+        "Dotted horizontal lines (lower panel): cross-conformal, which spends no "
+        "labels on calibration at all.",
+        "Bands span min\u2013max across seeds. Bank Account Fraud; TabPFN-3.5 via "
+        "the Prior Labs API.",
+    ]
+    fig.text(0.012, 0.012, "\n".join(notes),
+             fontsize=7.5, color=INK_MUTED, linespacing=1.5, va="bottom")
+    fig.subplots_adjust(left=0.10, right=0.90, top=0.92, bottom=0.20)
     FIGS.mkdir(exist_ok=True)
     for ext in ("png", "svg"):
         fig.savefig(path.with_suffix(f".{ext}"), dpi=200, facecolor=SURFACE)
