@@ -119,6 +119,25 @@ almost entirely by the 99% of traffic that is legitimate and would barely
 register a change in fraud behaviour; each class keeps its own level and updates
 only when a label of that class arrives.
 
+**What we measured: it cannot help at this label budget.** The threshold is an
+*order statistic* of the calibration scores, so with `n` calibration positives
+only `n` distinct thresholds exist and α must move by roughly `1/n` before the
+prediction sets change at all. At 46 positives that is 0.0139. Across the five
+drift months ACI moves the level by **0.003** — a fifth of what is needed — so
+at usable γ it is numerically identical to doing nothing. Turn γ up far enough
+to move the threshold and it stops tracking the drift and starts oscillating:
+the month-to-month coverage swing goes from 0.023 to **0.106**. This is not a
+defect in ACI; it is what adaptivity costs when the calibration set is small,
+and it points back at the headline, since cross-conformal doubles the
+calibration set and so doubles the threshold resolution.
+
+One implementation note that is easy to get wrong, and which we did get wrong
+first: `update`/`update_batch` take one step **per observation**, while
+`update_round`/`update_rounds` take one step **per batch** from the observed
+miscoverage rate. Driving ACI once per row over a month of ~1,400 transactions
+applies ~1,400 steps and slams the level into its clip bounds — observed going
+0.05 → 0.5 → 0.0001 → 0.5 across five months before the distinction existed.
+
 ## 7. Decision layer
 
 A prediction set is not a decision. Under a fixed analyst budget `K`:
@@ -153,17 +172,28 @@ would cost.
 **Label budgets.** A pool holding exactly `F` positives at the base rate, so
 `F ∈ {25, 50, 100, 200}` corresponds to pools of roughly 2,300 to 18,000 rows.
 
+The matched comparison — split at `2F` against cross at `F`, which calibrate on
+the same number of positives and so target the same level — carries one
+asymmetry, and it runs against cross: a budget of `2F` is a pool of `2F/0.011`
+rows, so split also gets **twice the in-context rows**. The better-resourced
+arm is the one being beaten, which makes those margins conservative.
+
 **Alphas** are swept offline through `predict_set_from_proba`, so additional
 levels cost no further API calls. E2 onward also persist the evaluation
 probabilities to `results/proba/`, which lets any α be evaluated after the fact
 for free.
 
-**Seeds.** Five per configuration for E1 and E2, three for E4. Bands in every
-figure span min–max across seeds.
+**Seeds.** Five per configuration for E1 and E2; three for E3, E4, E5 and E6.
+Bands in every figure span min–max across seeds. Where two conditions are
+compared they are **paired on the seeds they share** and tested pairwise —
+comparing means over different seed sets flattered a result four separate times
+in this project, and the paired test took it back every time.
 
 **Pre-registration.** Predictions and their falsification conditions were written
 into [`CAHIER-DES-CHARGES.md`](CAHIER-DES-CHARGES.md) §7.1 before the experiments
-ran. Two were falsified and are reported as such.
+ran. **Four of the five were falsified**, including two of our own about cost,
+and all four are reported as such — see the scoreboard in the README and
+[`FINDINGS.md`](FINDINGS.md).
 
 ## 9. Compute
 

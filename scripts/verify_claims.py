@@ -639,6 +639,26 @@ checks.append(("py.typed is declared to the build backend",
                "py.typed" in (REPO / "pyproject.toml").read_text(),
                "pyproject does not list py.typed, so the wheel may drop it"))
 
+# ---- 5r. method.md agrees with the results it describes -------------------
+# It is a judged deliverable and had drifted: it said two predictions were
+# falsified (four were) and listed seeds for three of the six experiments.
+_method = (REPO / "docs/method.md").read_text()
+for _name, _pat, _want in (
+    ("method.md falsification count", r"\*\*Four of the five were falsified\*\*", True),
+    ("method.md records the ACI verdict", r"cannot help at this label budget", True),
+    ("method.md notes the matched-comparison asymmetry", r"twice the in-context rows", True),
+):
+    checks.append((_name, bool(re.search(_pat, _method)) == _want,
+                   f"docs/method.md is missing: {_pat}"))
+# Seeds per experiment, straight from the results files.
+for _e in (1, 2, 3, 4, 5, 6):
+    _rows = load(f"e{_e}.jsonl")
+    if _rows:
+        _n = len({r.get("seed") for r in _rows})
+        _claim = 5 if _e in (1, 2) else 3
+        checks.append((f"method.md seed count for E{_e}", _n == _claim,
+                       f"E{_e} has {_n} seeds; method.md says {_claim}"))
+
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
 out = subprocess.run([sys.executable, "-m", "pytest", "-q",
