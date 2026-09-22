@@ -477,11 +477,11 @@ and labels are the resource that is actually scarce.
 
 ```bash
 pip install -e ".[dev]"   # tests, plus everything needed to redraw the figures
-pytest                    # 119 tests, CPU, ~3s warm (~10s on a cold clone)
+pytest                    # 129 tests, CPU, ~3s warm (~10s on a cold clone)
 ```
 
 The core depends on **numpy, pandas and scikit-learn only** — no torch, no
-`tabpfn`, no GPU. 119 tests in about three seconds on a laptop. TabPFN appears in
+`tabpfn`, no GPU. 129 tests in about three seconds on a laptop. TabPFN appears in
 `experiments/` and is never imported by `src/`.
 
 For the experiments you additionally need the dataset and a free Prior Labs
@@ -529,6 +529,18 @@ Mondrian holds **0.890** against a 0.90 target. `tests/test_multiclass.py` pins
 this. Only `decision.route` is binary by nature — approve / block / review has no
 sensible reading across five classes. The **benchmarks** in this repository are
 binary, because the motivating problem is.
+
+**Correctness is verified against MAPIE, not asserted.** Two levels:
+
+| | comparison | result |
+|---|---|---|
+| split | same estimator, same calibration set, same `lac` score, so the sets *must* match | **identical**, asserted exactly, 3 alphas × 3 seeds |
+| cross | ours is Vovk (2015) — pool out-of-fold scores, predict with the full-data model. MAPIE's is CV+ (Barber et al. 2021), which aggregates the fold models instead. **Different constructions**, so exact agreement would be suspicious | **99.7% of prediction sets identical**; coverage within 0.002 and set size within 0.002 at α ∈ {0.05, 0.1, 0.2} |
+
+The second row is the one that matters, because cross-conformal is the headline.
+Two independently written implementations of two different cross-conformal
+constructions landing on the same sets is stronger evidence than either agreeing
+with itself.
 
 Three decisions worth knowing:
 

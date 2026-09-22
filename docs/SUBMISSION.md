@@ -22,7 +22,7 @@ measuring what that buys on TabPFN-3.5 and the Bank Account Fraud dataset
 (Jesus et al., NeurIPS 2022; 1M rows, 1.1% fraud, real temporal drift).
 
 The core depends only on numpy, pandas and scikit-learn. It never imports TabPFN
-or torch, installs in seconds, and its 119 tests run on a laptop CPU in
+or torch, installs in seconds, and its 129 tests run on a laptop CPU in
 about three. TabPFN appears only in `experiments/`, reached through the managed
 Prior Labs API — so **every figure regenerates from committed results with no API
 key and no GPU.**
@@ -107,9 +107,15 @@ committed results and fails if any has drifted.
 `.fit()` and `.predict_set(X, alpha)`. Marginal and class-conditional (Mondrian)
 calibration, K-fold cross-conformal, adaptive conformal inference for drifting
 streams, and a decision layer mapping prediction sets to approve / block / review
-under a fixed analyst budget. Multiclass is supported and tested. Correctness is
-verified against MAPIE rather than asserted: prediction sets are exactly
-identical to `SplitConformalClassifier` with the `lac` score.
+under a fixed analyst budget. Multiclass is supported and tested.
+
+Correctness is verified against MAPIE rather than asserted, at two levels. For
+split conformal the sets are **exactly identical** to `SplitConformalClassifier`
+with the `lac` score — same estimator, same calibration set, so they must be. For
+cross-conformal, which is the headline, ours is Vovk (2015) and MAPIE's is CV+
+(Barber et al. 2021) — genuinely different constructions — and they produce
+**99.7% identical prediction sets**, with coverage and set size agreeing to
+within 0.002 at α ∈ {0.05, 0.1, 0.2}.
 
 ### Relation to tabpfn-extensions
 

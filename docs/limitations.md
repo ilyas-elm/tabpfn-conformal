@@ -118,7 +118,7 @@ it produces identical prediction sets, which `tests/test_scores.py` asserts.
 
 ## Reproducibility
 
-The core library and its 119 tests run on CPU with numpy, pandas and
+The core library and its 129 tests run on CPU with numpy, pandas and
 scikit-learn, in under a second, with no TabPFN and no GPU. The experiments need
 a free Prior Labs account. `TabPFN-3.5-Thinking` and `-Plus` have **no local
 weights** and are reachable only through the managed API, so those results
