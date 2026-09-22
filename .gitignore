@@ -10,7 +10,23 @@ build/
 data/
 *.csv
 !results/*.csv
-.env
 
 # generated from demo/_template.html + figures/demo_data.json
 demo/index.html
+
+# Credentials — defence in depth. scripts/check_secrets.py fails the build if
+# any of these are ever tracked, but they should not reach the index at all.
+.env
+.env.*
+*.pem
+*.key
+id_rsa
+id_ed25519
+kaggle.json
+.netrc
+.npmrc
+.pypirc
+credentials.json
+secrets.json
+secrets.yaml
+secrets.yml

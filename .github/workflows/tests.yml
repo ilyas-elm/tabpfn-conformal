@@ -23,6 +23,12 @@ jobs:
         # CPU only, no GPU, no TabPFN: the core package must stay this light.
         run: pytest -q
 
+      - name: Scan for anything credential-shaped
+        # This repository is public and its experiments are API-backed, so the
+        # failure mode is a token pasted into a script or a log captured
+        # verbatim from a response. Neither looks like a mistake at the time.
+        run: python scripts/check_secrets.py
+
       - name: Verify every numeric claim in the README
         # The signature check of this project: recomputes each figure in the
         # README from results/ and exits non-zero on any drift. Needs no API
