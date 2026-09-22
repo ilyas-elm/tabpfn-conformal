@@ -3,9 +3,16 @@
 [![tests](https://github.com/ilyas-elm/tabpfn-conformal/actions/workflows/tests.yml/badge.svg)](https://github.com/ilyas-elm/tabpfn-conformal/actions/workflows/tests.yml)
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-**Cross-conformal reaches the same coverage guarantee from half the confirmed
-frauds, at no cost in set width — and on TabPFN-3.5 it costs zero training runs
-to get there.**
+**Cross-conformal reaches the same targeted coverage level from half the
+confirmed frauds, at no cost in set width — and on TabPFN-3.5 it costs zero
+training runs to get there.**
+
+It does cost something else, which we measured rather than assumed: split
+conformal's guarantee is *exact*, cross-conformal's is only *approximate*, and
+at tight α cross delivers about **two points less realized coverage than it
+certifies**, where split holds. That is the honest trade — half the labels
+against two points — and it is
+[quantified below](#what-cross-conformal-actually-costs) on both datasets.
 
 With a hundred confirmed frauds, the 99% guarantee a regulator asks for is
 mathematically unavailable to standard practice. This makes it available.
@@ -58,7 +65,9 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 
 | | measured | where |
 |---|---|---|
-| Cross-conformal reaches the same guarantee from **half the confirmed frauds** | never significantly wider (0 of 9 paired tests); narrower where labels are scarcest | [E1](#2-measured-the-same-guarantee-from-half-the-labels) · [E6](#does-it-replicate-four-datasets) |
+| Cross-conformal reaches the same targeted level from **half the confirmed frauds** | never significantly wider (0 of 9 paired tests); narrower where labels are scarcest | [E1](#2-measured-the-same-guarantee-from-half-the-labels) · [E6](#does-it-replicate-four-datasets) |
+| …and it **replicates on a second domain** — forest cover type, 0.473% positive, no shared column | cross significantly wider in 0 of 3 matched comparisons | [E7](#does-it-hold-on-a-different-dataset-entirely) |
+| **What that costs**: cross is only approximately valid, and it shows | below its own certified level in 3 of 6 dataset-α combinations; split in 0 of 6 | [validity](#what-cross-conformal-actually-costs) |
 | TabPFN gives **narrower prediction sets than LightGBM** at an identical targeted level | 6.9–12.4% narrower, 4 of 4 comparisons | [E4](#against-the-baselines-tabpfn-wins-where-it-counts) |
 | TabPFN's **calibration error is 74–86% lower** — the mechanism behind the above | ECE 0.0019–0.0037 vs 0.0129–0.0141 | [calibration](#why-tabpfn-wins-calibration-measured-rather-than-cited) |
 | Under drift, Thinking loses coverage less often than base | 3 of 15 seed-months below target vs 9 of 15; never worse on any seed, better on 2 of 3 — **directional, t ≈ 1.7 at n=3** | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
@@ -320,6 +329,80 @@ because conformal scores the same context twice, once to calibrate and once to
 evaluate, and because the predict saving grows with context while the fit
 penalty does not.
 
+### Does it hold on a different dataset entirely?
+
+Everything above is Bank Account Fraud. E6's four datasets are BAF Base plus
+Variants I–III — same 32 columns, resampled under different bias — so "one
+dataset family" was the honest description.
+
+**Forest Cover Type** (Blackard & Dean, UCI) is the other domain: 581,012
+cartographic observations, 54 numeric features, predicting tree species from
+elevation, slope, hillshade and soil type. Binarised to cover type 4,
+Cottonwood/Willow, which occurs at **0.473%** — comparable to BAF's 1.1% and
+arrived at naturally rather than by subsampling. No fraud, no transactions, no
+temporal drift, no shared column. It ships with scikit-learn, so reproducing it
+needs no extra credentials.
+
+E1's matched comparison, rerun unchanged:
+
+| calib. positives | targeted level | split needs | its set size | cross needs | its set size | labels saved |
+|---:|---:|---:|---:|---:|---:|---:|
+| 25 | 96.0% | 50 | 0.925 | **25** | **0.917** (narrower by 0.8%) | **25 (50%)** |
+| 50 | 92.0% | 100 | 0.907 | **50** | **0.929** (wider by 2.4%) | **50 (50%)** |
+| 100 | 91.0% | 200 | 0.906 | **100** | **0.915** (wider by 1.0%) | **100 (50%)** |
+
+Paired by seed:
+
+| calib. positives | paired difference | verdict |
+|---:|---:|---|
+| 25 | +0.0072 ± 0.0037 (n=3) | tie (within noise) |
+| 50 | -0.0220 ± 0.0083 (n=3) | tie (within noise) |
+| 100 | -0.0090 ± 0.0086 (n=3) | tie (within noise) |
+
+**Cross-conformal is significantly wider in 0 of 3 comparisons here**, and
+narrower in 0 — three ties. The halving itself is structural: it follows from
+where the calibration set comes from, not from the data, so it transfers by
+construction. What this tests is whether it *costs* anything on a domain the
+method was not tuned on, and it does not.
+
+Running it also surfaced the validity cost below, which a single dataset would
+have left as one unreplicated number.
+
+### What cross-conformal actually costs
+
+Split conformal carries an **exact** finite-sample guarantee. Cross-conformal
+does not — pooling out-of-fold scores and applying them to a model fitted on the
+whole pool is *approximately* valid (Vovk 2015), and the related CV+ bounds
+worst-case coverage at `1 − 2α` (Barber et al. 2021). This repository has cited
+that caveat from the start. Here it is measured.
+
+For every run: realized coverage of the fraud class minus **the level that run
+actually certifies**, `ceil((n+1)(1−α))/n`. The seed is the unit of analysis —
+within a seed the two arms share an evaluation set, so the individual runs are
+not independent and testing them as though they were understates the error.
+
+| dataset | α | split (exact) | cross (approximate) |
+|---|---:|---:|---:|
+| Bank Account Fraud | 0.05 | -0.0060 ± 0.0026 | **-0.0204 ± 0.0059** |
+| Bank Account Fraud | 0.1 | -0.0071 ± 0.0072 | **-0.0236 ± 0.0062** |
+| Bank Account Fraud | 0.2 | +0.0075 ± 0.0136 | -0.0028 ± 0.0125 |
+| Forest Cover Type | 0.05 | -0.0075 ± 0.0034 | **-0.0155 ± 0.0019** |
+| Forest Cover Type | 0.1 | -0.0079 ± 0.0061 | +0.0000 ± 0.0080 |
+| Forest Cover Type | 0.2 | -0.0052 ± 0.0216 | +0.0145 ± 0.0204 |
+
+**Split is below its certified level in 0 of 6 dataset-α combinations. Cross is
+below in 3 of 6**, by about 1.5 to 2.4 points, and it replicates on both
+datasets. The effect concentrates at tight α, where the certified level is
+highest and the approximation has least room; by α = 0.2 it is gone.
+
+So the trade is not free, and stating it precisely is better than claiming it
+is: **cross-conformal buys the same targeted level from half the confirmed
+positives, and pays about two points of realized coverage for it at tight α.**
+A desk that needs the exact guarantee should use split and find the labels. A
+desk that cannot find the labels now knows what the alternative costs.
+
+Reproduce with `python experiments/analyze_validity.py` — no API key needed.
+
 ### Why TabPFN wins: calibration, measured rather than cited
 
 Until now this README borrowed the claim that TabPFN is unusually well
@@ -477,11 +560,11 @@ and labels are the resource that is actually scarce.
 
 ```bash
 pip install -e ".[dev]"   # tests, plus everything needed to redraw the figures
-pytest                    # 129 tests, CPU, ~3s warm (~10s on a cold clone)
+pytest                    # 126 tests, CPU, ~3s warm (~10s on a cold clone)
 ```
 
 The core depends on **numpy, pandas and scikit-learn only** — no torch, no
-`tabpfn`, no GPU. 129 tests in about three seconds on a laptop. TabPFN appears in
+`tabpfn`, no GPU. 126 tests in about three seconds on a laptop. TabPFN appears in
 `experiments/` and is never imported by `src/`.
 
 For the experiments you additionally need the dataset and a free Prior Labs

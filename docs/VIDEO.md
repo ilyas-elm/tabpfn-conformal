@@ -105,7 +105,7 @@ our own about cost."
 > *Terminal: `pytest`, then the extensions PR page — or
 > `contrib/tabpfn-extensions/` if the PR is not open yet.*
 
-"A hundred and twenty-nine tests, CPU only, a few seconds. The core is numpy, pandas
+"A hundred and twenty-six tests, CPU only, a few seconds. The core is numpy, pandas
 and scikit-learn — no TabPFN, no GPU — and every figure regenerates from
 committed results without an API key.
 
@@ -138,5 +138,9 @@ classification. This fills that gap."
   margins are conservative — say that instead.
 - Do **not** say the KV cache gives identical sets. The probabilities differ in
   the fourth decimal. "Same answer to four decimals" is the line.
+- Do **not** say cross-conformal is free. It reaches the same *targeted* level
+  from half the labels, and it sits about two points below its own certified
+  level at tight α, where split holds. Say "half the labels, two points of
+  coverage" — the measured trade is more convincing than a free lunch.
 - Only say "the PR is open" once it actually is. Until then: "the PR is ready
   to open", and show `contrib/tabpfn-extensions/` instead of the PR page.

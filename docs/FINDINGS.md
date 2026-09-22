@@ -515,6 +515,58 @@ TabPFN-specific finding in the project and it matched what Prior Labs documents
 about Thinking on temporal data. Wanting a result to be true is exactly when
 replication matters most.
 
+## E7 — a second domain, and the price of approximate validity — 22 September
+
+**The gap addressed.** Every result was Bank Account Fraud; E6's "four datasets"
+share BAF's 32 columns. E7 is Forest Cover Type (Blackard & Dean, UCI): 581,012
+cartographic observations, 54 features, cover type 4 (Cottonwood/Willow) at
+**0.473%**, a natural rate rather than a subsampled one. No fraud, no
+transactions, no temporal structure, no shared column. It ships with
+scikit-learn, so it needs no extra credentials. Priced at 960k tokens before
+spending; 24/24 configurations ran.
+
+**The halving transfers.** Cross-conformal is significantly wider in **0 of 3**
+matched comparisons, narrower in 0 — three ties. The halving is structural, so it
+transfers by construction; what E7 tests is whether it *costs* anything on a
+domain the method was not tuned on, and it does not.
+
+**✗ What E7 exposed on the main dataset.** Auditing realized coverage against
+*the level each run actually certifies*:
+
+| dataset | α | split (exact) | cross (approximate) |
+|---|---:|---:|---:|
+| BAF | 0.05 | −0.0060 ± 0.0026 | **−0.0204 ± 0.0059** |
+| BAF | 0.10 | −0.0071 ± 0.0072 | **−0.0236 ± 0.0062** |
+| BAF | 0.20 | +0.0075 ± 0.0136 | −0.0028 ± 0.0125 |
+| covtype | 0.05 | −0.0075 ± 0.0034 | **−0.0155 ± 0.0019** |
+| covtype | 0.10 | −0.0079 ± 0.0061 | +0.0000 ± 0.0080 |
+| covtype | 0.20 | −0.0052 ± 0.0216 | +0.0145 ± 0.0204 |
+
+Split is below its certified level in **0 of 6**; cross in **3 of 6**, by 1.5–2.4
+points, concentrated at tight α and replicating on both datasets. This is the
+Vovk-2015 approximate-validity caveat the repository has cited from the start,
+now measured. The headline is qualified accordingly: the same targeted level from
+half the confirmed positives, against about two points of realized coverage.
+That is a better claim than a free lunch, and it is the one the data supports.
+
+**Two errors on the way there, both mine, both caught before publication.**
+
+First I blamed BAF's temporal split — exchangeability violated by construction,
+which is E3's whole subject — and ran a CPU control on BAF with a random split
+instead. It did **not** reproduce the effect: both splits held. The hypothesis was
+wrong and the control said so.
+
+Then, checking why, I found my own statistics were unsound. I had treated E1's 40
+runs as 40 independent observations. They are not: within a seed the split and
+cross arms share an evaluation set, and budgets draw from the same months.
+Aggregating to the seed first — 5 independent units, not 40 — the finding
+survives (t = −2.97), and **separating by strategy is what made the real cause
+visible**. Pooling the arms had hidden it: split's +0.007 was cancelling cross's
+−0.024.
+
+This is the fifth time in this project that the unit of analysis was the whole
+question. It is now the first line of `analyze_validity.py`.
+
 ## Results integrity, and cross-conformal against MAPIE — 22 September
 
 **Asked directly whether changing the library invalidated the results.** It is

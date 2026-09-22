@@ -17,12 +17,12 @@ TabPFN-3.5 returns a probability. A bank's risk committee needs a *guarantee*:
 what fraction of fraud will this catch, and can you prove it. This project is a
 small scikit-learn-compatible library that wraps any `predict_proba` classifier
 in conformal prediction — turning probabilities into **prediction sets with a
-finite-sample, distribution-free coverage guarantee** — plus six experiments
+finite-sample, distribution-free coverage guarantee** — plus seven experiments
 measuring what that buys on TabPFN-3.5 and the Bank Account Fraud dataset
 (Jesus et al., NeurIPS 2022; 1M rows, 1.1% fraud, real temporal drift).
 
 The core depends only on numpy, pandas and scikit-learn. It never imports TabPFN
-or torch, installs in seconds, and its 129 tests run on a laptop CPU in
+or torch, installs in seconds, and its 126 tests run on a laptop CPU in
 about three. TabPFN appears only in `experiments/`, reached through the managed
 Prior Labs API — so **every figure regenerates from committed results with no API
 key and no GPU.**
@@ -45,6 +45,21 @@ at no cost in set width. Across four datasets and nine paired comparisons it is
 significantly wider in **zero** and significantly narrower in one — the scarcest
 label budget, which is the regime that matters. The raw win count is 6 of 9, but
 the seeds are shared, so the paired test is the one we report.
+
+It **replicates on a second domain**: Forest Cover Type (581k cartographic
+observations, cover type 4 at 0.473%, no shared column with BAF, ships with
+scikit-learn), where cross-conformal is significantly wider in **0 of 3** matched
+comparisons.
+
+**And it is not free, which we measured rather than assumed.** Split conformal's
+guarantee is exact; cross-conformal's is only approximate (Vovk 2015; CV+ worst
+case 1−2α). Comparing every run's realized coverage against *the level that run
+actually certifies*, split is below it in **0 of 6** dataset-α combinations and
+cross in **3 of 6**, by 1.5–2.4 points, concentrated at tight α and replicating
+on both datasets. So the trade is: the same targeted level from half the
+confirmed positives, against about two points of realized coverage at tight α. A
+desk that needs the exact guarantee should use split and find the labels; a desk
+that cannot find them now knows the price.
 
 Three supporting results:
 

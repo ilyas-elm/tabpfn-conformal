@@ -27,6 +27,8 @@ from tabpfn_conformal import (
 REPO = pathlib.Path(__file__).resolve().parents[1]
 PROBA = REPO / "results" / "proba"
 CLASSES = np.array([0, 1])
+THRESHOLDS = (0.01, 0.05, 0.2, 0.5, 0.9)
+GOLDEN_PATH = pathlib.Path(__file__).parent / "data" / "metric_goldens.json"
 
 pytestmark = pytest.mark.skipif(
     not PROBA.exists(), reason="committed probabilities not present"
@@ -42,41 +44,60 @@ def _files():
     return sorted(PROBA.rglob("*.npz"))
 
 
-def test_the_committed_probabilities_are_still_there():
-    files = _files()
-    assert len(files) >= 180, f"expected the full set of saved probabilities, found {len(files)}"
-
-
-@pytest.mark.parametrize("threshold", [0.01, 0.05, 0.2, 0.5, 0.9])
-def test_metrics_are_stable_on_the_real_saved_probabilities(threshold):
-    """Pins the metric vocabulary against real data, not a synthetic fixture.
-
-    Golden values were recorded from the library as it stood when the results
-    were produced (commit 1418523) and verified identical afterwards across
-    3,760 comparisons. A change that moves any of them moves the README.
-    """
-    totals = {"cov": 0.0, "cov0": 0.0, "cov1": 0.0, "size": 0.0, "empty": 0.0}
-    n = 0
-    for f in _files():
-        z = np.load(f)
-        proba, y = z["proba"].astype(float), z["y_true"]
-        sets = _sets(proba, threshold)
+def _digest(path: pathlib.Path) -> dict:
+    """One row of golden values for a single probability file."""
+    z = np.load(path)
+    proba, y = z["proba"].astype(float), z["y_true"]
+    out = {}
+    for thr in THRESHOLDS:
+        sets = _sets(proba, thr)
         by_class = coverage_by_class(sets, y, CLASSES)
-        totals["cov"] += marginal_coverage(sets, y, CLASSES)
-        totals["cov0"] += by_class[0]
-        totals["cov1"] += by_class[1]
-        totals["size"] += average_set_size(sets)
-        totals["empty"] += empty_set_rate(sets)
-        n += 1
+        out[str(thr)] = [
+            round(marginal_coverage(sets, y, CLASSES), 12),
+            round(by_class[0], 12),
+            round(by_class[1], 12),
+            round(average_set_size(sets), 12),
+            round(empty_set_rate(sets), 12),
+        ]
+    return out
 
-    # Aggregated over every file, so one drifting row cannot hide in the mean.
-    digest = {k: round(v / n, 10) for k, v in totals.items()}
-    golden = GOLDEN[threshold]
-    for k, want in golden.items():
-        assert digest[k] == pytest.approx(want, abs=1e-9), (
-            f"{k} at threshold {threshold} moved: {digest[k]} vs recorded {want}. "
-            "The library no longer reproduces the committed results."
-        )
+
+def test_the_committed_probabilities_are_still_there():
+    recorded = json.loads(GOLDEN_PATH.read_text())
+    present = {f.relative_to(PROBA).as_posix() for f in _files()}
+    missing = sorted(set(recorded) - present)
+    assert not missing, f"probability files recorded but now absent: {missing[:5]}"
+
+
+def test_metrics_are_stable_on_the_real_saved_probabilities():
+    """Golden values per file, so a later experiment adding results cannot move them.
+
+    Recorded from the library as it stood when the results were produced
+    (commit 1418523) and verified identical afterwards across 3,760
+    comparisons. A change that moves any of them moves the README.
+    """
+    recorded = json.loads(GOLDEN_PATH.read_text())
+    drifted = []
+    for rel, want in recorded.items():
+        got = _digest(PROBA / rel)
+        for thr, values in want.items():
+            if any(abs(a - b) > 1e-9 for a, b in zip(got[thr], values)):
+                drifted.append((rel, thr, values, got[thr]))
+    assert not drifted, (
+        f"{len(drifted)} file/threshold pairs no longer reproduce. First: "
+        f"{drifted[0]}. The library no longer reproduces the committed results."
+    )
+
+
+def test_every_probability_file_is_covered_by_a_golden():
+    """A new experiment must be recorded, not silently left unprotected."""
+    recorded = set(json.loads(GOLDEN_PATH.read_text()))
+    present = {f.relative_to(PROBA).as_posix() for f in _files()}
+    uncovered = sorted(present - recorded)
+    assert not uncovered, (
+        f"{len(uncovered)} probability file(s) have no golden value: "
+        f"{uncovered[:5]}. Run `python scripts/record_metric_goldens.py`."
+    )
 
 
 def test_stored_set_sizes_match_what_the_library_computes_now():
@@ -108,10 +129,3 @@ def test_stored_set_sizes_match_what_the_library_computes_now():
 
 # Recorded from the library at commit 1418523, the state that produced the
 # results, and re-verified against the current library file by file.
-GOLDEN = {
-    0.01: {"cov": 0.1104840334, "cov0": 0.0, "cov1": 0.2419591814, "size": 0.5501950393, "empty": 0.4498049607},
-    0.05: {"cov": 0.2535095943, "cov0": 0.0, "cov1": 0.5683184906, "size": 0.7853067692, "empty": 0.2146932308},
-    0.2: {"cov": 0.4004709931, "cov0": 3.5461e-06, "cov1": 0.9015462459, "size": 0.9542351909, "empty": 0.0457648091},
-    0.5: {"cov": 0.4412945871, "cov0": 9.21986e-05, "cov1": 0.9927687027, "size": 1.0, "empty": 0.0},
-    0.9: {"cov": 0.4528461149, "cov0": 0.0152248286, "cov1": 0.9999759733, "size": 1.120355106, "empty": 0.0},
-}

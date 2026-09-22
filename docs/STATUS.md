@@ -10,13 +10,15 @@ Every deliverable exists in draft or better.
 
 | deliverable | state |
 |---|---|
-| Library (`src/tabpfn_conformal`) | complete — 129 tests, multiclass, verified against MAPIE |
+| Library (`src/tabpfn_conformal`) | complete — 126 tests, multiclass, verified against MAPIE |
 | E1 cross vs split | complete, 40/40 |
 | E2 budget allocation | complete, 80/80 |
 | E3 drift + ACI + Thinking | ⚠ **seed 2 running** — see below |
 | E4 baselines | complete, 36/36 |
 | E5 scale + KV cache | complete, 24 rows |
 | E6 variant replication | complete, 36/36 |
+| E7 second domain (Forest Cover Type) | complete, 24/24 — cross wider in 0 of 3 |
+| Validity audit (what cross costs) | complete — `experiments/analyze_validity.py` |
 | Calibration analysis | complete |
 | README | complete, all claims verified |
 | `docs/` method, limitations, findings | complete |
@@ -33,6 +35,22 @@ never worse on any seed and strictly better on two of three, but paired by seed
 the difference is 2.0 ± 1.2 months (t ≈ 1.7, n=3) — directional, not
 established. README and FINDINGS state it at that strength. No further action
 needed unless more seeds are wanted.
+
+## The headline changed on 22 September — read this first
+
+The central claim is now **qualified**, and the qualification is the most
+important thing in the project. Cross-conformal reaches the same *targeted*
+level from half the confirmed positives — that still holds, and it now
+replicates on a second domain (E7, Forest Cover Type). But split's guarantee is
+exact and cross's is only approximate, and **cross sits below its own certified
+level in 3 of 6 dataset-α combinations by 1.5–2.4 points, where split sits below
+in 0 of 6.**
+
+So the trade is: the same targeted level from half the labels, against about two
+points of realized coverage at tight α. The README, SUBMISSION and FINDINGS all
+say this. **Do not revert to "at no cost" anywhere** —
+`experiments/analyze_validity.py` reproduces the table, and `verify_claims.py`
+recomputes both counts.
 
 ## What is left to do, in order
 
@@ -51,7 +69,7 @@ needed unless more seeds are wanted.
    (locally: `FAST_TEST_MODE=1 PYTHONPATH=contrib/tabpfn-extensions/src pytest
    contrib/tabpfn-extensions/tests`).
 3. **Record the video** — [`VIDEO.md`](VIDEO.md) has the script and a list of
-   six claims not to make on camera. Its numbers are checked by
+   seven claims not to make on camera. Its numbers are checked by
    `scripts/verify_claims.py`, so re-run that before recording.
 4. **Submit** — [`SUBMISSION.md`](SUBMISSION.md) is the description field.
 

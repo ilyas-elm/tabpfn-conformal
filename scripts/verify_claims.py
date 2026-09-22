@@ -667,7 +667,8 @@ _sub = (REPO / "docs/SUBMISSION.md").read_text()
 _n_experiments = len([f for f in (REPO / "results").glob("e[0-9].jsonl")])
 _m = re.search(r"plus (\w+) experiments", _sub)
 check("SUBMISSION experiment count",
-      float({"six": 6, "five": 5, "four": 4}.get(_m.group(1), -1)) if _m else None,
+      float({"three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+             "eight": 8, "nine": 9, "ten": 10}.get(_m.group(1), -1)) if _m else None,
       float(_n_experiments), 0.5)
 
 # Headline figures, compared as literal strings so a different sentence shape in
@@ -705,6 +706,77 @@ checks.append(("STATUS names the changelog rename step",
                "PRNUMBER.added.md" in _status,
                "their CI fails a PR without the towncrier fragment, and STATUS "
                "does not say to rename it"))
+
+# ---- 5u. E7 and the measured cost of approximate validity ------------------
+# The headline was qualified on the strength of these, so they are recomputed
+# here rather than trusted. Seed is the unit: within a seed the split and cross
+# arms share an evaluation set, so the runs are not independent.
+def _gaps(rows, strategy, alpha):
+    from collections import defaultdict as _dd
+    per = _dd(list)
+    for r in rows:
+        if r["strategy"] != strategy:
+            continue
+        a, n = r["alphas"].get(alpha), r.get("n_cal_fraud")
+        if not a or not n:
+            continue
+        cert = min(1.0, math.ceil((n + 1) * (1 - float(alpha))) / n)
+        per[r["seed"]].append(a["coverage_fraud"] - cert)
+    return np.array([np.mean(per[s]) for s in sorted(per)])
+
+
+_CRIT = {2: 12.71, 3: 4.30, 4: 3.18, 5: 2.78}
+_below = {"split": 0, "cross": 0}
+_cells = 0
+for _f, _ in (("e1.jsonl", "BAF"), ("e7.jsonl", "covtype")):
+    _rows = load(_f)
+    if not _rows:
+        continue
+    for _a in ("0.05", "0.1", "0.2"):
+        for _st in ("split", "cross"):
+            _g = _gaps(_rows, _st, _a)
+            if len(_g) < 2:
+                continue
+            _se = float(_g.std(ddof=1) / np.sqrt(len(_g)))
+            _t = _g.mean() / _se if _se else 0.0
+            if _t < -_CRIT.get(len(_g), 2.0):
+                _below[_st] += 1
+            if _st == "cross":
+                _cells += 1
+
+if _cells:
+    check("README: cross below its certified level, count",
+          in_readme(r"Cross is\nbelow in (\d+) of 6"), float(_below["cross"]), 0.5)
+    check("README: split below its certified level, count",
+          in_readme(r"below its certified level in (\d+) of 6"),
+          float(_below["split"]), 0.5)
+
+# E7 exists, is the second domain, and its paired comparison is what we claim.
+_e7 = load("e7.jsonl")
+if _e7:
+    checks.append(("E7 ran the full grid", len(_e7) == 24,
+                   f"{len(_e7)} rows, expected 24"))
+    checks.append(("E7 is a different dataset from BAF",
+                   all(r.get("dataset") == "covtype" for r in _e7),
+                   "E7 rows are not tagged covtype"))
+    # cross significantly wider in zero matched comparisons
+    from collections import defaultdict as _dd7
+    _pair = _dd7(dict)
+    for r in _e7:
+        a = r["alphas"].get("0.1")
+        if a:
+            _pair[r["n_cal_fraud"]].setdefault(r["strategy"], {})[r["seed"]] = a["set_size"]
+    _wider = 0
+    for _k, _pr in _pair.items():
+        _s = sorted(set(_pr.get("split", {})) & set(_pr.get("cross", {})))
+        if len(_s) < 2:
+            continue
+        _d = np.array([_pr["split"][x] - _pr["cross"][x] for x in _s], dtype=float)
+        _se = float(_d.std(ddof=1) / np.sqrt(len(_d)))
+        if _se and _d.mean() / _se < -_CRIT.get(len(_d), 2.0):
+            _wider += 1
+    checks.append(("E7: cross significantly wider in zero comparisons", _wider == 0,
+                   f"cross is significantly wider in {_wider} matched comparisons"))
 
 # ---- 6. Test count --------------------------------------------------------
 import subprocess
