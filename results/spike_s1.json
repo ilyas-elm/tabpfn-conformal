@@ -101,7 +101,7 @@
       "config": "fit_with_cache + thinking_mode   <-- S1",
       "ok": false,
       "error_type": "RuntimeError",
-      "error": "Fail to call fit: [HTTP 422] [{'type': 'value_error', 'loc': ('body',), 'msg': 'Value error, FIT_WITH_CACHE fit mode is not compatible with thinking mode', 'input': {'task_config': {'task': 'classification', 'tabpfn_config': {'random_state': 0, 'ignore_pretraining_limits': False, 'fit_mode': 'fit_with_cache', 'balance_probabilities': False}}, 'tabpfn_systems': ['preprocessing', 'text', 'thinking'], 'thinking_config': {'effort': 'medium'}, 'train_set_upload_id': '01a0b95f-c56c-72a3-bf60-f12f05cdc"
+      "error": "Fail to call fit: [HTTP 422] [{'type': 'value_error', 'loc': ('body',), 'msg': 'Value error, FIT_WITH_CACHE fit mode is not compatible with thinking mode', 'input': {'task_config': {'task': 'classification', 'tabpfn_config': {'random_state': 0, 'ignore_pretraining_limits': False, 'fit_mode': 'fit_with_cache', 'balance_probabilities': False}}, 'tabpfn_systems': ['preprocessing', 'text', 'thinking'], 'thinking_config': {'effort': 'medium'}, 'train_set_upload_id': '<redacted>'"
     }
   ],
   "s1_answer": "incompatible (RuntimeError)",
