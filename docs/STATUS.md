@@ -54,7 +54,16 @@ recomputes both counts.
 
 ## What is left to do, in order
 
-1. **Flip the repo public.** It is private now, and this has to come *first*:
+1. **Flip the repo public.** Audited 22 Sept before doing so: no credentials in
+   any blob of any commit, `.env` and `data/` never committed, no sensitive
+   filename ever added, CI references no secrets, and the committed `.npz`
+   files hold probabilities and labels only. `python scripts/check_secrets.py
+   --history` re-runs the whole sweep; it is also a CI step now, so a future
+   commit cannot quietly leak one. Two cosmetic exposures were redacted from
+   HEAD (a truncated, expired server-side upload id in `results/spike_s1.json`,
+   and local absolute paths in run logs). **History was deliberately not
+   rewritten** — neither item is a credential, and 84 commits of visible
+   corrections are worth more than removing them. It is private now, and this has to come *first*:
    both [`../contrib/tabpfn-extensions/ISSUE.md`](../contrib/tabpfn-extensions/ISSUE.md)
    and `PR.md` link to `github.com/ilyas-elm/tabpfn-conformal`, so posting either
    while the repo is private gives Prior Labs a 404.
