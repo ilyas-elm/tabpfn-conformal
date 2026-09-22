@@ -49,3 +49,58 @@ def test_marginal_split_matches_mapie(alpha, seed):
     their_sets = np.asarray(their_sets).reshape(our_sets.shape)
 
     np.testing.assert_array_equal(our_sets, their_sets)
+
+
+# --- cross-conformal ---------------------------------------------------------
+# The split test above pins an *exact* equivalence: same estimator, same
+# calibration set, same score, so the sets must be identical. Cross is different.
+# Ours is the cross-conformal predictor of Vovk (2015) -- pool the out-of-fold
+# scores, predict with a model fitted on everything. MAPIE's is CV+ (Barber et
+# al. 2021), which aggregates the fold models' predictions instead. They are not
+# the same construction, so exact agreement is not expected and would be
+# suspicious. What matters is that they land in the same place, since our
+# headline result is about cross-conformal.
+
+
+@pytest.mark.parametrize("alpha", [0.05, 0.1, 0.2])
+def test_cross_conformal_lands_where_mapies_cv_plus_does(alpha):
+    ours_cov, mapie_cov, ours_w, mapie_w, agree = [], [], [], [], []
+    for seed in range(3):
+        X, y = make_imbalanced(n_samples=4000, minority_rate=0.05, seed=seed)
+        X_pool, X_test, y_pool, y_test = train_test_split(
+            X, y, test_size=0.4, stratify=y, random_state=seed
+        )
+        cc = ConformalClassifier(
+            LogisticRegression(max_iter=1000), method="marginal",
+            strategy="cross", n_folds=5, random_state=seed,
+        ).fit(X_pool, y_pool)
+        ours_sets = cc.predict_set(X_test, alpha)
+
+        theirs = mapie_classification.CrossConformalClassifier(
+            estimator=LogisticRegression(max_iter=1000),
+            confidence_level=1 - alpha, conformity_score="lac",
+            cv=5, random_state=seed,
+        )
+        theirs.fit_conformalize(X_pool, y_pool)
+        _, their_sets = theirs.predict_set(X_test)
+        their_sets = np.asarray(their_sets).reshape(ours_sets.shape)
+
+        from tabpfn_conformal import average_set_size, marginal_coverage
+        ours_cov.append(marginal_coverage(ours_sets, y_test, cc.classes_))
+        mapie_cov.append(marginal_coverage(their_sets, y_test, cc.classes_))
+        ours_w.append(average_set_size(ours_sets))
+        mapie_w.append(average_set_size(their_sets))
+        agree.append(float((ours_sets == their_sets).all(axis=1).mean()))
+
+    # Both reach the target; neither is systematically looser than the other.
+    assert np.mean(ours_cov) >= 1 - alpha - 0.02, np.mean(ours_cov)
+    assert np.mean(mapie_cov) >= 1 - alpha - 0.02, np.mean(mapie_cov)
+    assert abs(np.mean(ours_cov) - np.mean(mapie_cov)) < 0.01, (
+        f"coverage diverges: ours {np.mean(ours_cov):.4f}, MAPIE {np.mean(mapie_cov):.4f}"
+    )
+    assert abs(np.mean(ours_w) - np.mean(mapie_w)) < 0.01, (
+        f"set size diverges: ours {np.mean(ours_w):.4f}, MAPIE {np.mean(mapie_w):.4f}"
+    )
+    # Measured at 99.7% across three alphas; 0.98 leaves room for a MAPIE
+    # release changing its aggregation without this becoming a flaky failure.
+    assert np.mean(agree) > 0.98, f"only {np.mean(agree):.1%} of sets agree"

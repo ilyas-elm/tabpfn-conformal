@@ -515,6 +515,48 @@ TabPFN-specific finding in the project and it matched what Prior Labs documents
 about Thinking on temporal data. Wanting a result to be true is exactly when
 replication matters most.
 
+## Results integrity, and cross-conformal against MAPIE — 22 September
+
+**Asked directly whether changing the library invalidated the results.** It is
+the right question: `src/` changed in four commits after the API runs finished,
+and the extensions payload is generated from `src/`, so if behaviour had moved,
+every number in the README would be quoting code that no longer produces it.
+
+Answered with evidence rather than reasoning. The three behavioural changes are
+guards — an invalid `positive_idx`, non-finite probabilities, and `_as_idx`
+switching from `np.searchsorted` to a positional lookup, which is identical
+whenever `classes` is sorted, and `classes_ = np.unique(y)` always is. Checked
+by extracting the library at the commit that produced the results and running
+both versions side by side:
+
+- **3,760 metric comparisons** over all 188 saved probability files, at five
+  score thresholds: largest difference **0.0**.
+- **48 full-pipeline configurations** on the real BAF pools — two budgets, three
+  seeds, two strategies, four alphas — prediction sets **bit-identical**.
+
+`tests/test_results_integrity.py` now pins this permanently: golden aggregates
+over the real saved probabilities, plus a rebuild of E3's frozen arm from its
+persisted calibration. A 0.01% drift in `average_set_size` fails it.
+
+**Cross-conformal now has an external check, which is the one that was missing.**
+The suite verified the *split* path against MAPIE — exact equality, since with the
+same estimator and calibration set the sets must match — and the headline result
+is about *cross*. MAPIE ships `CrossConformalClassifier`, but it is CV+
+(Barber et al. 2021), which aggregates the fold models, where ours is Vovk (2015),
+which pools out-of-fold scores and predicts with the full-data model. Different
+constructions, so exact agreement would be suspicious rather than reassuring.
+Measured across α ∈ {0.05, 0.1, 0.2}:
+
+| α | our coverage | MAPIE coverage | our width | MAPIE width | identical sets |
+|---|---:|---:|---:|---:|---:|
+| 0.05 | 0.9513 | 0.9520 | 0.9816 | 0.9831 | 99.70% |
+| 0.10 | 0.8967 | 0.8981 | 0.9157 | 0.9173 | 99.70% |
+| 0.20 | 0.7987 | 0.7975 | 0.8103 | 0.8090 | 99.75% |
+
+Two independently written implementations of two different cross-conformal
+constructions landing on the same sets is stronger evidence for the headline
+than either agreeing with itself.
+
 ## Fourth audit — 21 September
 
 **The drift figure drew the wrong target line, and it is the figure in the

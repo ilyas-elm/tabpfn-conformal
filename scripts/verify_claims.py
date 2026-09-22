@@ -684,8 +684,13 @@ for _label, _literal in (
                    f"{_literal!r} in README={_literal in README}, "
                    f"in SUBMISSION={_literal in _sub}"))
 
+# Specific to the KV cache: the phrase "identical prediction sets" is legitimate
+# elsewhere (the MAPIE split comparison really is exact), so match the sentence
+# that would be wrong rather than the words.
+_cache_claim = re.search(r"KV cache[\s\S]{0,160}?identical (?:prediction )?sets",
+                         _sub)
 checks.append(("SUBMISSION does not claim identical cache sets",
-               "identical prediction sets" not in _sub,
+               _cache_claim is None,
                "SUBMISSION.md says the KV cache gives identical sets; it does not"))
 
 # ---- 5t. The handoff doc counts what the video script actually lists -------
