@@ -659,7 +659,8 @@ three alphas and three seeds.
 
 What is added on top: the label-budget allocation question as a first-class
 parameter, α at prediction time for metered APIs, Mondrian combined with
-cross-conformal in one object, online ACI for monthly drift, and a dependency
+cross-conformal in one scikit-learn object, online ACI for monthly drift,
+and a dependency
 footprint small enough to vendor into
 [`tabpfn-extensions`](https://github.com/PriorLabs/tabpfn-extensions).
 
@@ -672,11 +673,52 @@ calibration, no cross-conformal, and no online variant. That is the gap. The
 existence of `cp_missing_data` is encouraging rather than awkward: it shows
 conformal contributions are in scope.
 
+## Relation to the literature
+
+Every component here is published. Being specific about which is worth doing,
+because what this project contributes is what is left after they are subtracted.
+
+**Class-conditional calibration under imbalance is settled, and predates this
+project by nine years.** Sun et al. (2017) applied *Mondrian cross-conformal
+prediction* to 18 imbalanced bioactivity datasets at ratios from 1:10 to 1:1000
+and reported what section 4 above reports: valid coverage for the minority class
+where marginal conformal gives none. So combining Mondrian with cross-conformal
+is not new either, and the claim made here is an API convenience, not a method.
+Two 2026 papers already cited above find the same failure again, and a third,
+[arXiv:2607.06605](https://arxiv.org/abs/2607.06605), finds marginal conformal
+holding its 90% target overall while minority coverage falls to 64.8% on
+blood-brain-barrier penetration and 4.2% on clinical-trial toxicity.
+
+**The observation that a model with no training step leaves more data for
+calibration has also been made.** [arXiv:2507.08858](https://arxiv.org/abs/2507.08858)
+makes it for time-series foundation models: because they are zero-shot, most of
+the available data can be allocated to calibration instead.
+[arXiv:2509.01840](https://arxiv.org/abs/2509.01840) pushes the same idea
+further in a different direction, using in-context learning to simulate the
+retraining that *full* conformal prediction needs, removing that cost rather
+than cross-conformal's. Neither is tabular classification, neither uses
+cross-conformal, and neither measures what the substitution buys in labels.
+
+**What is left is the part worth reading:**
+
+- **The measurement rather than the principle.** Cross-conformal reaching the
+  same *targeted* level from half the confirmed positives, on TabPFN-3.5, for
+  classification, replicated across four BAF variants and one unrelated domain.
+- **Its price, which we did not find quantified anywhere.** "Cross-conformal is
+  approximately valid" is cited universally and, as far as we can tell, never
+  measured. Against the level each run actually certifies, cross sits below in
+  **3 of 6** dataset-α combinations by 1.5 to 2.4 points, split in **0 of 6**.
+- **The feasibility ceiling as an operating constraint, not a footnote.**
+  α ≥ 1/(n+1) in units of *confirmed frauds* is what decides whether the
+  guarantee a regulator asks for exists at all, before any modelling.
+- **The packaging**, since none of the above exists for classification in
+  `tabpfn-extensions`.
+
 ## What we got wrong
 
 [`docs/FINDINGS.md`](docs/FINDINGS.md) is a chronological log of every discovery
 and every correction, including four claims this project made and then measured
-to be false. Three of four pre-registered predictions were falsified. The
+to be false. Four of five pre-registered predictions were falsified. The
 corrections are in the log because they are the most informative part of the
 work, not despite being unflattering.
 
