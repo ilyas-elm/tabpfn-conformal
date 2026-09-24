@@ -7,7 +7,10 @@ dist/
 build/
 .pytest_cache/
 .DS_Store
-data/
+# Anchored: an unanchored `data/` also swallows tests/data/, which is where
+# the metric goldens live -- they went missing from the repository for three
+# days and three integrity tests failed on every fresh clone.
+/data/
 *.csv
 !results/*.csv
 

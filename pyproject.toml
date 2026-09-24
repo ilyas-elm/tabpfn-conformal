@@ -30,7 +30,14 @@ dependencies = [
 # Regenerating the figures must not require the TabPFN stack: a reader checking
 # the results should never need an API key, a GPU, or lightgbm.
 analysis = ["matplotlib>=3.7"]
-dev = ["pytest>=7.0", "mapie>=0.8", "matplotlib>=3.7"]
+dev = [
+    "pytest>=7.0",
+    "mapie>=0.8",
+    "matplotlib>=3.7",
+    # scripts/verify_claims.py reads this file back; tomllib is 3.11+ and
+    # requires-python still says 3.10.
+    'tomli>=2.0; python_version < "3.11"',
+]
 experiments = ["tabpfn-client", "matplotlib>=3.7", "lightgbm", "pyarrow", "kagglehub"]
 
 [project.urls]

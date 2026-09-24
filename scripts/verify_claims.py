@@ -530,7 +530,10 @@ if e4:
 
 # ---- 5l. Package metadata agrees with pyproject ---------------------------
 try:
-    import tomllib
+    try:
+        import tomllib                       # 3.11+
+    except ModuleNotFoundError:              # 3.10, which requires-python allows
+        import tomli as tomllib
     _pj = tomllib.loads((REPO / "pyproject.toml").read_text())["project"]
     sys.path.insert(0, str(REPO / "src"))
     import tabpfn_conformal as _pkg
