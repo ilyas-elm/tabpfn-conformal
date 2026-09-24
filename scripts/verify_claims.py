@@ -789,6 +789,23 @@ m = re.search(r"(\d+) tests? collected", out.stdout)
 if m:
     check("test count", in_readme(r"(\d+) tests, CPU"), float(m.group(1)), 0.5)
 
+# ---- 5m. The falsification counts in prose match the scoreboard -----------
+# One sentence said "three of four" for three days after a fifth prediction was
+# added and a fourth was falsified, two screens below a table saying otherwise.
+# The table is the source of truth; every prose count is checked against it.
+_pred_rows = re.findall(r"^\| \*\*P\d+\*\* \|.*$", README, re.M)
+if _pred_rows:
+    _total = len(_pred_rows)
+    _false = sum("falsified" in r for r in _pred_rows)
+    _words = {3: "three", 4: "four", 5: "five", 6: "six"}
+    _claims = re.findall(r"(\w+) of (\w+) pre-registered predictions were falsified",
+                         README, re.I)
+    _wrong = [f"'{a} of {b}'" for a, b in _claims
+              if a.lower() != _words.get(_false, "?") or b.lower() != _words.get(_total, "?")]
+    checks.append((f"prose falsification counts match the P-table ({_false} of {_total})",
+                   bool(_claims) and not _wrong,
+                   "; ".join(_wrong) or "no such sentence found in the README"))
+
 # ---- 6a. No committed figure predates the script that draws it ------------
 # Two figures shipped for days showing a flat dashed line labelled "target 90%"
 # after their scripts had been fixed to draw the level each run actually
