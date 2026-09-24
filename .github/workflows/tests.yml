@@ -15,10 +15,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+      # A venv on the matrix interpreter, not `uv pip install --system`.
+      # `--system` targets whichever interpreter the runner already has, so it
+      # both (a) refuses on ubuntu-latest, whose /usr/bin/python3 is marked
+      # externally managed -- this job had never once reached the test step --
+      # and (b) would have installed three times into the same 3.12, so the
+      # matrix would not have been testing 3.10 or 3.13 even had it run.
       - name: Set up Python ${{ matrix.python-version }}
-        run: uv python install ${{ matrix.python-version }}
+        run: |
+          uv venv --python ${{ matrix.python-version }}
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - name: Install
-        run: uv pip install --system -e ".[dev]"
+        run: uv pip install -e ".[dev]"
+      - name: Show what is actually being tested
+        run: python -VV
       - name: Run tests
         # CPU only, no GPU, no TabPFN: the core package must stay this light.
         run: pytest -q
