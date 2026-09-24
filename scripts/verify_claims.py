@@ -789,6 +789,48 @@ m = re.search(r"(\d+) tests? collected", out.stdout)
 if m:
     check("test count", in_readme(r"(\d+) tests, CPU"), float(m.group(1)), 0.5)
 
+# ---- 6a. No committed figure predates the script that draws it ------------
+# Two figures shipped for days showing a flat dashed line labelled "target 90%"
+# after their scripts had been fixed to draw the level each run actually
+# certifies -- which at alpha=0.1 moves with n_cal, so a flat line was wrong at
+# every point by a different amount, and every marker sat above it. The scripts
+# were right; nobody re-ran them. Byte-comparing figures in CI is hopeless
+# across fonts and matplotlib versions, but matplotlib stamps <dc:date> into
+# every SVG, and git knows when each script last changed. That comparison is
+# exact and platform-independent.
+import datetime
+_fig_dir = REPO / "figures"
+if _fig_dir.exists():
+    _stale, _unknown = [], []
+    for _svg in sorted(_fig_dir.glob("*.svg")):
+        _m = re.match(r"(e\d+)_", _svg.name)
+        if not _m:
+            continue
+        _script = REPO / "experiments" / f"analyze_{_m.group(1)}.py"
+        if not _script.exists():
+            continue
+        _d = re.search(r"<dc:date>([0-9T:.\-]+)</dc:date>", _svg.read_text(errors="ignore"))
+        if not _d:
+            continue
+        _drawn = datetime.datetime.fromisoformat(_d.group(1))
+        _out = subprocess.run(
+            ["git", "log", "-1", "--format=%cI", "--", str(_script.relative_to(REPO))],
+            cwd=REPO, capture_output=True, text=True).stdout.strip()
+        if not _out:
+            # A shallow clone has no history to ask; say so rather than pass.
+            _unknown.append(_svg.name)
+            continue
+        _changed = datetime.datetime.fromisoformat(_out).astimezone().replace(tzinfo=None)
+        if _drawn < _changed:
+            _stale.append(f"{_svg.name} drawn {_drawn:%Y-%m-%d %H:%M} but "
+                          f"{_script.name} changed {_changed:%Y-%m-%d %H:%M}")
+    if _unknown:
+        checks.append(("no figure predates its generator", None,
+                       f"no git history for {len(_unknown)} figures (shallow clone?)"))
+    else:
+        checks.append(("no figure predates its generator", not _stale,
+                       "; ".join(_stale) or "all figures postdate their script"))
+
 # ---- 6b. The vendored payload still carries its caveat --------------------
 # build_extension_pr.py replaces every module docstring with a vendoring header,
 # which silently deleted the approximate-validity caveat from the module Prior
