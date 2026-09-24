@@ -79,8 +79,15 @@ GPU.
 > Mondrian holds 0.890). Should compose with `ManyClassClassifier`. The
 > benchmarks here are binary, because the motivating problem is.
 >
-> Cross-conformal is approximately valid rather than exactly valid
-> (Vovk 2015; CV+ worst case `1 - 2*alpha`) and the module says so where it matters.
+> **What it costs, measured.** Cross-conformal is approximately valid rather
+> than exactly valid (Vovk 2015; CV+ worst case `1 - 2*alpha`), and that is not
+> only theoretical. Comparing each run against the level it actually certifies
+> -- `ceil((n+1)(1-alpha))/n`, not the nominal `1-alpha` -- cross sat below its
+> own certified level in **3 of 6** dataset-alpha combinations, by 1.5 to 2.4
+> points, concentrated at tight alpha; split was below in **0 of 6**. So the
+> trade is half the labels against about two points of realized coverage, not a
+> free lunch. The module docstring carries this caveat, so it reaches anyone who
+> reads `strategy="cross"` rather than only this PR.
 > The methods are standard — this is packaging, not new statistics.
 >
 > Benchmarks, figures and full method notes:
