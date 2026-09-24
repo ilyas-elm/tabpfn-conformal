@@ -62,10 +62,34 @@ def device_report() -> dict:
             "device": "cuda" if torch.cuda.is_available() else "cpu", "gpu": gpu}
 
 
+def find_base(data_dir: pathlib.Path) -> pathlib.Path:
+    """Locate ``Base.csv``, looking past whatever Kaggle called the folder.
+
+    A Kaggle input directory is named after the dataset slug, which is not
+    something this script can know, and some datasets nest their files a level
+    down. Guessing wrong used to fail *after* the warm-up, so the search costs
+    nothing and removes a whole class of "add the dataset and try again".
+    """
+    if (data_dir / "Base.csv").exists():
+        return data_dir / "Base.csv"
+    for root in (data_dir, pathlib.Path("/kaggle/input")):
+        if root.is_dir():
+            found = sorted(root.rglob("Base.csv"))
+            if found:
+                print(f"note: --data did not hold Base.csv; using {found[0].parent}")
+                return found[0]
+    attached = ([p.name for p in pathlib.Path("/kaggle/input").glob("*")]
+                if pathlib.Path("/kaggle/input").is_dir() else [])
+    raise SystemExit(
+        f"No Base.csv under {data_dir} or /kaggle/input.\n"
+        f"Inputs currently attached: {attached or 'none'}\n"
+        "On Kaggle: sidebar, + Add Input, search 'Bank Account Fraud Dataset "
+        "NeurIPS 2022', Add. Nothing was measured and no GPU time was spent."
+    )
+
+
 def load_frames(data_dir: pathlib.Path):
-    path = data_dir / "Base.csv"
-    if not path.exists():
-        raise SystemExit(f"Missing {path}. On Kaggle, add the BAF dataset and pass --data.")
+    path = find_base(data_dir)
     df = pd.read_csv(path)
     return (df[df[TIME].isin(POOL_MONTHS)].reset_index(drop=True),
             df[df[TIME].isin(EVAL_MONTHS)].reset_index(drop=True))
