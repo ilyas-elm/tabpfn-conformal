@@ -34,6 +34,7 @@ import sys
 import time
 
 import numpy as np
+import pandas as pd
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "src"))
@@ -79,7 +80,8 @@ def to_numeric(X):
     """
     X = X.copy()
     for c in X.columns:
-        if X[c].dtype == object:
+        # Not `dtype == object`: pandas 3 reports text columns as `str`.
+        if not (pd.api.types.is_numeric_dtype(X[c]) or pd.api.types.is_bool_dtype(X[c])):
             X[c] = X[c].astype("category")
     return X
 

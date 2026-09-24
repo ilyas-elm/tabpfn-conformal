@@ -17,35 +17,52 @@ protocol is E4's, unchanged.
 
 ## What you need
 
-- **A Kaggle account.** Free, at <https://www.kaggle.com>. If you downloaded the
-  dataset with `scripts/download_data.py` you may already have one.
-- **Phone verification.** This is the part that catches people out: Kaggle will
-  not give you a GPU until you verify a phone number. Settings → Phone
-  Verification. Do this *before* you start, or you will build the notebook and
-  find the GPU option greyed out.
-- About **fifteen minutes**, and GPU quota (Kaggle gives you a number of GPU
-  hours per week and shows what you have left in the session sidebar).
+- **A Kaggle account**, free, at <https://www.kaggle.com>.
+- **Phone verification.** Settings, then Phone Verification. This is what
+  unlocks both the GPU *and* internet access in a notebook. Do it before you
+  start, or both options are greyed out.
+- **The TabPFN licence accepted, and your API key.** Local weights are not just
+  a download: TabPFN asks for a one-time licence acceptance, and a notebook is
+  not an interactive terminal, so it reads `TABPFN_TOKEN` instead. Log in at
+  <https://ux.priorlabs.ai>, accept on the **Licenses** tab, then copy the key
+  from <https://ux.priorlabs.ai/account>. If you already have a key for
+  `tabpfn-client`, it is the same key; you may still need the licence tick.
 
-## What a Kaggle notebook is
+  The token only authorises the download. Inference is local, which is the
+  whole point of this run, so nothing goes over the network while the clock is
+  running. `wallclock.py` downloads and loads the weights in a warm-up phase
+  before it times anything.
 
-A free Jupyter notebook that runs on Kaggle's machines instead of yours. You
-type into cells in the browser, press run, and it executes on their hardware,
-including a GPU, which this laptop does not have. Nothing installs locally.
+- About **half an hour** of GPU quota. Kaggle shows what you have left in the
+  session sidebar. The run is 24 configurations and writes its JSON after every
+  one, so a session that dies part-way still leaves usable rows.
 
 ## Step by step
 
 1. Go to <https://www.kaggle.com/code> and click **+ New Notebook**.
 
-2. Right-hand sidebar → **Session options** → **Accelerator** → pick **GPU T4 x2**.
-   If it is greyed out, you have not done the phone verification above.
+2. Right-hand sidebar, **Session options**:
+   - **Accelerator**, pick **GPU T4 x2**.
+   - **Internet**, switch it **on**. It is off by default, and without it the
+     `pip install` and the `git clone` below both fail.
+   If either is greyed out, you have not done the phone verification.
 
-3. Same sidebar → **+ Add Input** → search `Bank Account Fraud Dataset NeurIPS 2022`
-   → **Add**. It appears under `/kaggle/input/`. You may have to accept the
+3. **Add-ons**, then **Secrets**, then **Add a new secret**. Label it
+   `TABPFN_TOKEN`, paste your key as the value, and make sure it is attached to
+   this notebook. Put it here rather than in a cell: a cell is saved with the
+   notebook, and a notebook can be shared.
+
+4. Same sidebar, **+ Add Input**, search `Bank Account Fraud Dataset NeurIPS 2022`,
+   then **Add**. It appears under `/kaggle/input/`. You may have to accept the
    dataset's terms once.
 
-4. Click the first cell, paste this in, and press the ▶ button:
+5. Click the first cell, paste this in, and press the play button:
 
    ```python
+   from kaggle_secrets import UserSecretsClient
+   import os
+   os.environ["TABPFN_TOKEN"] = UserSecretsClient().get_secret("TABPFN_TOKEN")
+
    !pip install -q tabpfn lightgbm
    !git clone -q https://github.com/ilyas-elm/tabpfn-conformal.git
    %cd tabpfn-conformal
@@ -54,13 +71,13 @@ including a GPU, which this laptop does not have. Nothing installs locally.
        --data /kaggle/input/bank-account-fraud-dataset-neurips-2022
    ```
 
-   The clone only works once the repository is public. It prints one line per
-   configuration as it goes, so you can see it working.
+   It prints `device: cuda (Tesla T4)`, then two warm-up lines, then one line per
+   configuration, so you can see it working.
 
-5. When it finishes, the sidebar's **Output** (or Data → output) tab has
+6. When it finishes, the sidebar's **Output** tab has
    `results/kaggle_wallclock.json`. Download it.
 
-6. Back here, put that file in `results/` and run:
+7. Back here, put that file in `results/` and run:
 
    ```bash
    python experiments/analyze_kaggle.py
@@ -70,11 +87,22 @@ including a GPU, which this laptop does not have. Nothing installs locally.
 
 ## If something goes wrong
 
-- **No GPU option** → phone verification, step above.
+- **No GPU option, or Internet cannot be switched on** → phone verification,
+  step above. Both are gated on it.
+- **`TabPFNLicenseError`, or the script exits saying TabPFN could not load its
+  weights** → the licence is not accepted, or the secret is not attached to
+  this notebook. The script checks this in its first seconds, on purpose, so
+  you lose nothing by rerunning the cell once it is fixed.
+- **`No such file: kaggle_secrets`** → you are not on Kaggle. Set
+  `TABPFN_TOKEN` in the environment instead.
 - **`FileNotFoundError` on `Base.csv`** → the dataset input was not added, or its
   folder is named differently. Run `!ls /kaggle/input/` in a cell and pass the
   real path to `--data`.
 - **`Repository not found` on the clone** → the repo is still private.
+- **Segfault on a Mac** → this is a Linux script. torch and lightgbm each load
+  their own libomp on macOS and the process dies when the second one fits. It
+  does not happen on Kaggle, and it is why the local dry run below only covers
+  one family at a time.
 - **It says it is running on CPU** → the accelerator was not set. The script
   warns on stderr and the analysis refuses to draw a conclusion, because on CPU
   it settles nothing.
