@@ -39,68 +39,51 @@ protocol is E4's, unchanged.
 
 ## Step by step
 
-1. Go to <https://www.kaggle.com/code> and click **+ New Notebook**.
+The notebook is committed here as
+[`wallclock.ipynb`](wallclock.ipynb). Run it rather than pasting cells, and
+**make it public when it finishes**: a public notebook shows a judge the GPU it
+ran on, the timings and the whole log, and lets them press Copy & Edit and
+reproduce it. That is worth more than the JSON on its own.
+
+1. Go to <https://www.kaggle.com/code>, **+ New Notebook**, then
+   **File, Import Notebook** and upload `wallclock.ipynb`.
 
 2. Right-hand sidebar, **Session options**:
    - **Accelerator**, pick **GPU T4 x2**.
    - **Internet**, switch it **on**. It is off by default, and without it the
-     `pip install` and the `git clone` below both fail.
+     `pip install` and the `git clone` both fail.
    If either is greyed out, you have not done the phone verification.
 
 3. **Add-ons**, then **Secrets**, then **Add a new secret**. Paste your key as
    the value and make sure the secret is **attached to this notebook**. Put it
-   here rather than in a cell: a cell is saved with the notebook, and a notebook
-   can be shared.
+   here rather than in a cell: a cell is saved with the notebook, and this
+   notebook is meant to be shared.
 
-   The label does not matter as long as the cell below knows it. The cell tries
+   The label does not matter as long as the notebook knows it. It tries
    `tabpfn v3.5`, `TABPFN_TOKEN`, `tabpfn_token` and `conform`, prints which one
-   it found, and stops with a clear message if none match, so a wrong label
-   costs seconds rather than a session. If yours is different, add it to the
-   list.
+   it found, and stops with a clear message if none match. If yours is
+   different, add it to the list in the second code cell.
 
-4. Same sidebar, **+ Add Input**, search `Bank Account Fraud Dataset NeurIPS 2022`,
-   then **Add**. It appears under `/kaggle/input/`. You may have to accept the
-   dataset's terms once.
+4. Sidebar, **+ Add Input**, search `Bank Account Fraud Dataset NeurIPS 2022`,
+   then **Add**. You may have to accept the dataset's terms once. The notebook
+   finds the file itself, so the folder name does not matter.
 
-5. Click the first cell, paste this in, and press the play button:
+5. **Run All.** It prints the GPU, the secret label it used, the data path, then
+   two warm-up lines, then one line per configuration, then the comparison
+   table and a paired verdict.
 
-   ```python
-   import os
-   from kaggle_secrets import UserSecretsClient
+6. **Save Version** with output, then **Share, Public**. Check the log first:
+   it prints the secret's *label*, never its value, but look anyway before
+   making it public. Put the notebook URL in the README next to the P5 row.
 
-   secrets = UserSecretsClient()
-   for label in ("tabpfn v3.5", "TABPFN_TOKEN", "tabpfn_token", "conform"):
-       try:
-           os.environ["TABPFN_TOKEN"] = secrets.get_secret(label)
-           print(f"using Kaggle secret: {label}")
-           break
-       except Exception:
-           continue
-   else:
-       raise SystemExit("No TabPFN secret found. Add-ons -> Secrets, attach it "
-                        "to this notebook, and add its label to the list above.")
-
-   !pip install -q tabpfn lightgbm
-   !git clone -q https://github.com/ilyas-elm/tabpfn-conformal.git
-   %cd tabpfn-conformal
-   !pip install -q -e .
-   !python experiments/kaggle/wallclock.py \
-       --data /kaggle/input/bank-account-fraud-dataset-neurips-2022
-   ```
-
-   It prints `device: cuda (Tesla T4)`, then two warm-up lines, then one line per
-   configuration, so you can see it working.
-
-6. When it finishes, the sidebar's **Output** tab has
-   `results/kaggle_wallclock.json`. Download it.
-
-7. Back here, put that file in `results/` and run:
+7. Download `results/kaggle_wallclock.json` from the **Output** tab, drop it in
+   `results/` here, commit it, and run:
 
    ```bash
    python experiments/analyze_kaggle.py
    ```
 
-   That prints the comparison and a verdict per configuration.
+   The committed JSON is what lets anyone recompute the verdict without a GPU.
 
 ## If something goes wrong
 
