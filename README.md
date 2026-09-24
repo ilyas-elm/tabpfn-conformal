@@ -272,8 +272,10 @@ budget on Base. Everything else is a tie.
 
 The raw win count was 6 of 9, which over-reads noise: the seeds are paired, so
 they must be tested pairwise. Doing that properly shrinks the claim and makes it
-survive — *the same guarantee from half the labels, for free*, everywhere tested,
-with a real width advantage where positives are scarcest.
+survive — *the same targeted level from half the labels, at no cost in width*,
+everywhere tested, with a real width advantage where positives are scarcest.
+Width is not the only currency, though: what it does cost is
+[realized coverage](#what-cross-conformal-actually-costs).
 
 One row is worth naming rather than burying. **Variant III at 100 calibration
 positives is the closest thing to a loss**: −0.0423 ± 0.0162, t ≈ 2.6, which does

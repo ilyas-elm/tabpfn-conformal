@@ -3,6 +3,19 @@
 Vendored from https://github.com/ilyas-elm/tabpfn-conformal (Apache 2.0).
 Regenerate with `scripts/build_extension_pr.py` in that repository rather than
 editing here, so the two cannot drift apart.
+
+Honest caveat
+-------------
+Pooling out-of-fold scores and then applying them to a model fitted on the full
+pool gives *approximate* validity, not the exact finite-sample guarantee of
+split conformal (see Vovk 2015 on cross-conformal predictors; the related CV+
+of Barber et al. 2021 bounds worst-case coverage at ``1 - 2*alpha``).
+
+This is not only theoretical. Measured across two datasets, realized coverage
+sat below the level each run actually certifies in 3 of 6 dataset-alpha
+combinations, by 1.5 to 2.4 points, concentrated at tight alpha -- where split
+conformal was below in 0 of 6. Report empirical coverage alongside this caveat
+rather than claiming the split-conformal guarantee this does not have.
 """
 
 from __future__ import annotations

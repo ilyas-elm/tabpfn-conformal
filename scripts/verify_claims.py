@@ -789,6 +789,22 @@ m = re.search(r"(\d+) tests? collected", out.stdout)
 if m:
     check("test count", in_readme(r"(\d+) tests, CPU"), float(m.group(1)), 0.5)
 
+# ---- 6b. The vendored payload still carries its caveat --------------------
+# build_extension_pr.py replaces every module docstring with a vendoring header,
+# which silently deleted the approximate-validity caveat from the module Prior
+# Labs would merge -- while PR.md told them the module "says so where it
+# matters". Anyone reading strategy="cross" upstream would have seen no warning.
+_vend = REPO / "contrib/tabpfn-extensions/src/tabpfn_extensions/conformal/crossconformal.py"
+if _vend.exists():
+    _v = _vend.read_text()
+    checks.append(("vendored cross-conformal keeps the validity caveat",
+                   all(t in _v for t in ("approximate", "Vovk 2015", "3 of 6", "0 of 6")),
+                   "the caveat did not survive vendoring; PR.md claims it does"))
+    _pr = (REPO / "contrib/tabpfn-extensions/PR.md").read_text()
+    checks.append(("the PR description states the measured cost, not just the theory",
+                   "3 of 6" in _pr and "0 of 6" in _pr,
+                   "PR.md describes approximate validity without the measured number"))
+
 # ---- 7. The demo is reproducible, and the video quotes it correctly -------
 # The demo page is a headline deliverable, so its data must regenerate from
 # results/ and the script must quote what the page actually shows.
