@@ -104,7 +104,7 @@ def figure(stats, alpha: float, path: pathlib.Path):
         ax.axhspan(ys.mean() - sd, ys.mean() + sd, color=SPLIT_C, alpha=0.07,
                    zorder=1, linewidth=0)
         ax.axhline(ys.mean(), color=INK_MUTED, linewidth=1.2, linestyle=(0, (4, 3)), zorder=1)
-        ax.annotate(f"±1 seed SD ({sd:.3f}) around the mean —\n"
+        ax.annotate(f"±1 seed SD ({sd:.3f}) around the mean;\n"
                     f"the whole curve sits inside it",
                     xy=(xs[1], ys.mean() + sd), xytext=(0, 6),
                     textcoords="offset points", fontsize=8, color=INK_2, linespacing=1.4)
@@ -186,8 +186,8 @@ def main() -> int:
                   f"{off['fit_seconds']:.1f} s | {on['fit_seconds']:.1f} s | "
                   f"{dp:.1e} | {dw:.1e} |")
         print("\nA cached fit front-loads the attention state, so `fit` gets slower and")
-        print("every later pass gets faster. Conformal scores the same context twice —")
-        print("once to calibrate, once to evaluate — so it pays back immediately.")
+        print("every later pass gets faster. Conformal scores the same context twice, ")
+        print("once to calibrate, once to evaluate, so it pays back immediately.")
         print("\nThe cached and uncached runs are **not bit-identical**: the probabilities")
         print("differ in the fourth decimal on nearly every row. They agree to far better")
         print("than the seed-to-seed spread, so the conclusion is unchanged, but the")

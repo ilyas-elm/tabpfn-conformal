@@ -130,7 +130,7 @@ def main() -> int:
         print(f"| {name} | " + " | ".join(f"{c:.3f}" for c in cov)
               + f" | {flag}{below} of {len(cov)}{flag} | {swing:.3f} | {width:.3f} |")
 
-    print(f"\nTarget {target:.3%} — the level {n_cal_fraud} calibration positives "
+    print(f"\nTarget {target:.3%}, the level {n_cal_fraud} calibration positives "
           f"actually certify at alpha={args.alpha:g}, not the nominal "
           f"{1 - args.alpha:.0%}. Fewer months below is better; over-coverage is "
           "not a failure, it is width paid for nothing.")

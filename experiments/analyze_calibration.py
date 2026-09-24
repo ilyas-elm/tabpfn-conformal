@@ -64,7 +64,7 @@ def weighted_brier(p, y, w) -> float:
 def main() -> int:
     files = sorted(glob.glob(str(REPO / "results/proba/e4/*.npz")))
     if not files:
-        raise SystemExit("No E4 probabilities — run experiments/api/e4_baselines.py first.")
+        raise SystemExit("No E4 probabilities; run experiments/api/e4_baselines.py first.")
 
     agg = defaultdict(list)
     for f in files:
@@ -107,7 +107,7 @@ def main() -> int:
 
     print("\nConformal prediction is distribution-free: the coverage guarantee holds for")
     print("a badly calibrated model too. What calibration buys is not validity but")
-    print("EFFICIENCY — the same promise from narrower sets. That is the mechanism")
+    print("EFFICIENCY, the same promise from narrower sets. That is the mechanism")
     print("behind TabPFN's narrower sets in E4, and it is measurable here.")
 
     path = REPO / "results" / "calibration.json"

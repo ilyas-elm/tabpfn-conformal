@@ -198,7 +198,7 @@ def tables(agg, alpha: str):
             cov = np.array(c["coverage"])
             eff = float(np.mean(c["effective"]))
             eff_s = "infeasible" if np.isnan(eff) else f"{eff:.1%}"
-            gap = "—" if np.isnan(eff) else f"{cov.mean() - eff:+.3f}"
+            gap = "n/a" if np.isnan(eff) else f"{cov.mean() - eff:+.3f}"
             print(
                 f"| {b} | {s} | {int(np.mean(c['n_cal'])):,} | {eff_s} | {cov.mean():.3f} | "
                 f"{gap} | {cov.max() - cov.min():.3f} | {np.mean(c['width']):.3f} | {len(cov)} |"
@@ -316,7 +316,7 @@ def matched_level_table(agg, alpha: str):
     if not pairs:
         return
 
-    print(f"\n### Matched on calibration size — identical targeted level (alpha = {alpha})\n")
+    print(f"\n### Matched on calibration size, identical targeted level (alpha = {alpha})\n")
     print("| calib. positives | targeted level | split needs | its set size | "
           "cross needs | its set size | labels saved |")
     print("|---:|---:|---:|---:|---:|---:|---:|")

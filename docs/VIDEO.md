@@ -1,13 +1,13 @@
 # Demo video script
 
 Runs **about 4:10** read at a normal pace, including the pauses for dragging the
-sliders — 508 spoken words. The submission form calls the video optional; the 50%
+sliders, 508 spoken words. The submission form calls the video optional; the 50%
 criterion is *showcase*, so it is worth making. If you need it under three
 minutes, cut the 'What TabPFN brings' section and keep the desk: the desk is the
 part that cannot be read off the README.
 
 The [demo](https://claude.ai/artifact/RQdPAtjvKefEv1iUT1RB1q) is a console, not a
-document — it carries numbers and controls, no prose. **Everything explanatory is
+document; it carries numbers and controls, no prose. **Everything explanatory is
 below, to be read aloud.** Nothing in this script needs to appear on screen.
 
 **What to have open:** the demo full-screen in one tab, the GitHub repo in
@@ -25,31 +25,31 @@ it before recording.
 
 > *On screen: the console, top bar visible, nothing touched yet.*
 
-"A fraud model gives you a probability. A risk committee needs a guarantee —
+"A fraud model gives you a probability. A risk committee needs a guarantee,
 what fraction of fraud will this catch, and can you prove it?
 
 Conformal prediction converts one into the other. How tight a guarantee you can
 even ask for is fixed by something most teams never check: how many confirmed
 frauds you have."
 
-## 0:27–1:04 · Panel 01 — the ceiling
+## 0:27–1:04 · Panel 01, the ceiling
 
 > *Drag the label-budget slider down to 100, pause, then back up.*
 
 "A calibration set of size n can only certify alpha of at least one over n plus
 one. Arithmetic, not a tendency.
 
-Split conformal — the default in every library — spends half your positives on
+Split conformal, the default in every library, spends half your positives on
 calibration. At a hundred confirmed frauds it tops out at **98%**. The 99% your
 regulator asked for is not expensive. It is unavailable.
 
 Cross-conformal spends none of them. Same hundred frauds, **99%**."
 
-## 1:04–1:43 · Panel 02 — why this is a TabPFN project
+## 1:04–1:43 · Panel 02; why this is a TabPFN project
 
 > *Point at the table. Toggle α 0.05 / α 0.10 once.*
 
-"Cross-conformal is not new — MAPIE ships it. It is rarely used because it costs
+"Cross-conformal is not new; MAPIE ships it. It is rarely used because it costs
 K refits.
 
 TabPFN-3.5 has no training step. `fit` swaps the in-context set and takes no
@@ -61,24 +61,24 @@ columns: cross reaches the same guarantee from **half the confirmed frauds**.
 A hundred confirmed frauds is weeks of analyst work. Fifty thousand tokens is a
 quarter of one percent of a monthly budget."
 
-## 1:43–2:58 · Panels 03 and 04 — the desk
+## 1:43–2:58 · Panels 03 and 04, the desk
 
 > *Drag the review budget from 0 up to 200. Let the grid recolour. Then pull it
 > back to 60 and let the queue table settle.*
 
 "Four hundred real held-out transactions, routed live. Each square is one case.
-Singleton prediction sets decide themselves — approve, block. Ambiguous ones need
+Singleton prediction sets decide themselves, approve, block. Ambiguous ones need
 a human, and you only have so many.
 
 Watch the two leading numbers. Coverage sits at **94.2% against a 95.1% target**
-and does not move — the budget cannot change it, because that is the guarantee.
+and does not move, the budget cannot change it, because that is the guarantee.
 Fraud *caught* moves from **49% to 94%**.
 
 That gap is the honest part. Conformal promises the true label is in the set;
 acting on an ambiguous set still needs a free analyst. An uncalibrated
 probability hides that trade. This makes it a number you can staff against.
 
-And this is the queue an analyst actually opens — real cases, ranked, with the
+And this is the queue an analyst actually opens, real cases, ranked, with the
 set that put them there. Push alpha up and empty sets appear: the model ruling
 out *both* labels. Those go to the front."
 
@@ -92,21 +92,21 @@ Its calibration error is **74 to 86% lower** than LightGBM's on identical rows,
 and conformal turns that into narrower sets.
 
 Under drift, the base model drops below its own promised coverage in **nine of
-fifteen seed-months. Thinking, in three.** Thinking was never worse on any seed —
+fifteen seed-months. Thinking, in three.** Thinking was never worse on any seed,
 but at three seeds that gap is directional, not established, and the README says
 so. On the first seed it looked decisive. It did not replicate. Thinking has no
 local weights, so that comparison exists only through the Prior Labs API.
 
-We pre-registered five predictions. **Four were falsified** — including two of
+We pre-registered five predictions. **Four were falsified**, including two of
 our own about cost."
 
 ## 3:47–4:11 · It is real software
 
-> *Terminal: `pytest`, then the extensions PR page — or
+> *Terminal: `pytest`, then the extensions PR page, or
 > `contrib/tabpfn-extensions/` if the PR is not open yet.*
 
 "A hundred and twenty-six tests, CPU only, a few seconds. The core is numpy, pandas
-and scikit-learn — no TabPFN, no GPU — and every figure regenerates from
+and scikit-learn, no TabPFN, no GPU, and every figure regenerates from
 committed results without an API key.
 
 `tabpfn-extensions` has conformal regression for missing data. Nothing for
@@ -118,8 +118,8 @@ classification. This fills that gap."
 
 - **Drag the sliders slowly.** The recolouring grid is the one moment of motion;
   let it land before speaking over it.
-- **The page has no prose on purpose.** Do not read the panel headings aloud —
-  they are labels, you are the narration.
+- **The page has no prose on purpose.** Do not read the panel headings aloud;
+they are labels; you are the narration.
 - **Do not narrate the terminal.** One shot of green tests, two seconds.
 - Say "we predicted X, measured not-X" at least once. Most submissions overclaim;
   a judge who checks one number and finds it honest trusts the rest.
@@ -135,12 +135,12 @@ classification. This fills that gap."
   honest line is 9 of 15 versus 3 of 15 seed-months, directional at n = 3.
 - Do **not** say the matched comparison has no confound. Split at 2F also gets
   twice the in-context rows; the asymmetry favours split, which is why the
-  margins are conservative — say that instead.
+  margins are conservative; say that instead.
 - Do **not** say the KV cache gives identical sets. The probabilities differ in
   the fourth decimal. "Same answer to four decimals" is the line.
 - Do **not** say cross-conformal is free. It reaches the same *targeted* level
   from half the labels, and it sits about two points below its own certified
   level at tight α, where split holds. Say "half the labels, two points of
-  coverage" — the measured trade is more convincing than a free lunch.
+  coverage", the measured trade is more convincing than a free lunch.
 - Only say "the PR is open" once it actually is. Until then: "the PR is ready
   to open", and show `contrib/tabpfn-extensions/` instead of the PR page.

@@ -352,7 +352,7 @@ if _mc.exists():
             _label,
             _claimed is not None and any(abs(_claimed - a) < 1e-9 for a in _asserted),
             f"README says {_claimed}; tests/test_multiclass.py asserts "
-            f"{sorted(_asserted)} — the README says this file pins it",
+            f"{sorted(_asserted)}; the README says this file pins it",
         ))
 
 # ---- 5f. The extensions payload is the code we actually tested --------------
@@ -386,7 +386,7 @@ if _payload.exists():
         elif _logic(_mod, rename=True) != _logic(_ship):
             _drifted.append(f"{_mod.name} logic differs")
     checks.append(("extensions payload matches src", not _drifted,
-                   "; ".join(_drifted) + " — run scripts/build_extension_pr.py"))
+                   "; ".join(_drifted) + "; run scripts/build_extension_pr.py"))
 
 # ---- 5g. The K-times cost correction, from committed quotes ---------------
 # This is the README's own correction of an earlier overclaim, and it had no
@@ -792,57 +792,42 @@ if m:
 # ---- 6a. No committed figure predates the script that draws it ------------
 # Two figures shipped for days showing a flat dashed line labelled "target 90%"
 # after their scripts had been fixed to draw the level each run actually
-# certifies -- which at alpha=0.1 moves with n_cal, so a flat line was wrong at
-# every point by a different amount, and every marker sat above it. The scripts
+# certifies, which at alpha=0.1 moves with n_cal, so a flat line was wrong at
+# every point by a different amount and every marker sat above it. The scripts
 # were right; nobody re-ran them. Byte-comparing figures in CI is hopeless
-# across fonts and matplotlib versions, but matplotlib stamps <dc:date> into
-# every SVG, and git knows when each script last changed. That comparison is
-# exact and platform-independent.
-import datetime
-
-
-def _iso(text: str) -> datetime.datetime:
-    """`fromisoformat` before 3.11 rejects a `Z` suffix, and git emits one."""
-    return datetime.datetime.fromisoformat(text.strip().replace("Z", "+00:00"))
+# across fonts and matplotlib versions, but git dates both files off one clock:
+# if the script was committed after the figure, the figure was not regenerated.
+# Committing a script together with its regenerated figures gives them the same
+# timestamp, so that, the normal case, is not flagged.
+def _last_commit(rel: str):
+    out = subprocess.run(["git", "log", "-1", "--format=%ct", "--", rel],
+                         cwd=REPO, capture_output=True, text=True).stdout.strip()
+    return int(out) if out.isdigit() else None
 
 
 _fig_dir = REPO / "figures"
 if _fig_dir.exists():
     _stale, _unknown = [], []
-    _fig_err = None
-    try:
-        for _svg in sorted(_fig_dir.glob("*.svg")):
-            _m = re.match(r"(e\d+)_", _svg.name)
-            if not _m:
-                continue
-            _script = REPO / "experiments" / f"analyze_{_m.group(1)}.py"
-            if not _script.exists():
-                continue
-            _d = re.search(r"<dc:date>([0-9T:.\-]+)</dc:date>", _svg.read_text(errors="ignore"))
-            if not _d:
-                continue
-            _drawn = _iso(_d.group(1))
-            _out = subprocess.run(
-                ["git", "log", "-1", "--format=%cI", "--", str(_script.relative_to(REPO))],
-                cwd=REPO, capture_output=True, text=True).stdout.strip()
-            if not _out:
-                # A shallow clone has no history to ask; say so rather than pass.
-                _unknown.append(_svg.name)
-                continue
-            _changed = _iso(_out).astimezone().replace(tzinfo=None)
-            if _drawn < _changed:
-                _stale.append(f"{_svg.name} drawn {_drawn:%Y-%m-%d %H:%M} but "
-                              f"{_script.name} changed {_changed:%Y-%m-%d %H:%M}")
-    except Exception as _exc:
-        _fig_err = f"could not compare figure dates: {_exc}"
-    if _fig_err:
-        checks.append(("no figure predates its generator", None, _fig_err))
-    elif _unknown:
+    for _svg in sorted(_fig_dir.glob("*.svg")):
+        _m = re.match(r"(e\d+)_", _svg.name)
+        if not _m:
+            continue
+        _script = REPO / "experiments" / f"analyze_{_m.group(1)}.py"
+        if not _script.exists():
+            continue
+        _fig_at = _last_commit(str(_svg.relative_to(REPO)))
+        _src_at = _last_commit(str(_script.relative_to(REPO)))
+        if _fig_at is None or _src_at is None:
+            # A shallow clone has no history to ask; say so rather than pass.
+            _unknown.append(_svg.name)
+        elif _src_at > _fig_at:
+            _stale.append(f"{_svg.name} last committed before {_script.name}")
+    if _unknown:
         checks.append(("no figure predates its generator", None,
                        f"no git history for {len(_unknown)} figures (shallow clone?)"))
     else:
         checks.append(("no figure predates its generator", not _stale,
-                       "; ".join(_stale) or "all figures postdate their script"))
+                       "; ".join(_stale) or "every figure was committed with or after its script"))
 
 # ---- 6b. The vendored payload still carries its caveat --------------------
 # build_extension_pr.py replaces every module docstring with a vendoring header,

@@ -229,7 +229,7 @@ def table(split, cross, alpha: str):
             cw = float(np.mean(cross[b]["width"]))
             verdict2 = ("**beats every split setting**" if cw < means[best]
                         else "does not beat the best split")
-            print(f"  Cross-conformal: {cw:.3f} — {verdict2}.")
+            print(f"  Cross-conformal: {cw:.3f}, {verdict2}.")
 
 
 def main() -> int:

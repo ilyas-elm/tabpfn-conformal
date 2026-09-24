@@ -4,11 +4,11 @@
 Every wall-clock number in E4 is tagged ``wallclock_comparable: false``, because
 TabPFN ran remotely on Prior Labs' GPUs while LightGBM ran on a laptop CPU. The
 TabPFN figure there is dominated by upload and round-trip, not by inference, so
-the two are not a race — see ``docs/limitations.md``.
+the two are not a race; see ``docs/limitations.md``.
 
 This settles it: **both models, one machine, one accelerator.** It runs the E4
-protocol unchanged — matched label budgets, the same pool and evaluation
-construction from ``experiments/api/_common.py`` — but against *local* TabPFN
+protocol unchanged, matched label budgets, the same pool and evaluation
+construction from ``experiments/api/_common.py``, but against *local* TabPFN
 weights instead of the API, so there is no network in the measurement.
 
     # Kaggle: new notebook, Accelerator = GPU T4 x2, add the BAF dataset,
@@ -23,7 +23,7 @@ Writes ``results/kaggle_wallclock.json``. Download it, drop it into ``results/``
 and run ``python experiments/analyze_kaggle.py``.
 
 Honest about what it measures: *local* TabPFN, not the managed API. That is the
-point — it removes the network, which is the confound. It does not reproduce the
+point, it removes the network, which is the confound. It does not reproduce the
 API numbers and is not meant to.
 """
 from __future__ import annotations

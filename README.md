@@ -4,37 +4,37 @@
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 **Cross-conformal reaches the same targeted coverage level from half the
-confirmed frauds, at no cost in set width — and on TabPFN-3.5 it costs zero
+confirmed frauds, at no cost in set width, and on TabPFN-3.5 it costs zero
 training runs to get there.**
 
 It does cost something else, which we measured rather than assumed: split
 conformal's guarantee is *exact*, cross-conformal's is only *approximate*, and
 at tight α cross delivers about **two points less realized coverage than it
-certifies**, where split holds. That is the honest trade — half the labels
-against two points — and it is
+certifies**, where split holds. That is the honest trade, half the labels
+against two points, and it is
 [quantified below](#what-cross-conformal-actually-costs) on both datasets.
 
 With a hundred confirmed frauds, the 99% guarantee a regulator asks for is
 mathematically unavailable to standard practice. This makes it available.
 
 Conformal prediction turns a model's probabilities into prediction sets with a
-distribution-free coverage guarantee. Split conformal — the default everyone
-uses — holds out half your labels to calibrate that guarantee. With a fraud base
+distribution-free coverage guarantee. Split conformal, the default everyone
+uses, holds out half your labels to calibrate that guarantee. With a fraud base
 rate near 1%, a pool of 10,000 transactions holds roughly a hundred frauds, and
 split conformal spends fifty of them on calibration instead of on the model.
 
 That trade only ever made sense because the alternative meant retraining.
-**TabPFN-3.5 has no training step** — `fit` swaps the in-context set and takes no
-gradient — so K-fold cross-conformal is K forward passes, and every fraud label
+**TabPFN-3.5 has no training step**. `fit` swaps the in-context set and takes no
+gradient, so K-fold cross-conformal is K forward passes, and every fraud label
 can be both context *and* calibration.
 
 Being precise about cost, because an earlier draft of this README overclaimed
-it: cross-conformal is **exactly K× the API cost of split conformal** — measured,
+it: cross-conformal is **exactly K× the API cost of split conformal**, measured,
 2.0× at K=2 and 20.0× at K=20, at both 10k and 100k pools
 ([`cost_kfold.py`](experiments/api/cost_kfold.py), free: `estimate_cost` sends
-dimensions only) — and it is **not** the case that only TabPFN can
+dimensions only), and it is **not** the case that only TabPFN can
 afford it. In our own baselines LightGBM cross-conformal finished in about six
-seconds — though that is not a fair race, since TabPFN runs remotely over the
+seconds, though that is not a fair race, since TabPFN runs remotely over the
 network and LightGBM runs on this laptop's CPU ([limitations](docs/limitations.md)).
 What TabPFN removes is the training: **0 gradient-trained fits against
 LightGBM's 6**. That is the hardware-independent number, and the one that scales
@@ -55,7 +55,7 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 > recomputed without an API key: `python scripts/verify_claims.py` recomputes
 > 135 of them from `results/` and exits non-zero on any drift.
 > **Four of five pre-registered predictions were falsified**, including two of
-> our own about cost, and they are reported as such — see the
+> our own about cost, and they are reported as such; see the
 > [scoreboard](#what-we-predicted-and-what-happened),
 > [`docs/limitations.md`](docs/limitations.md) and
 > [`docs/FINDINGS.md`](docs/FINDINGS.md), which logs every correction in the
@@ -66,17 +66,17 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 | | measured | where |
 |---|---|---|
 | Cross-conformal reaches the same targeted level from **half the confirmed frauds** | never significantly wider (0 of 9 paired tests); narrower where labels are scarcest | [E1](#2-measured-the-same-guarantee-from-half-the-labels) · [E6](#does-it-replicate-four-datasets) |
-| …and it **replicates on a second domain** — forest cover type, 0.473% positive, no shared column | cross significantly wider in 0 of 3 matched comparisons | [E7](#does-it-hold-on-a-different-dataset-entirely) |
+| …and it **replicates on a second domain**, forest cover type, 0.473% positive, no shared column | cross significantly wider in 0 of 3 matched comparisons | [E7](#does-it-hold-on-a-different-dataset-entirely) |
 | **What that costs**: cross is only approximately valid, and it shows | below its own certified level in 3 of 6 dataset-α combinations; split in 0 of 6 | [validity](#what-cross-conformal-actually-costs) |
 | TabPFN gives **narrower prediction sets than LightGBM** at an identical targeted level | 6.9–12.4% narrower, 4 of 4 comparisons | [E4](#against-the-baselines-tabpfn-wins-where-it-counts) |
-| TabPFN's **calibration error is 74–86% lower** — the mechanism behind the above | ECE 0.0019–0.0037 vs 0.0129–0.0141 | [calibration](#why-tabpfn-wins-calibration-measured-rather-than-cited) |
-| Under drift, Thinking loses coverage less often than base | 3 of 15 seed-months below target vs 9 of 15; never worse on any seed, better on 2 of 3 — **directional, t ≈ 1.7 at n=3** | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
+| TabPFN's **calibration error is 74–86% lower**, the mechanism behind the above | ECE 0.0019–0.0037 vs 0.0129–0.0141 | [calibration](#why-tabpfn-wins-calibration-measured-rather-than-cited) |
+| Under drift, Thinking loses coverage less often than base | 3 of 15 seed-months below target vs 9 of 15; never worse on any seed, better on 2 of 3, **directional, t ≈ 1.7 at n=3** | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
 | The **KV cache** makes the evaluation pass **6.8× faster** at 200k context, same answer to 4 decimals | 36.9 s → 5.4 s | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
-| **Abundant data does not substitute for confirmed positives** — 20× more context changes nothing | slope −0.017 vs seed SD 0.046 | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
-| Where a scarce label budget should go: **nowhere — don't split it** | best split ratio still loses to cross at both budgets | [E2](#where-should-a-scarce-label-budget-go-mostly-nowhere) |
+| **Abundant data does not substitute for confirmed positives**, 20× more context changes nothing | slope −0.017 vs seed SD 0.046 | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
+| Where a scarce label budget should go: **nowhere, don't split it** | best split ratio still loses to cross at both budgets | [E2](#where-should-a-scarce-label-budget-go-mostly-nowhere) |
 | **Four of five pre-registered predictions were falsified** | including two of our own about cost | [scoreboard](#what-we-predicted-and-what-happened) |
 
-**[▶ Try the interactive demo](https://claude.ai/artifact/RQdPAtjvKefEv1iUT1RB1q)** — drag
+**[▶ Try the interactive demo](https://claude.ai/artifact/RQdPAtjvKefEv1iUT1RB1q)**; drag
 the label budget and watch the certifiable ceiling move, then route 400 real
 TabPFN predictions through the decision layer under an analyst budget you set.
 
@@ -89,18 +89,18 @@ and had to design around.
 
 | capability | where | what it bought, or cost |
 |---|---|---|
-| `TabPFNClassifier()`, no training step | E1, E2, E4, E5, E6 | The premise. K-fold cross-conformal is K forward passes, **0 gradient-trained fits against LightGBM's 6** — the reason the headline result is affordable at all. |
-| `thinking_mode=True`, `thinking_effort="medium"` | E3 | Under drift, below target in **3 of 15 seed-months against base's 9**. Directional at n=3, not established — and reachable *only* through the API, since Thinking has no local weights. |
+| `TabPFNClassifier()`, no training step | E1, E2, E4, E5, E6 | The premise. K-fold cross-conformal is K forward passes, **0 gradient-trained fits against LightGBM's 6**, the reason the headline result is affordable at all. |
+| `thinking_mode=True`, `thinking_effort="medium"` | E3 | Under drift, below target in **3 of 15 seed-months against base's 9**. Directional at n=3, not established, and reachable *only* through the API, since Thinking has no local weights. |
 | `time_col="month"` | E3 | Hands the temporal structure to the model natively instead of dropping it. |
 | `fit_mode="fit_with_cache"` | E5 | **6.8× faster evaluation pass** at 200k context, same answer to four decimals. Conformal is the workload it assumes: one fixed context, scored twice. |
-| `balance_probabilities=True` | E4 | TabPFN's own imbalance tooling, as the honest baseline to beat — it produces no coverage guarantee, and that is the comparison. |
+| `balance_probabilities=True` | E4 | TabPFN's own imbalance tooling, as the honest baseline to beat; it produces no coverage guarantee, and that is the comparison. |
 | `estimate_cost(...)` | every runner's `--dry-run`, and [`cost_kfold.py`](experiments/api/cost_kfold.py) | Prices a run from array *dimensions* before spending. It is how the K× cost overclaim got caught, for free. |
 | local weights (`tabpfn`) | [`experiments/kaggle/`](experiments/kaggle/README.md) | Takes the network out of the wall-clock comparison, which is the confound in P5. |
 | BAF Variants I–III | E6 | Replication across four datasets, which narrowed the headline from "narrower sets" to "same guarantee, half the labels". |
 
 **`time_col`, `group_col` and `group_time_col` are Thinking-only.** Passing
 `time_col` to the base model is rejected outright. So native temporal handling is
-not a free upgrade — it is a capability with no local weights behind it.
+not a free upgrade; it is a capability with no local weights behind it.
 
 **The KV cache and Thinking are mutually exclusive**, server-enforced:
 `HTTP 422 — FIT_WITH_CACHE fit mode is not compatible with thinking mode`. Cache
@@ -115,7 +115,7 @@ experiment was designed around them.
 
 Conformal's threshold is the ⌈(n+1)(1−α)⌉-th smallest calibration score, and that
 index cannot exceed `n`. So a calibration set of size `n` can only certify
-**α ≥ 1/(n+1)** — below that, no threshold exists and the predictor must return
+**α ≥ 1/(n+1)**, below that, no threshold exists and the predictor must return
 every label. Split conformal calibrates on half your positives. Cross-conformal
 calibrates on all of them:
 
@@ -127,12 +127,12 @@ calibrates on all of them:
 | 400 | 99.5% | **99.75%** |
 
 **Cross-conformal exactly halves the tightest guarantee obtainable.** This is
-arithmetic, not a result — you can check it on paper, and it does not depend on
+arithmetic, not a result; you can check it on paper, and it does not depend on
 the dataset, the model, or a random seed.
 
 ### 2. Measured: the same guarantee from half the labels
 
-Split conformal at a budget of 2F frauds calibrates on F of them — exactly as
+Split conformal at a budget of 2F frauds calibrates on F of them, exactly as
 cross-conformal at a budget of F does. **Identical calibration size means an
 identical targeted level**, so these pairs compare directly on set width, with no
 interpolation and no matching on realised coverage. Measured on Bank Account
@@ -146,11 +146,11 @@ Fraud at α = 0.10:
 
 Cross-conformal halves the number of confirmed frauds needed for any given
 guarantee. On Base the sets are also narrower, and most so where labels are
-scarcest — 12.9% at 25 calibration positives.
+scarcest, 12.9% at 25 calibration positives.
 
 **The one asymmetry in this comparison runs the other way.** A budget of 2F
 frauds is a pool of 2F/0.011 rows, so split at 2F hands TabPFN exactly **twice
-the in-context rows** that cross gets at F — 4,545 against 2,273, 9,091 against
+the in-context rows** that cross gets at F, 4,545 against 2,273, 9,091 against
 4,545, 18,182 against 9,091. The better-resourced model is the one being beaten,
 which makes these margins conservative rather than flattering. (E5 separately
 finds context size barely moves set width at a fixed fraud count, so the effect
@@ -159,7 +159,7 @@ is small either way.)
 **Tested across four datasets, the robust claim is the halving, not the
 narrowing.** See [below](#does-it-replicate-four-datasets): in nine paired
 comparisons cross-conformal is significantly wider in **zero**, and
-significantly narrower in one — the scarcest budget. The rest are ties. Half the
+significantly narrower in one, the scarcest budget. The rest are ties. Half the
 labels, free.
 
 For a fraud desk, a hundred confirmed frauds is weeks of analyst work. Fifty
@@ -174,7 +174,7 @@ requested:
 
 | calibration positives | level actually targeted at α = 0.10 |
 |---:|---:|
-| 13 | **100.0%** — the threshold *is* the maximum score |
+| 13 | **100.0%**, the threshold *is* the maximum score |
 | 25 | 96.0% |
 | 50 | 92.0% |
 | 100 | 91.0% |
@@ -185,14 +185,14 @@ always the more conservative of the two. Measured on Bank Account Fraud at
 α=0.10 with a budget of **50 confirmed frauds**: split calibrates on 25 of them,
 targets 96%, and delivers **coverage 0.960 with mean set size 1.497**;
 cross calibrates on all 50, targets 92%, and delivers **0.880 with set size
-1.263**. Split's higher coverage is not better calibration — it is aiming at 96%
+1.263**. Split's higher coverage is not better calibration; it is aiming at 96%
 because it cannot aim at 90%, and paying for the overshoot in set width.
 
 ### 4. Under extreme imbalance, marginal conformal abandons the minority class
 
-This part is **not our finding** — it is published
+This part is **not our finding**; it is published
 ([arXiv:2607.27143](https://arxiv.org/abs/2607.27143); *MAKE* 8(7):190, both
-2026) — and this library pins it as a regression test
+2026), and this library pins it as a regression test
 (`tests/test_coverage.py`). Marginal conformal spends its error budget where the
 mass is, so at a 1% base rate the fraud class can fall far below 1−α while the
 headline number looks healthy. Class-conditional (Mondrian) calibration is the
@@ -202,7 +202,7 @@ fix, and it is the default here.
 
 Bank Account Fraud (Feedzai, NeurIPS 2022), 1,000,000 rows at a 1.1029% fraud
 rate. Temporal protocol: months 0–5 are the labelled pool, months 6–7 the
-evaluation set — never a random split, because the fraud rate climbs from 0.875%
+evaluation set, never a random split, because the fraud rate climbs from 0.875%
 in month 2 to 1.475% in month 7. TabPFN-3.5 through the Prior Labs API.
 
 ![Set size at matched coverage level: cross-conformal reaches each level with half the fraud labels](figures/e1_matched_alpha01.png)
@@ -223,7 +223,7 @@ python experiments/analyze_e1.py --alpha 0.05
 ### Against the baselines: TabPFN wins where it counts
 
 At an identical targeted level, TabPFN produces **narrower prediction sets than
-LightGBM in all four comparisons** — which is to say fewer cases land in a human
+LightGBM in all four comparisons**, which is to say fewer cases land in a human
 analyst's queue for the same guarantee:
 
 | strategy | budget | targeted level | TabPFN | LightGBM | TabPFN narrower by |
@@ -237,22 +237,22 @@ Conformal prediction is what makes this measurable: it converts model quality
 into the unit a fraud desk actually budgets for.
 
 **Against TabPFN's own imbalance tooling**, which produces no guarantee at all:
-a tuned threshold — the approach [arXiv:2605.21742](https://arxiv.org/abs/2605.21742)
-found strongest for prior-data fitted networks — reaches 0.925 recall while
+a tuned threshold, the approach [arXiv:2605.21742](https://arxiv.org/abs/2605.21742)
+found strongest for prior-data fitted networks, reaches 0.925 recall while
 flagging **40.7% of legitimate traffic**. Comparable recall, no promise it holds
 next month.
 
 Worth knowing if you use it: **`balance_probabilities=True` changes nothing once
 you tune a threshold.** It moves the probability scale a long way (the tuned
 threshold shifts from 0.0045 to 0.29) but leaves recall and false-positive rate
-identical in four of six seeds and within two cases in 2,878 on the other two —
+identical in four of six seeds and within two cases in 2,878 on the other two,
 a monotone rescaling, which threshold tuning absorbs. It earns its keep only
 against a *fixed* cutoff like 0.5.
 
 ### Does it replicate? Four datasets
 
 One dataset is one result. The BAF suite is six one-million-row datasets at the
-same 1.103% fraud rate, differing in the bias deliberately injected into them —
+same 1.103% fraud rate, differing in the bias deliberately injected into them,
 a real replication test. Re-running only the matched-level comparison:
 
 | dataset | calib. positives | paired difference (split − cross) | verdict |
@@ -267,12 +267,12 @@ a real replication test. Re-running only the matched-level comparison:
 | Variant III | 50 | +0.0126 ± 0.0067 (n=3) | tie |
 | Variant III | 100 | −0.0423 ± 0.0162 (n=3) | tie *(see below)* |
 
-**Significantly wider in 0 of 9. Significantly narrower in 1** — the scarcest
+**Significantly wider in 0 of 9. Significantly narrower in 1**, the scarcest
 budget on Base. Everything else is a tie.
 
 The raw win count was 6 of 9, which over-reads noise: the seeds are paired, so
 they must be tested pairwise. Doing that properly shrinks the claim and makes it
-survive — *the same targeted level from half the labels, at no cost in width*,
+survive, *the same targeted level from half the labels, at no cost in width*,
 everywhere tested, with a real width advantage where positives are scarcest.
 Width is not the only currency, though: what it does cost is
 [realized coverage](#what-cross-conformal-actually-costs).
@@ -297,7 +297,7 @@ frauds. So: hold the frauds at **200** and grow the legitimate context from
 | 200,200 | 0.10% | 1.434 |
 
 **No.** Slope −0.017 set size per 10× context, against a seed standard deviation
-of 0.046 — flat. Adding 190,000 legitimate rows buys nothing.
+of 0.046, flat. Adding 190,000 legitimate rows buys nothing.
 
 ![Set size against context size at a fixed 200 confirmed frauds; the curve is flat and sits inside one seed standard deviation](figures/e5_scale_alpha005.png)
 
@@ -309,7 +309,7 @@ resource cross-conformal stops wasting.
 each fold's server-side fit grows with the context, so 100k and 200k would have
 been hours per configuration. A wall-clock limit, not a result.)*
 
-**What the KV cache is worth**, at the same contexts — `fit_mode="fit_with_cache"`,
+**What the KV cache is worth**, at the same contexts, `fit_mode="fit_with_cache"`,
 same seed, same rows:
 
 | context | predict uncached | predict cached | speedup | fit uncached | fit cached | max \|Δp\| |
@@ -318,7 +318,7 @@ same seed, same rows:
 | 100,200 | 13.6 s | **4.4 s** | 3.1× | 31.6 s | 54.7 s | 4.3e-04 |
 | 200,200 | 36.9 s | **5.4 s** | **6.8×** | 153.4 s | 134.2 s | 7.0e-04 |
 
-The cached and uncached runs are **not bit-identical** — the probabilities differ
+The cached and uncached runs are **not bit-identical**, the probabilities differ
 in the fourth decimal on nearly every row, which is two orders of magnitude below
 the seed-to-seed spread and does not move any conclusion. An earlier version of
 this table claimed "same sets: yes"; it was comparing *mean* set size within
@@ -326,7 +326,7 @@ this table claimed "same sets: yes"; it was comparing *mean* set size within
 
 **The cache is not free**: it front-loads the attention state, so `fit` gets
 *slower* at 50k and 100k and only the prediction pass gets faster. At 50,200 the
-round trip is worse overall — 26.7 s cached against 21.7 s uncached. It pays off
+round trip is worse overall, 26.7 s cached against 21.7 s uncached. It pays off
 because conformal scores the same context twice, once to calibrate and once to
 evaluate, and because the predict saving grows with context while the fit
 penalty does not.
@@ -334,13 +334,13 @@ penalty does not.
 ### Does it hold on a different dataset entirely?
 
 Everything above is Bank Account Fraud. E6's four datasets are BAF Base plus
-Variants I–III — same 32 columns, resampled under different bias — so "one
+Variants I–III, same 32 columns, resampled under different bias, so "one
 dataset family" was the honest description.
 
 **Forest Cover Type** (Blackard & Dean, UCI) is the other domain: 581,012
 cartographic observations, 54 numeric features, predicting tree species from
 elevation, slope, hillshade and soil type. Binarised to cover type 4,
-Cottonwood/Willow, which occurs at **0.473%** — comparable to BAF's 1.1% and
+Cottonwood/Willow, which occurs at **0.473%**, comparable to BAF's 1.1% and
 arrived at naturally rather than by subsampling. No fraud, no transactions, no
 temporal drift, no shared column. It ships with scikit-learn, so reproducing it
 needs no extra credentials.
@@ -362,7 +362,7 @@ Paired by seed:
 | 100 | -0.0090 ± 0.0086 (n=3) | tie (within noise) |
 
 **Cross-conformal is significantly wider in 0 of 3 comparisons here**, and
-narrower in 0 — three ties. The halving itself is structural: it follows from
+narrower in 0, three ties. The halving itself is structural: it follows from
 where the calibration set comes from, not from the data, so it transfers by
 construction. What this tests is whether it *costs* anything on a domain the
 method was not tuned on, and it does not.
@@ -373,13 +373,13 @@ have left as one unreplicated number.
 ### What cross-conformal actually costs
 
 Split conformal carries an **exact** finite-sample guarantee. Cross-conformal
-does not — pooling out-of-fold scores and applying them to a model fitted on the
+does not, pooling out-of-fold scores and applying them to a model fitted on the
 whole pool is *approximately* valid (Vovk 2015), and the related CV+ bounds
 worst-case coverage at `1 − 2α` (Barber et al. 2021). This repository has cited
 that caveat from the start. Here it is measured.
 
 For every run: realized coverage of the fraud class minus **the level that run
-actually certifies**, `ceil((n+1)(1−α))/n`. The seed is the unit of analysis —
+actually certifies**, `ceil((n+1)(1−α))/n`. The seed is the unit of analysis,
 within a seed the two arms share an evaluation set, so the individual runs are
 not independent and testing them as though they were understates the error.
 
@@ -403,13 +403,13 @@ positives, and pays about two points of realized coverage for it at tight α.**
 A desk that needs the exact guarantee should use split and find the labels. A
 desk that cannot find the labels now knows what the alternative costs.
 
-Reproduce with `python experiments/analyze_validity.py` — no API key needed.
+Reproduce with `python experiments/analyze_validity.py`, no API key needed.
 
 ### Why TabPFN wins: calibration, measured rather than cited
 
 Until now this README borrowed the claim that TabPFN is unusually well
 calibrated. Measured on our own rows, from probabilities already saved, at zero
-API cost — and reweighted to the true 1.41% base rate, because the evaluation
+API cost, and reweighted to the true 1.41% base rate, because the evaluation
 set is enriched and calibration metrics are base-rate sensitive:
 
 | strategy | budget | TabPFN ECE | LightGBM ECE | TabPFN better by | AUC gap |
@@ -423,7 +423,7 @@ set is enriched and calibration metrics are base-rate sensitive:
 mechanism behind the narrower sets above, and the direction matters:
 
 > Conformal prediction is *distribution-free*. Its coverage guarantee holds for a
-> badly calibrated model too — it just produces wider sets to get there. What
+> badly calibrated model too; it just produces wider sets to get there. What
 > calibration buys is not validity but **efficiency**.
 
 So the chain is: TabPFN is better calibrated → its conformal sets are narrower →
@@ -453,37 +453,37 @@ At usable γ it is *numerically identical* to doing nothing. Turn γ up far enou
 to move the threshold and it stops tracking the drift and starts oscillating:
 the month-to-month swing goes from 0.023 to **0.106**, four and a half times
 wider, on a single seed. The one row with fewer months below target, γ = 1.0,
-buys that with the widest sets and the wildest swing — 0.894 one month and 1.000
+buys that with the widest sets and the wildest swing, 0.894 one month and 1.000
 the next. That is not adaptation.
 
 ![Coverage by month under drift, base TabPFN-3.5: frozen thresholds fall below the certified level from month 4 on](figures/e3_drift_base.png)
 
 The same walk with Thinking. Its frozen thresholds clear the certified level in
-all five months on this seed; re-encoding the context monthly — the green line —
+all five months on this seed; re-encoding the context monthly, the green line,
 dips below it once, at month 5:
 
 ![Coverage by month under drift, TabPFN-3.5-Thinking](figures/e3_drift_thinking.png)
 
 **TabPFN-3.5-Thinking reduces the problem but does not remove it.** Measured
 against the level actually targeted (97.83% with 46 calibration positives, not
-95% — the index rounds up), three seeds:
+95%; the index rounds up), three seeds:
 
 | model | seed 0 | seed 1 | seed 2 | seed-months below target | mean set size |
 |---|---:|---:|---:|---:|---:|
 | base TabPFN-3.5 | 4 of 5 | 0 of 5 | 5 of 5 | **9 of 15** | 1.427 |
 | TabPFN-3.5-Thinking | 0 of 5 | 0 of 5 | 3 of 5 | **3 of 15** | 1.502 |
 
-The first seed looked decisive — base failing four months, Thinking none — and
+The first seed looked decisive, base failing four months, Thinking none, and
 **it did not hold up**. Seed 1 has base holding comfortably; seed 2 has Thinking
 failing three months of its own.
 
 What survives three seeds, stated at the strength the data supports:
 **Thinking was never worse than base on any seed, and strictly better on two of
 three**, for about 5% wider sets. Paired by seed the difference is
-2.0 ± 1.2 months (t ≈ 1.7, n = 3) — **directional, not statistically
+2.0 ± 1.2 months (t ≈ 1.7, n = 3), **directional, not statistically
 established.** Settling it properly needs more seeds than this project has spent.
 
-This matches what Prior Labs documents — Thinking is stronger on temporal and grouped data — and
+This matches what Prior Labs documents, Thinking is stronger on temporal and grouped data, and
 Thinking has **no local weights**, so this result is only reachable through the
 managed API. It also passes `time_col`, which the base model rejects outright,
 so it compares recommended usage rather than isolating the checkpoint. One seed.
@@ -495,14 +495,14 @@ all. At the 46 positives available here that step is **0.0139**; ACI moves α by
 0.003 across the whole walk. Raise γ enough to move and it jumps a whole order
 statistic and overshoots.
 
-This is not a defect in ACI — and it points back at the headline, since
+This is not a defect in ACI, and it points back at the headline, since
 cross-conformal doubles the calibration set and so doubles threshold resolution.
 
 ### Where should a scarce label budget go? Mostly, nowhere
 
 The question this project set out to measure. Sweeping `cal_size` from 0.2 to
 0.8 at both budgets, and testing the spread with a permutation that shuffles the
-settings within each seed — 20,000 permutations, so the selection of best-versus-
+settings within each seed, 20,000 permutations, so the selection of best-versus-
 worst is inside the null rather than ignored by it:
 
 | budget | spread, best to worst | permutation p | |
@@ -510,7 +510,7 @@ worst is inside the null rather than ignored by it:
 | 100 frauds | 0.089 | **0.042** | the settings differ |
 | 200 frauds | 0.055 | 0.618 | nothing there |
 
-So at the smaller budget the allocation does matter — but **it does not matter
+So at the smaller budget the allocation does matter, but **it does not matter
 enough to be worth choosing**, because the best split setting still loses to not
 splitting at all: 1.505 against cross-conformal's **1.463**. And the test says
 only that the seven settings differ; which one is best is a pick from seven on
@@ -530,15 +530,15 @@ before the experiments ran.
 
 | | prediction | outcome |
 |---|---|---|
-| **P1** | cross-conformal has lower seed-variance of fraud coverage | **falsified** — 0.107 vs 0.083 at F=25 (cross better) but 0.044 vs 0.081 at F=100 (cross worse). No consistent direction. |
-| **P2** | cross-conformal costs under 2× split in API tokens | **falsified** — measured exactly K×: 2.0× at K=2, 20.0× at K=20. The API prices a call by total rows touched, so each fold is a full pass over the pool. |
+| **P1** | cross-conformal has lower seed-variance of fraud coverage | **falsified**, 0.107 vs 0.083 at F=25 (cross better) but 0.044 vs 0.081 at F=100 (cross worse). No consistent direction. |
+| **P2** | cross-conformal costs under 2× split in API tokens | **falsified**, measured exactly K×: 2.0× at K=2, 20.0× at K=20. The API prices a call by total rows touched, so each fold is a full pass over the pool. |
 | **P3** | marginal CP under-covers the fraud class; Mondrian does not | holds (and was already published) |
-| **P4** | static thresholds decay under drift; ACI holds coverage | **falsified** — ACI is identical to frozen at usable γ, for the quantization reason above. |
-| **P5** | LightGBM cross-conformal costs far more wall-clock | **falsified** — ~6s against TabPFN's ~51s. Confounded (local CPU vs remote GPU), but the intuition was wrong: LightGBM trains on 9,000 rows in under a second. The fair-hardware rerun is written and tested ([`experiments/kaggle/`](experiments/kaggle/README.md)); it needs one GPU session, so P5 is **still open**. |
+| **P4** | static thresholds decay under drift; ACI holds coverage | **falsified**; ACI is identical to frozen at usable γ, for the quantization reason above. |
+| **P5** | LightGBM cross-conformal costs far more wall-clock | **falsified**, ~6s against TabPFN's ~51s. Confounded (local CPU vs remote GPU), but the intuition was wrong: LightGBM trains on 9,000 rows in under a second. The fair-hardware rerun is written and tested ([`experiments/kaggle/`](experiments/kaggle/README.md)); it needs one GPU session, so P5 is **still open**. |
 
 **Four of five failed.** What survives is sturdier for it: the feasibility
-ceiling and level fidelity are *deterministic* — checkable on paper, not
-falsifiable by more data — and the half-the-labels and baseline results are
+ceiling and level fidelity are *deterministic*, checkable on paper, not
+falsifiable by more data, and the half-the-labels and baseline results are
 measured at matched level, with the only asymmetry favouring the baseline.
 
 ### Cost, measured rather than claimed
@@ -554,7 +554,7 @@ measured at matched level, with the only asymmetry favouring the baseline.
 
 Below ~100,000 context rows everything sits on a 10,000-token minimum charge, so
 the documented KV-cache saving is real but invisible at small scale. Five folds
-on a 10,000-row pool is roughly 50,000 tokens — about 0.25% of a monthly budget.
+on a 10,000-row pool is roughly 50,000 tokens, about 0.25% of a monthly budget.
 Cross-conformal is not cheap relative to split; it is cheap in absolute terms,
 and labels are the resource that is actually scarce.
 
@@ -565,13 +565,13 @@ pip install -e ".[dev]"   # tests, plus everything needed to redraw the figures
 pytest                    # 126 tests, CPU, ~3s warm (~10s on a cold clone)
 ```
 
-The core depends on **numpy, pandas and scikit-learn only** — no torch, no
+The core depends on **numpy, pandas and scikit-learn only**, no torch, no
 `tabpfn`, no GPU. 126 tests in about three seconds on a laptop. TabPFN appears in
 `experiments/` and is never imported by `src/`.
 
 For the experiments you additionally need the dataset and a free Prior Labs
 account. Bank Account Fraud is distributed through Kaggle only and is not in
-this repository — `data/` is gitignored, since it is a million rows:
+this repository; `data/` is gitignored, since it is a million rows:
 
 ```bash
 pip install -e ".[experiments]"
@@ -579,8 +579,8 @@ python scripts/download_data.py           # Kaggle credentials; prints a manual 
 python -c "import tabpfn_client; tabpfn_client.init()"
 ```
 
-`download_data.py` verifies what arrived rather than assuming it — row count,
-column count, fraud rate and the per-month drift — and prints them.
+`download_data.py` verifies what arrived rather than assuming it, row count,
+column count, fraud rate and the per-month drift, and prints them.
 
 See [`experiments/api/README.md`](experiments/api/README.md) for the token,
 budget discipline and rate limits. Every experiment takes `--dry-run`, which
@@ -601,17 +601,17 @@ python scripts/verify_claims.py       # recomputes 49 README/script claims; non-
 | `scores.py` | nonconformity scores (`one_minus_prob` by default) |
 | `calibration.py` | split-conformal quantiles: marginal and class-conditional |
 | `crossconformal.py` | K-fold out-of-fold scoring |
-| `adaptive.py` | adaptive conformal inference — online per-class levels under drift |
+| `adaptive.py` | adaptive conformal inference, online per-class levels under drift |
 | `decision.py` | prediction sets → approve / block / review under a budget |
 | `wrapper.py` | `ConformalClassifier`, scikit-learn compatible |
 | `metrics.py` | coverage by class, set size, empty-set rate |
 
-The conformal machinery is **not restricted to binary** — scores, calibration,
+The conformal machinery is **not restricted to binary**, scores, calibration,
 cross-conformal and the wrapper all work for any number of classes, and the
 class-conditional argument gets stronger with more of them: at five skewed
 classes, marginal conformal leaves the worst class at **0.675** coverage while
 Mondrian holds **0.890** against a 0.90 target. `tests/test_multiclass.py` pins
-this. Only `decision.route` is binary by nature — approve / block / review has no
+this. Only `decision.route` is binary by nature, approve / block / review has no
 sensible reading across five classes. The **benchmarks** in this repository are
 binary, because the motivating problem is.
 
@@ -620,7 +620,7 @@ binary, because the motivating problem is.
 | | comparison | result |
 |---|---|---|
 | split | same estimator, same calibration set, same `lac` score, so the sets *must* match | **identical**, asserted exactly, 3 alphas × 3 seeds |
-| cross | ours is Vovk (2015) — pool out-of-fold scores, predict with the full-data model. MAPIE's is CV+ (Barber et al. 2021), which aggregates the fold models instead. **Different constructions**, so exact agreement would be suspicious | **99.7% of prediction sets identical**; coverage within 0.002 and set size within 0.002 at α ∈ {0.05, 0.1, 0.2} |
+| cross | ours is Vovk (2015), pool out-of-fold scores, predict with the full-data model. MAPIE's is CV+ (Barber et al. 2021), which aggregates the fold models instead. **Different constructions**, so exact agreement would be suspicious | **99.7% of prediction sets identical**; coverage within 0.002 and set size within 0.002 at α ∈ {0.05, 0.1, 0.2} |
 
 The second row is the one that matters, because cross-conformal is the headline.
 Two independently written implementations of two different cross-conformal
@@ -632,7 +632,7 @@ Three decisions worth knowing:
 **`alpha` is a prediction-time argument.** Calibration stores the *scores*;
 thresholds are derived on demand. Sweeping α costs no further calls to the base
 estimator, which against a metered API is the difference between one billed pass
-and thirty. `predict_set_from_proba` goes further — score once, sweep offline.
+and thirty. `predict_set_from_proba` goes further, score once, sweep offline.
 
 **`cal_size` is a constructor argument**, because how a scarce label budget
 should be divided between a foundation model's context and its calibration set
@@ -665,7 +665,7 @@ footprint small enough to vendor into
 
 To be precise about that last point, since it is easy to overstate: the
 extensions repo **does** contain one conformal module, `cp_missing_data`, which
-exports `CPMDATabPFNRegressor` — a **regression** interval estimator specialised
+exports `CPMDATabPFNRegressor`, a **regression** interval estimator specialised
 to missing-data patterns, using a single split-conformal calibration set. There
 is no conformal prediction for **classification**, no class-conditional
 calibration, no cross-conformal, and no online variant. That is the gap. The
@@ -692,7 +692,7 @@ being nearly free was wrong and is corrected there.
 
 ## Licence
 
-Apache 2.0 — see [`LICENSE`](LICENSE).
+Apache 2.0; see [`LICENSE`](LICENSE).
 
 **TabPFN-3.5's model weights are released by Prior Labs under a separate,
 non-commercial licence.** This package does not bundle, depend on, or

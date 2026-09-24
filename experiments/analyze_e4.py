@@ -86,7 +86,7 @@ def cost(conf, thresh):
     print("\n> ⚠ **The wall-clock column is not a like-for-like comparison and must not "
           "be presented as one.** TabPFN runs against a remote API (network latency, "
           "queueing); LightGBM runs on local CPU. The hardware-neutral number is "
-          "gradient-trained fits — 0 for TabPFN by construction, since `fit` swaps a "
+          "gradient-trained fits, 0 for TabPFN by construction, since `fit` swaps a "
           "context and takes no gradient step. A fair wall-clock comparison needs both "
           "models on identical hardware.")
 
@@ -106,8 +106,8 @@ def guarantee(conf, thresh, alpha: str):
         print(f"| {arm} | **no** | {np.mean(cell['recall']):.3f} recall | "
               f"{np.nanmean(cell['fpr']):.3f} of legitimate traffic flagged |")
     print("\n> Both cost columns are within-class or set-size quantities. The evaluation "
-          "set is enriched to ~49% fraud, so any *marginal* rate measured on it — a raw "
-          "flag rate, or set size read as a production review load — would be inflated. "
+          "set is enriched to ~49% fraud, so any *marginal* rate measured on it, a raw "
+          "flag rate, or set size read as a production review load, would be inflated. "
           "False-positive rate is a within-class quantity and is unbiased by the "
           "enrichment.\n")
     print("The threshold arms are the approach arXiv:2605.21742 found strongest for "
@@ -121,7 +121,7 @@ def main() -> int:
     ap.add_argument("--alpha", default="0.05")
     args = ap.parse_args()
     if not RESULTS.exists():
-        raise SystemExit(f"No {RESULTS.relative_to(REPO)} — run E4 first.")
+        raise SystemExit(f"No {RESULTS.relative_to(REPO)}; run E4 first.")
     conf, thresh, n = load(args.alpha)
     print(f"{n} result rows")
     quality(conf, float(args.alpha))

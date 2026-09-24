@@ -4,7 +4,7 @@ Everything so far runs on BAF Base. One dataset is one result, and the honest
 question a reader asks next is whether it generalises. The Bank Account Fraud
 suite exists precisely for this: six one-million-row datasets at the same 1.103%
 fraud rate, differing in the *bias* deliberately injected into them (Jesus et
-al., NeurIPS 2022). Same task, different data-generating quirks — a real
+al., NeurIPS 2022). Same task, different data-generating quirks, a real
 replication test rather than a friendly one.
 
 Deliberately narrow. This does not re-run E1; it re-runs the single comparison
@@ -55,7 +55,7 @@ N_FOLDS = 5
 def load_variant(name: str):
     path = REPO / "data" / f"{name}.csv"
     if not path.exists():
-        raise SystemExit(f"Missing {path.relative_to(REPO)} — run scripts/download_data.py")
+        raise SystemExit(f"Missing {path.relative_to(REPO)}; run scripts/download_data.py")
     df = pd.read_csv(path)
     return (df[df[TIME].isin(POOL_MONTHS)].reset_index(drop=True),
             df[df[TIME].isin(EVAL_MONTHS)].reset_index(drop=True))
