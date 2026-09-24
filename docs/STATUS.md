@@ -1,7 +1,7 @@
-# Status — 20 September 2026 (updated)
+# Status — 24 September 2026 (updated)
 
 Written so the project can be picked up from the repository alone. Deadline
-**6 October 2026, 23:59 CEST** (22:59 Morocco) — 16 days.
+**6 October 2026, 23:59 CEST** (22:59 Morocco) — 12 days.
 
 ## Where things stand
 
@@ -13,7 +13,7 @@ Every deliverable exists in draft or better.
 | Library (`src/tabpfn_conformal`) | complete — 126 tests, multiclass, verified against MAPIE |
 | E1 cross vs split | complete, 40/40 |
 | E2 budget allocation | complete, 80/80 |
-| E3 drift + ACI + Thinking | ⚠ **seed 2 running** — see below |
+| E3 drift + ACI + Thinking | complete, 3 seeds — claim weakened, see below |
 | E4 baselines | complete, 36/36 |
 | E5 scale + KV cache | complete, 24 rows |
 | E6 variant replication | complete, 36/36 |
@@ -24,7 +24,7 @@ Every deliverable exists in draft or better.
 | `docs/` method, limitations, findings | complete |
 | Interactive demo | published |
 | Video script | written, not recorded |
-| Extensions PR | generated and tested, **not opened** |
+| Extensions PR | generated and tested, **not opened** — unblocked now the repo is public |
 | Submission text | drafted |
 
 ## The one open question — SETTLED 20 Sept
@@ -54,19 +54,30 @@ recomputes both counts.
 
 ## What is left to do, in order
 
-1. **Flip the repo public.** Audited 22 Sept before doing so: no credentials in
-   any blob of any commit, `.env` and `data/` never committed, no sensitive
-   filename ever added, CI references no secrets, and the committed `.npz`
-   files hold probabilities and labels only. `python scripts/check_secrets.py
-   --history` re-runs the whole sweep; it is also a CI step now, so a future
-   commit cannot quietly leak one. Two cosmetic exposures were redacted from
-   HEAD (a truncated, expired server-side upload id in `results/spike_s1.json`,
-   and local absolute paths in run logs). **History was deliberately not
-   rewritten** — neither item is a credential, and 84 commits of visible
-   corrections are worth more than removing them. It is private now, and this has to come *first*:
-   both [`../contrib/tabpfn-extensions/ISSUE.md`](../contrib/tabpfn-extensions/ISSUE.md)
-   and `PR.md` link to `github.com/ilyas-elm/tabpfn-conformal`, so posting either
-   while the repo is private gives Prior Labs a 404.
+1. ~~**Flip the repo public.**~~ **Done 24 September.**
+   Audited first: no credentials in any blob of any commit, `.env` and `data/`
+   never committed, no sensitive filename ever added, CI references no secrets,
+   and the committed `.npz` files hold probabilities and labels only.
+   `python scripts/check_secrets.py --history` re-runs the whole sweep and is a
+   CI step, so a future commit cannot quietly leak one. Two cosmetic exposures
+   were redacted from HEAD (a truncated, expired server-side upload id in
+   `results/spike_s1.json`, and local absolute paths in run logs). **History was
+   deliberately not rewritten** — neither item is a credential, and 84 commits of
+   visible corrections are worth more than removing them.
+
+   **Going public immediately exposed a defect no local check could see: CI had
+   failed 56 times out of 56 and had never once passed.** The badge at the top of
+   the README was red from the first run on 19 September, and nothing behind it
+   had ever executed — not the tests, not the secret scan, not the claim
+   verifier. Three causes, fixed in `0c91584`: `uv pip install --system` refuses
+   on ubuntu-latest (externally-managed interpreter) and would have targeted the
+   wrong interpreter anyway, so the matrix was never testing 3.10 or 3.13; an
+   unanchored `data/` in `.gitignore` also matched `tests/data/`, so
+   `metric_goldens.json` was never committed and the three results-integrity
+   tests failed on every fresh clone; and `verify_claims.py` imported `tomllib`,
+   which is 3.11+, under a bare `except`, silently skipping two checks on 3.10.
+   **All 30 steps now pass on all three interpreters.**
+
 2. **Open the extensions PR.** `python scripts/build_extension_pr.py` regenerates
    the payload; [`../contrib/tabpfn-extensions/ISSUE.md`](../contrib/tabpfn-extensions/ISSUE.md)
    is the issue to post first (their CONTRIBUTING asks for an issue before a PR),
@@ -93,7 +104,8 @@ verification**, which is what unlocks the GPU. About fifteen minutes.
 [`../experiments/kaggle/README.md`](../experiments/kaggle/README.md) is the
 step-by-step, written for someone who has never opened Kaggle.
 
-The repository has to be public first (step 1), because the notebook clones it.
+The repository is public as of 24 Sept, so the notebook can clone it. This is
+no longer blocked on anything but a Kaggle account.
 
 Until it is actually run, P5 stays open and `docs/limitations.md` says so. The
 submission does not depend on it.
@@ -113,14 +125,45 @@ submission does not depend on it.
   every number in the README from `results/` and has caught real drift.
 - **Grep the docs for absolutes before submitting.** Most are accurate, which is
   why the false ones survive several readings.
+- **A badge you have never clicked is not a green badge.** CI here failed 56
+  times out of 56 while six review passes called it green, because every one
+  of them simulated the workflow locally instead of reading the runs GitHub
+  actually executed. Locally the steps all passed; on the runner the install
+  died before the first test. Check the API, not your own re-enactment.
+- **Clone the repository before believing it reproduces.** `tests/data/` was
+  gitignored by accident, so three tests passed for the author and failed for
+  everyone else. A working copy cannot show you what you forgot to commit.
+- **Anything generated for an outside audience loses what the generator does
+  not carry.** `build_extension_pr.py` replaces module docstrings, which
+  deleted the approximate-validity caveat from the payload while the PR text
+  claimed the module carried it. Diff the generated artefact against what you
+  claim about it, not against the source it came from.
 - Check CPU time against elapsed time when a run looks slow — the client can
   block for hours on a dropped response.
 
 ## Environment
 
-- Repo: `~/project_hub/tabpfn-conformal`, remote `git@github.com:ilyas-elm/tabpfn-conformal` (**private**)
+- Repo: `~/project_hub/tabpfn-conformal`, remote `git@github.com:ilyas-elm/tabpfn-conformal` (**public** since 24 Sept)
+- The GitHub repo still has no description, topics or homepage set — the web
+  UI is the only way, and it is the first thing a judge sees. Suggested text
+  is at the end of this file.
 - Homebrew `git` is broken on this machine (libcurl mismatch); use `/usr/bin/git`
 - Homebrew cannot install bottles (macOS 14 is Tier 3), so no `gh` — use the web UI
 - `uv` at `~/Library/Python/3.14/bin/uv`, not on PATH; venv is Python 3.12
 - API token in `.env` (gitignored). Budget: 5M/day, 20M/month, resets 1 Oct
 - TabPFN runs on Prior Labs' GPUs via `tabpfn-client`; nothing local needs a GPU
+
+## Repository presentation — not set, and it is the first thing seen
+
+GitHub's API reports `description: null`, `topics: []`, `homepage: null`. On a
+submission judged 50% on showcase, the one-line description is what appears in
+search, in the org feed, and in every link preview. Only the web UI can set
+these (no `gh` on this machine). On the repo page, "About" → the gear icon:
+
+- **Description:**
+  `Distribution-free coverage guarantees for TabPFN-3.5. Cross-conformal reaches the same targeted level from half the confirmed positives — measured, with the cost stated.`
+- **Website:** the published demo URL (the one in the README's "Try the
+  interactive demo" link)
+- **Topics:** `conformal-prediction`, `tabpfn`, `uncertainty-quantification`,
+  `tabular`, `fraud-detection`, `prediction-sets`, `imbalanced-classification`,
+  `machine-learning`
