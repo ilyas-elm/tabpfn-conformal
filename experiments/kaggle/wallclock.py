@@ -113,7 +113,7 @@ def build(family: str, device: str):
     return LGBMClassifier(n_estimators=200, verbose=-1, random_state=0)
 
 
-def warm_up(device: str) -> None:
+def warm_up(device: str, families=("tabpfn", "lightgbm")) -> None:
     """Fit both families once on throwaway data, before anything is timed.
 
     TabPFN does not load its weights until ``fit``, and on a fresh machine that
@@ -134,7 +134,7 @@ def warm_up(device: str) -> None:
     # the frame this actually runs on, so carry one text column here too.
     X["text"] = ["alpha", "beta"] * 16
     y = np.array([0, 1] * 16)
-    for family in ("tabpfn", "lightgbm"):
+    for family in families:
         t0 = time.perf_counter()
         Xw = to_numeric(X) if family == "lightgbm" else X
         try:
@@ -169,6 +169,10 @@ def main() -> int:
                     default=pathlib.Path("/kaggle/input/bank-account-fraud-dataset-neurips-2022"))
     ap.add_argument("--budgets", type=int, nargs="+", default=list(BUDGETS))
     ap.add_argument("--seeds", type=int, nargs="+", default=list(SEEDS))
+    # If a session dies part-way, the JSON already holds the finished rows and
+    # this lets you rerun only what is missing instead of the whole grid.
+    ap.add_argument("--families", nargs="+", default=["tabpfn", "lightgbm"],
+                    choices=["tabpfn", "lightgbm"])
     args = ap.parse_args()
 
     dev = device_report()
@@ -178,7 +182,7 @@ def main() -> int:
               "models on the same accelerator; on CPU it settles nothing.",
               file=sys.stderr)
 
-    warm_up(dev["device"])
+    warm_up(dev["device"], args.families)
 
     pool_df, eval_df = load_frames(args.data)
     out, rows = REPO / "results" / "kaggle_wallclock.json", []
@@ -190,7 +194,7 @@ def main() -> int:
                 continue
             X_eval, y_eval = make_eval(eval_df, seed)
 
-            for family in ("tabpfn", "lightgbm"):
+            for family in args.families:
                 Xp = to_numeric(X_pool) if family == "lightgbm" else X_pool
                 Xe = to_numeric(X_eval) if family == "lightgbm" else X_eval
                 for strategy in ("split", "cross"):

@@ -47,10 +47,16 @@ protocol is E4's, unchanged.
      `pip install` and the `git clone` below both fail.
    If either is greyed out, you have not done the phone verification.
 
-3. **Add-ons**, then **Secrets**, then **Add a new secret**. Label it
-   `TABPFN_TOKEN`, paste your key as the value, and make sure it is attached to
-   this notebook. Put it here rather than in a cell: a cell is saved with the
-   notebook, and a notebook can be shared.
+3. **Add-ons**, then **Secrets**, then **Add a new secret**. Paste your key as
+   the value and make sure the secret is **attached to this notebook**. Put it
+   here rather than in a cell: a cell is saved with the notebook, and a notebook
+   can be shared.
+
+   The label does not matter as long as the cell below knows it. The cell tries
+   `tabpfn v3.5`, `TABPFN_TOKEN`, `tabpfn_token` and `conform`, prints which one
+   it found, and stops with a clear message if none match, so a wrong label
+   costs seconds rather than a session. If yours is different, add it to the
+   list.
 
 4. Same sidebar, **+ Add Input**, search `Bank Account Fraud Dataset NeurIPS 2022`,
    then **Add**. It appears under `/kaggle/input/`. You may have to accept the
@@ -59,9 +65,20 @@ protocol is E4's, unchanged.
 5. Click the first cell, paste this in, and press the play button:
 
    ```python
-   from kaggle_secrets import UserSecretsClient
    import os
-   os.environ["TABPFN_TOKEN"] = UserSecretsClient().get_secret("TABPFN_TOKEN")
+   from kaggle_secrets import UserSecretsClient
+
+   secrets = UserSecretsClient()
+   for label in ("tabpfn v3.5", "TABPFN_TOKEN", "tabpfn_token", "conform"):
+       try:
+           os.environ["TABPFN_TOKEN"] = secrets.get_secret(label)
+           print(f"using Kaggle secret: {label}")
+           break
+       except Exception:
+           continue
+   else:
+       raise SystemExit("No TabPFN secret found. Add-ons -> Secrets, attach it "
+                        "to this notebook, and add its label to the list above.")
 
    !pip install -q tabpfn lightgbm
    !git clone -q https://github.com/ilyas-elm/tabpfn-conformal.git
