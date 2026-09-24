@@ -88,10 +88,13 @@ recomputes both counts.
    `tabpfn_extensions.conformal`, 18 tests pass under `FAST_TEST_MODE=1`
    (locally: `FAST_TEST_MODE=1 PYTHONPATH=contrib/tabpfn-extensions/src pytest
    contrib/tabpfn-extensions/tests`).
-3. **Record the video**; [`VIDEO.md`](VIDEO.md) has the script and a list of
+3. **Share the demo artifact.** See the section below: it is private, and the
+   README links to it prominently. One menu, thirty seconds, and it is the
+   difference between the showcase criterion landing and 404ing.
+4. **Record the video**; [`VIDEO.md`](VIDEO.md) has the script and a list of
    seven claims not to make on camera. Its numbers are checked by
    `scripts/verify_claims.py`, so re-run that before recording.
-4. **Submit**; [`SUBMISSION.md`](SUBMISSION.md) is the description field.
+5. **Submit**; [`SUBMISSION.md`](SUBMISSION.md) is the description field.
 
 **Optional, and only after the four above: P5 on fair hardware.** The wall-clock
 comparison against LightGBM is confounded (TabPFN remote, LightGBM local) and all
@@ -152,6 +155,15 @@ submission does not depend on it.
 - `uv` at `~/Library/Python/3.14/bin/uv`, not on PATH; venv is Python 3.12
 - API token in `.env` (gitignored). Budget: 5M/day, 20M/month, resets 1 Oct
 - TabPFN runs on Prior Labs' GPUs via `tabpfn-client`; nothing local needs a GPU
+
+## The demo artifact is PRIVATE, and the README links to it
+
+The publish API reports it as private: *only its owner and the people the owner
+has given access can open the link.* The README's "Try the interactive demo"
+link is the showcase centrepiece of a submission judged 50% on showcase, so
+until this is changed a judge clicking it gets nothing. It has to be set to
+"anyone with the link" from the page's own Share menu; no tooling can do it.
+Check it the way a judge would: open the link in a private window, signed out.
 
 ## The published demo is a second copy, and nothing can check it automatically
 
