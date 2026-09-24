@@ -17,7 +17,7 @@ build/
 # generated from demo/_template.html + figures/demo_data.json
 demo/index.html
 
-# Credentials — defence in depth. scripts/check_secrets.py fails the build if
+# Credentials, defence in depth. scripts/check_secrets.py fails the build if
 # any of these are ever tracked, but they should not reach the index at all.
 .env
 .env.*
