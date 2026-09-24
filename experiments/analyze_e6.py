@@ -76,7 +76,7 @@ def main() -> int:
     if not total:
         return 0
     print(f"\nRaw win count: cross is narrower in {wins} of {total}. That over-reads "
-          "noise —\nthe seeds are paired, so test them pairwise.\n")
+          "noise;\nthe seeds are paired, so test them pairwise.\n")
 
     print("### Paired across seeds (same seed, split at 2F vs cross at F)\n")
     print("| dataset | calib. positives | paired difference | verdict |")
@@ -104,7 +104,7 @@ def main() -> int:
           f"{sum(tally.values())} comparisons.** It is significantly narrower in "
           f"{tally['narrower']}; the rest are ties.")
     print("\nSo the claim that replicates is *the same guarantee from half the confirmed")
-    print("frauds at no cost in set width* — the narrower-sets result holds where labels")
+    print("frauds at no cost in set width*, the narrower-sets result holds where labels")
     print("are scarcest, which is the regime that matters, but not everywhere.")
     return 0
 

@@ -40,16 +40,16 @@ GPU.
 >
 > **What it adds**
 >
-> - `ConformalClassifier` — scikit-learn compatible, wraps any `predict_proba`
+> - `ConformalClassifier`, scikit-learn compatible, wraps any `predict_proba`
 >   estimator
-> - `method="mondrian"` — class-conditional calibration, one threshold per class.
+> - `method="mondrian"`, class-conditional calibration, one threshold per class.
 >   Marginal conformal spends its error budget where the mass is, so under heavy
 >   imbalance the minority class can fall far below `1 - alpha` while the headline
 >   number looks healthy.
-> - `strategy="cross"` — K-fold cross-conformal, which spends no labelled
+> - `strategy="cross"`, K-fold cross-conformal, which spends no labelled
 >   positives on calibration
-> - `ACI` — adaptive conformal inference for drifting streams
-> - `route` — prediction sets to approve / block / review under a review budget
+> - `ACI`, adaptive conformal inference for drifting streams
+> - `route`, prediction sets to approve / block / review under a review budget
 >
 > **Why `strategy="cross"` is worth having here specifically.** Cross-conformal
 > normally costs K refits, which is why split conformal is the default everywhere.
@@ -73,7 +73,7 @@ GPU.
 > in `average_set_size`, and the ACI level being discarded on handoff. Every one
 > was confirmed to fail on the mutation it guards.
 >
-> **Scope.** Prediction sets for any number of classes — `tests/test_multiclass.py`
+> **Scope.** Prediction sets for any number of classes, `tests/test_multiclass.py`
 > covers 3 and 5, where the class-conditional argument is if anything stronger
 > (marginal leaves the worst class at 0.675 coverage against a 0.90 target;
 > Mondrian holds 0.890). Should compose with `ManyClassClassifier`. The
@@ -88,7 +88,7 @@ GPU.
 > trade is half the labels against about two points of realized coverage, not a
 > free lunch. The module docstring carries this caveat, so it reaches anyone who
 > reads `strategy="cross"` rather than only this PR.
-> The methods are standard — this is packaging, not new statistics.
+> The methods are standard; this is packaging, not new statistics.
 >
 > Benchmarks, figures and full method notes:
 > https://github.com/ilyas-elm/tabpfn-conformal

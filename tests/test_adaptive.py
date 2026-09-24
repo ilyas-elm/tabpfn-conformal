@@ -170,8 +170,8 @@ def test_alpha_dict_reports_the_adapted_levels_not_the_target():
 
     `alpha_dict()` is what E3 feeds to `predict_set_from_proba` for the ACI arm.
     If it returned `alpha_target` the adaptation would be computed and then
-    discarded, and every ACI result would collapse onto the frozen one —
-    indistinguishable from this project's actual finding that ACI cannot move
+    discarded, and every ACI result would collapse onto the frozen one,
+indistinguishable from this project's actual finding that ACI cannot move
     the threshold at 46 calibration positives. A null result has to be measured,
     not produced by a bug.
     """

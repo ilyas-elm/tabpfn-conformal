@@ -3,7 +3,7 @@
 
 Run this after an experiment adds probability files to `results/proba/`. It
 records what the *current* library computes, so only run it when you are sure
-the library is right — the point of the goldens is to catch it changing.
+the library is right, the point of the goldens is to catch it changing.
 """
 from __future__ import annotations
 

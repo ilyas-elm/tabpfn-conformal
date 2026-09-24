@@ -14,7 +14,7 @@ class-conditional (Mondrian) variant that extreme class imbalance needs.
 
 Nothing here imports TabPFN: it wraps any estimator exposing `predict_proba`,
 and depends only on numpy and scikit-learn. `strategy="cross"` is worth knowing
-about specifically for TabPFN — K-fold cross-conformal spends none of the
+about specifically for TabPFN; K-fold cross-conformal spends none of the
 labelled positives on calibration, which normally costs K refits and costs K
 forward passes for a model with no training step.
 """

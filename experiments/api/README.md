@@ -38,7 +38,7 @@ into a chat.
 
 ## Budget discipline
 
-- `estimate_cost()` sends dimensions only — no upload, no quota consumed. Call it
+- `estimate_cost()` sends dimensions only, no upload, no quota consumed. Call it
   before every sweep.
 - Budgets are **5M tokens/day, 20M/month**, with a **10,000-token minimum per
   billable operation**.
@@ -46,7 +46,7 @@ into a chat.
   why K-fold cross-conformal is cheap here: K fits, but each row predicted once.
 - **Thinking fits are rate-limited to 30/hour.** Batch them overnight; never
   iterate on them interactively.
-- Rates are **50% off until 29 September 2026** — run the wide sweeps before then.
+- Rates are **50% off until 29 September 2026**; run the wide sweeps before then.
 
 ## Scripts
 
@@ -54,7 +54,7 @@ into a chat.
 |---|---|
 | `spike_s1_cache_thinking.py` | Settles whether the KV cache works with Thinking mode, and prices every planned experiment. Run this first. |
 
-Start with the free half — it spends nothing:
+Start with the free half, it spends nothing:
 
 ```bash
 python experiments/api/spike_s1_cache_thinking.py --quotes-only

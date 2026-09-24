@@ -267,7 +267,7 @@ def test_alpha_dict_reports_the_adapted_levels_not_the_target():
     """ACI's handoff into `predict_set`.
 
     If this returned `alpha_target`, the adaptation would be computed and then
-    discarded — indistinguishable from the (real) finding that ACI cannot move
+    discarded, indistinguishable from the (real) finding that ACI cannot move
     the threshold at a small calibration set.
     """
     aci = ACI(alpha_target=0.05, gamma=0.1, n_classes=2)

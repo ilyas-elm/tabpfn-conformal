@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E7 — does the headline hold on a genuinely different dataset?
+"""E7, does the headline hold on a genuinely different dataset?
 
 Every result so far is Bank Account Fraud. E6 replicated across BAF's Variants
 I–III, but those share the schema: same 32 columns, resampled under different
@@ -8,7 +8,7 @@ bias. "One dataset family" is the honest description and the README says so.
 This is the other domain. Forest Cover Type (Blackard & Dean, UCI): 581,012
 cartographic observations, 54 numeric features, predicting tree species from
 elevation, slope, hillshade and soil type. Binarised to **cover type 4
-(Cottonwood/Willow) against the rest**, which occurs at **0.473%** — comparable
+(Cottonwood/Willow) against the rest**, which occurs at **0.473%**, comparable
 to BAF's 1.1% and arrived at naturally rather than by subsampling. No fraud, no
 transactions, no temporal drift, no shared column.
 
@@ -70,7 +70,7 @@ def make_pool(X, y, n_frauds: int, seed: int):
 
 
 def make_eval(X, y, seed: int):
-    """Every positive, plus a fixed sample of negatives — as in E1."""
+    """Every positive, plus a fixed sample of negatives, as in E1."""
     rng = np.random.default_rng(seed)
     pos, neg = np.flatnonzero(y == 1), np.flatnonzero(y == 0)
     neg = rng.choice(neg, min(EVAL_NEG, len(neg)), replace=False)

@@ -9,7 +9,7 @@ wrong · **⚙** = engineering, not science.
 
 ---
 
-## 18 September — before any code
+## 18 September, before any code
 
 **⚑ The 50% criterion is the project's structural weakness.** A deliberately
 model-agnostic library is an argument that TabPFN is interchangeable. Fix: keep
@@ -17,7 +17,7 @@ the clean core, but make the headline a claim that is *false for other models*.
 
 **⚑ The planned headline was already published.** [arXiv:2607.27143](https://arxiv.org/abs/2607.27143)
 (July 2026) benchmarks marginal vs Mondrian CP **plus** cost-sensitive abstention
-with human review across 15 imbalanced tabular datasets — the Mondrian claim and
+with human review across 15 imbalanced tabular datasets, the Mondrian claim and
 the decision layer both. *MAKE* 8(7):190 does Mondrian at 1:345 imbalance. Both
 demoted to cited background; the decision layer became an application demo.
 
@@ -27,14 +27,14 @@ GPU runs the *second-best* model, and the API is not a budget compromise but the
 only route to the best one. This settled the compute plan.
 
 **⚑ `tabpfn-extensions` has no conformal prediction for classification.**
-*(Originally recorded as "no conformal prediction at all" — corrected 20 Sept,
+*(Originally recorded as "no conformal prediction at all", corrected 20 Sept,
 see below.)* Apache 2.0, takes contributions.
 
 **Correction to the brief:** BAF Base is **1.10%** fraud (~1 in 91), not 1 in 300.
 
 ---
 
-## 19 September — building, then measuring
+## 19 September, building, then measuring
 
 **✗ Cross-conformal is not new, and MAPIE already ships it.** MAPIE 1.5 has
 `CrossConformalClassifier` as well as `SplitConformalClassifier`; crepes has
@@ -46,11 +46,11 @@ narrow from "we bring cross-conformal to tabular data" to a claim about
 `PRIORLABS_API_TOKEN`. Read from the client source. A plausible-looking guess is
 worse than an open question because it silently becomes a fact in committed code.
 
-**⚑ `estimate_cost` takes an `operation` argument** — `predict`, `cache_predict`,
-`thinking_fit`, `thinking_predict` — and transmits dimensions only. So the entire
+**⚑ `estimate_cost` takes an `operation` argument**, `predict`, `cache_predict`,
+`thinking_fit`, `thinking_predict`, and transmits dimensions only. So the entire
 cost model can be measured for **zero tokens**.
 
-**Spike S1 — the KV cache and Thinking are mutually exclusive.** Server-enforced:
+**Spike S1, the KV cache and Thinking are mutually exclusive.** Server-enforced:
 `HTTP 422 — FIT_WITH_CACHE fit mode is not compatible with thinking mode`. The
 documentation contradicted itself; the measurement settled it. Cache economics
 attach to E1/E2, Thinking to E3, and they cannot share a figure.
@@ -64,11 +64,11 @@ attach to E1/E2, Thinking to E3, and they cannot share a figure.
 | 200,000 | 68,319 | 17,080 | **75%** |
 
 Everything under ~100k rows sits on a 10,000-token minimum. The documented 75%
-is real but only appears above that. At 200 rows the cache is *slower* — 9.7s vs
+is real but only appears above that. At 200 rows the cache is *slower*, 9.7s vs
 1.8s for a repeat prediction. **⚑ Consequence: any experiment meant to
 demonstrate cache economics must run at ≥100k context rows.**
 
-**✗ P2 falsified — cross-conformal costs exactly K×, not under 2×.** Measured
+**✗ P2 falsified; cross-conformal costs exactly K×, not under 2×.** Measured
 2.0× at K=2, 5.0× at K=5, 20.0× at K=20. The API prices a call by *total rows
 touched*, so each fold is a full pass over the pool and the folds add up
 linearly. "Fits are unbilled" is true and irrelevant: the predicts are what cost.
@@ -76,14 +76,14 @@ The original "K folds cost about the same as one" framing was wrong and a judge
 could have disproved it with one free call.
 
 **Reproduced and committed 20 Sept.** These numbers lived only in a session
-transcript for most of the project — the headline correction of an overclaim,
+transcript for most of the project, the headline correction of an overclaim,
 itself unbacked by any artifact. `experiments/api/cost_kfold.py` now re-quotes
 them and writes `results/cost_kfold.json`: ratio equals K in 6 of 6 quotes,
 across K ∈ {2, 5, 20} and pools of 10k and 100k. `verify_claims` reads the
 committed file, so it needs no token.
 
 **⚙ `time_col` is rejected outside thinking mode.** `group_col`,
-`time_col`, `group_time_col` — all Thinking-only. So native temporal handling is
+`time_col`, `group_time_col`, all Thinking-only. So native temporal handling is
 not a freebie; it is a capability with no local weights. This *strengthened* the
 showcase argument and would have been missed by assuming the parameter worked
 everywhere.
@@ -94,12 +94,12 @@ and `inference_config={"SUBSAMPLE_SAMPLES": N}`. E4 uses what exists.
 
 **⚙ A `predict` call blocked for 1h50m on 18 seconds of CPU.** The client sets
 no timeout on ordinary calls, so a dropped response stalls forever and every
-later configuration queues behind it — and from outside the run looks alive.
+later configuration queues behind it, and from outside the run looks alive.
 Added a SIGALRM watchdog per configuration. It has since caught two real stalls
 in E2, costing 10 minutes each instead of the whole grid.
 
 **⚙ Two broken tools on this machine.** Homebrew `git` 2.54.0 crashes on any
-network operation (`_curl_global_trace` missing — linked against a newer libcurl
+network operation (`_curl_global_trace` missing, linked against a newer libcurl
 than macOS 14 ships); use `/usr/bin/git`. Homebrew installs nothing needing a
 bottle, macOS 14 now being Tier 3.
 
@@ -111,17 +111,17 @@ bottle, macOS 14 now being Tier 3.
 index `⌈(n+1)(1−α)⌉` rounds *up*, so a small calibration set silently targets a
 higher level: 13 calibration positives at α=0.10 target **100%**, because the
 index lands on the maximum score. Split calibrates on half as many positives as
-cross at every budget, so split is always the more conservative of the two — its
+cross at every budget, so split is always the more conservative of the two, its
 higher coverage was granularity, not calibration.
 
-**✗ P1 falsified — cross does not have lower coverage variance.** Seed spread
+**✗ P1 falsified; cross does not have lower coverage variance.** Seed spread
 0.107 vs 0.083 at F=25 (cross better) but 0.044 vs 0.081 at F=100 (cross worse).
 No consistent direction.
 
 **⚑ The headline, found in data already collected.** Split at budget 2F
 calibrates on F positives, exactly as cross at budget F does. Identical
 calibration size ⇒ **identical targeted level**, so those pairs compare directly.
-Noted 20 Sept: this was written as "no confound", which is not quite right —
+Noted 20 Sept: this was written as "no confound", which is not quite right,
 split at 2F also holds twice the in-context rows (4,545 vs 2,273 and so on). The
 asymmetry favours split, so the margins below are conservative, but it is an
 asymmetry and the README now says so:
@@ -142,13 +142,13 @@ predictions. E2 onward persist evaluation probabilities (~80 KB per config), so
 
 ---
 
-## E3 — two bugs of mine, and a structural finding
+## E3, two bugs of mine, and a structural finding
 
 **✗ ACI was being driven 1,400 times per prediction round.** `update_batch`
 applies one step per *observation*; a month of BAF holds ~1,400 frauds. The level
 oscillated 0.05 → 0.5 → 0.0001 → 0.5 and coverage swung 0.517 to 1.000. Added
 `update_round` / `update_rounds`: one step per batch, from its observed
-miscoverage rate. Not an ACI failure — an interface misuse, now pinned as a test.
+miscoverage rate. Not an ACI failure, an interface misuse, now pinned as a test.
 
 **✗ A fake win, caught by fixing the replay.** The first γ sweep reported that
 γ=0.5 halved the deviation from target. It had recovered thresholds from month 3
@@ -157,7 +157,7 @@ set: γ ∈ {0.05, 0.2} are **identical** to frozen and γ ∈ {0.5, 1.0} are *w
 Had I not gone back, the README would carry a tuned-hyperparameter result that
 does not exist.
 
-**✗ P4 falsified — ACI cannot help at this label budget, for a structural
+**✗ P4 falsified, ACI cannot help at this label budget, for a structural
 reason.** With `n` calibration positives only `n` distinct thresholds exist, so α
 must move far enough to change which order statistic is selected before anything
 changes at all:
@@ -168,7 +168,7 @@ changes at all:
 | 92 (cross would give this) | 0.0038 |
 | 400 | 0.0024 |
 
-ACI at γ=0.05 moves α ~0.0014 per month — ~0.007 across the whole walk. Too
+ACI at γ=0.05 moves α ~0.0014 per month, ~0.007 across the whole walk. Too
 small to move the threshold; raise γ and it jumps a whole order statistic and
 overshoots. **⚑ This ties back to the headline: cross-conformal doubles the
 calibration set, doubles threshold resolution, and is the precondition for
@@ -178,7 +178,7 @@ online adaptation working at all.**
 
 **✗ A wrong number nearly shipped in a figure title.** E3 recorded the
 *evaluation set's* fraud rate as `fraud_rate`, and the evaluation set keeps every
-fraud plus a fixed legitimate sample — so it is ~41% by construction and says
+fraud plus a fixed legitimate sample, so it is ~41% by construction and says
 nothing about the month. The drift figure was captioned "as the fraud rate drifts
 (41.04% → 41.66%)". Now records `eval_fraud_rate` and `month_fraud_rate`
 separately; the real drift is **0.92% → 1.47%** across months 3–7.
@@ -191,22 +191,22 @@ limit, not a bug: tracking drift needs fresh *labels*, and fresh labels are
 exactly what a fraud desk does not have. Refreshing the context alone does not
 substitute.
 
-## E2 — the original open question, answered
+## E2, the original open question, answered
 
 **Largely a negative result.** At 100 frauds there is no detectable optimal
 `cal_size`: paired best-vs-worst difference +0.089 ± 0.042 (t=2.1, n=5) at
 α=0.05. At 200 frauds there is a real effect (t=3.6, t=6.5) but it is driven by
-`cal_size=0.8` being *bad* — starving the model — not by a sharp interior
+`cal_size=0.8` being *bad*, starving the model, not by a sharp interior
 optimum. **Cross-conformal beats every split setting at both budgets and both
 alphas, 4/4.**
 
-**✗ Corrected 21 Sept — two compounding errors, pulling opposite ways.**
+**✗ Corrected 21 Sept, two compounding errors, pulling opposite ways.**
 
 *First, the selection.* `best` and `worst` are the extremes of seven `cal_size`
 settings, and the paired t compared that pair against a critical value for *one
 pre-specified* comparison. Choosing a pair because it is extreme is what inflates
-it. `analyze_e2` now permutes the settings within each seed — the seeds are
-paired, so they are exchangeable under the null — rebuilding the null
+it. `analyze_e2` now permutes the settings within each seed; the seeds are
+paired, so they are exchangeable under the null. That rebuilds the null
 distribution of the max-minus-min statistic actually reported.
 
 *Second, the pairing was broken anyway.* E2 was resumed part-way, so
@@ -214,7 +214,7 @@ distribution of the max-minus-min statistic actually reported.
 (`cal_size=0.2` at 100 frauds, `cal_size=0.4` at 200). `analyze_e2` paired
 settings by **list position**, so for those two it differenced one seed against
 another. The means, and therefore the figure and every width in the README, were
-never affected — means do not care about order. The paired statistic did.
+never affected; means do not care about order. The paired statistic did.
 
 Aligning on seed and permuting:
 
@@ -225,13 +225,13 @@ Aligning on seed and permuting:
 
 So the honest finding moved in *both* directions: the 200-fraud "real optimum"
 (t = 3.6) evaporates, and the 100-fraud "no detectable optimum" becomes a real
-spread. Stable — p ∈ [0.0416, 0.0458] across 12 permutation seeds at 100, and
+spread. Stable, p ∈ [0.0416, 0.0458] across 12 permutation seeds at 100, and
 [0.611, 0.623] at 200, so this is not Monte-Carlo noise.
 
 What survives is better than what it replaced: at 100 frauds the allocation does
 matter, and **it still is not worth choosing**, because the best split setting
 (1.505) loses to cross-conformal (1.463). The verdict string no longer says "a
-real optimum" either — the test shows the settings differ, not which is best.
+real optimum" either; the test shows the settings differ, not which is best.
 
 The permutation machinery was checked against ground truth before being trusted:
 0 of 40 false positives on pure noise, and p = 0.001 on a planted effect of 0.30.
@@ -243,7 +243,7 @@ so the paired test is the correct one, and it reverses the call.
 
 ---
 
-## E4 — baselines, the guarantee, and the daily cap
+## E4, baselines, the guarantee, and the daily cap
 
 **⚑ TabPFN beats LightGBM at a matched guarantee, in all four comparisons.** Same
 strategy and budget ⇒ same calibration size ⇒ identical targeted level, so set
@@ -257,13 +257,13 @@ size compares the models cleanly:
 | cross | 200 | 95.5% | **1.459** | 1.566 | 6.8% |
 
 This is the cleanest showcase result in the project: conformal prediction
-converts model quality into a unit a fraud desk acts on — how many cases land in
-a human's queue — and TabPFN wins on it by 5–12%.
+converts model quality into a unit a fraud desk acts on, how many cases land in
+a human's queue, and TabPFN wins on it by 5–12%.
 
 **✗ P5 looks falsified too.** LightGBM cross-conformal ran in ~6s against
 TabPFN's ~51s. The comparison is confounded (remote vs local CPU) and every row
-carries `wallclock_comparable: false`, but the intuition behind P5 — that K
-gradient-boosted trainings would be prohibitive — is simply wrong at this scale.
+carries `wallclock_comparable: false`, but the intuition behind P5, that K
+gradient-boosted trainings would be prohibitive, is simply wrong at this scale.
 LightGBM trains on 9,000 rows in under a second. The hardware-neutral claim
 (0 gradient fits vs 6) stands; the speed claim does not, and should not be made.
 
@@ -275,7 +275,7 @@ legitimate traffic** to reach 0.92 recall. The same caveat applies to reading se
 size as a review load, and is now printed with the table.
 
 **⚙ `balance_probabilities` is a no-op if you tune a threshold.** The two
-no-guarantee arms came back identical — 0.925 recall, 0.407 false-positive rate —
+no-guarantee arms came back identical, 0.925 recall, 0.407 false-positive rate,
 in four of six seeds, and within two cases in 2,878 on the other two. Their tuned
 thresholds are wildly different (0.29 vs 0.0045), so the flag genuinely rescales
 the probabilities; it is just a monotone rescaling, which threshold tuning
@@ -285,11 +285,11 @@ than it is.
 
 **⚙ The daily cap is 5,000,000 tokens, separate from the 20M monthly.** E4 hit it
 at 4.99M and the remaining nine TabPFN configurations failed with HTTP 429. Not a
-bug and fully recoverable — the run resumes — but the cahier tracked the monthly
+bug and fully recoverable, the run resumes, but the cahier tracked the monthly
 budget and not the daily one. Both need watching.
 
 **⚙ The SIGALRM watchdog does not work on this client.** `tabpfn-client` uses
-httpx with its own timeouts: 900s per request and **7200s — two hours — for
+httpx with its own timeouts: 900s per request and **7200s, two hours, for
 uploads and async polling**, which is precisely the 1h50m stall seen earlier. A
 signal handler cannot interrupt a socket read happening below Python off the
 main thread, and the watchdog silently failed to fire 18 minutes past a 15-minute
@@ -298,7 +298,7 @@ and `TABPFN_CLIENT_ASYNC_POLL_TIMEOUT`, which are read from the environment and
 must be set **before** importing the client. `_common.set_client_timeouts()` does
 this and every experiment calls it.
 
-## 20 September — a claim of ours that was wrong
+## 20 September, a claim of ours that was wrong
 
 **✗ `tabpfn-extensions` does contain a conformal module.** Four documents said
 it had "no conformal prediction at all". That came from a web summary of the
@@ -307,7 +307,7 @@ repo's README rather than its source, and it is false: `cp_missing_data` exports
 
 Read from the source this time, the accurate statement is narrower and still a
 real gap. `cp_missing_data` is a **regression** interval estimator specialised to
-**missing-data patterns** — single split-conformal calibration (`val_size=0.3`),
+**missing-data patterns**, single split-conformal calibration (`val_size=0.3`),
 correction terms per missing-data mask, quantile intervals rather than
 prediction sets. There is no conformal prediction for **classification**, no
 class-conditional calibration, no cross-conformal, and no online variant.
@@ -325,7 +325,7 @@ It also cuts the other way: `cp_missing_data` existing is **evidence conformal
 contributions are in scope**, which is a better argument for the PR than an
 empty category would have been.
 
-## The Thinking arm — and a metric that hid its own result
+## The Thinking arm, and a metric that hid its own result
 
 **⚑ TabPFN-3.5-Thinking holds the guarantee under drift; the base model does not.**
 
@@ -336,36 +336,36 @@ empty category would have been.
 | **Thinking, frozen thresholds** | **0 of 5** | 1.536 |
 | **Thinking, ACI** | **0 of 5** | 1.542 |
 
-Measured against the level actually *targeted* — 97.83% with 46 calibration
+Measured against the level actually *targeted*, 97.83% with 46 calibration
 positives at α=0.05, not 95%, because the conformal index rounds up. Base falls
 below its own promise from month 4 onward as the fraud rate climbs. Thinking
 never does.
 
 This is the clearest TabPFN-3.5-specific result in the project, and it matches
 what Prior Labs documents: Thinking is stronger on temporal and grouped data.
-Here that shows up in the unit that matters — whether the guarantee survives
+Here that shows up in the unit that matters, whether the guarantee survives
 drift.
 
 Three caveats that must travel with it. Thinking also passes `time_col`, which
 base cannot (it is rejected outside thinking mode), so this compares *recommended
-usage* rather than isolating the checkpoint. It costs about 8% wider sets —
-1.536 against 1.422 — which is the price of not breaking the promise. And it is
+usage* rather than isolating the checkpoint. It costs about 8% wider sets,
+1.536 against 1.422, which is the price of not breaking the promise. And it is
 one seed.
 
 **✗ The metric was hiding this.** `analyze_e3` reported mean absolute deviation
 from target, which penalises over-coverage exactly as hard as under-coverage. On
-that metric Thinking scored **worse** (0.0375 vs base's 0.0143) — precisely
+that metric Thinking scored **worse** (0.0375 vs base's 0.0143), precisely
 backwards, because Thinking's "error" is over-delivering. For a guarantee the two
 directions are not symmetric: under-coverage breaks the promise, over-coverage
 only costs set width. The table now reports months-below-target first and width
 as the cost, which is the question a risk function actually asks.
 
-## E5 — scale, and the KV cache finally demonstrated
+## E5, scale, and the KV cache finally demonstrated
 
 **⚑ The earlier experiments were asking the wrong question about scale.** Every
 one shrank the labelled pool to preserve the 1.1% base rate, so 200 confirmed
 frauds meant a context of 18,000 rows. A real fraud desk has *millions* of
-transactions and a few hundred confirmed frauds — negatives are abundant,
+transactions and a few hundred confirmed frauds; negatives are abundant,
 positives are not. E5 holds the frauds fixed at 200 and pours in legitimate data,
 down to a context fraud rate of **0.10%** at 200,000 rows. That is both more
 faithful to the problem and the first time this project used TabPFN at a scale
@@ -373,7 +373,7 @@ the model was built for.
 
 **✗ A documented limit, noted on day one and then designed around badly.** Cached
 predicts cap at 10,000 test rows per call. The calibration pass scores 25,100, so
-every cached configuration failed with HTTP 422. Not a blocker — batching *is*
+every cached configuration failed with HTTP 422. Not a blocker, batching *is*
 the workload the cache assumes: encode the context once, stream batches through
 it. Added `BatchedPredictProba` in the experiments (a property of this API, not
 of conformal prediction).
@@ -387,26 +387,26 @@ of conformal prediction).
 | 200,200 | **36.9 s** | **5.4 s** | **6.8×** |
 
 Coverage and set width are **identical** in all three pairs (0.958/1.460,
-0.983/1.556, 0.954/1.441) — the cache changes cost, not answers. The speedup
+0.983/1.556, 0.954/1.441), the cache changes cost, not answers. The speedup
 grows with context, as documented, and `estimate_cost` puts the token saving at
 75% from 200k rows up. Conformal is precisely the workload it was built for: one
 fixed context, scored twice.
 
-Note the fit column moves the other way — 15 s → 24 s at 50k, since a cached fit
+Note the fit column moves the other way, 15 s → 24 s at 50k, since a cached fit
 computes and stores the attention state up front. It pays back on the second
 pass and after that it is free.
 
-## 20 September — an overstatement in our own headline
+## 20 September, an overstatement in our own headline
 
 **✗ "Only affordable because TabPFN never trains" was false, and our own data
 said so.** It was the README's first line. E4 measured LightGBM cross-conformal
-at about **six seconds** — cross-conformal is entirely affordable with a
+at about **six seconds**; cross-conformal is entirely affordable with a
 gradient-boosted model at this scale, which is exactly what falsifying P5
 established. A judge could have disproved the headline from our own results
 table two screens further down.
 
 Corrected to what is measured: the same guarantee from half the labels, and on
-TabPFN **0 gradient-trained fits against LightGBM's 6** — hardware-independent,
+TabPFN **0 gradient-trained fits against LightGBM's 6**, hardware-independent,
 and the number that scales.
 
 **✗ The K× cost caveat had been silently deleted.** An earlier edit to the README
@@ -418,11 +418,11 @@ correction that qualifies it. Restored.
 size stated inline rather than three sentences later.
 
 Found by grepping the public docs for absolutes and superlatives. Most hits were
-accurate — "never trains", "never a random split", "never clips silently" — which
+accurate, "never trains", "never a random split", "never clips silently", which
 is why the real ones had survived several readings. Worth repeating before
 submission.
 
-## E6 — the replication narrows the headline
+## E6, the replication narrows the headline
 
 **✗ "Narrower in five of six comparisons" was over-reading noise.** Re-running the
 matched-level comparison across Variants I–III gave a raw win count of 6 of 9,
@@ -442,13 +442,13 @@ that dissolves almost all of it.
 | Variant III | 50 | +0.0152 ± 0.0106 (n=2) | tie |
 
 **Significantly wider in 0 of 8; significantly narrower in 1.** The narrowing is
-real only where positives are scarcest — which is the regime the project is
+real only where positives are scarcest, which is the regime the project is
 about, but it is not a general property.
 
 **Completed 20 Sept at 36/36.** Variant III finished its second budget, so the
 table above is the partial run and the final count is **nine** comparisons, not
 eight: still significantly wider in **0**, still significantly narrower in **1**,
-same conclusion. The raw win count is 6 of 9 — which is exactly the number the
+same conclusion. The raw win count is 6 of 9, which is exactly the number the
 paired test exists to discount. `analyze_e6` prints both, in that order, so the
 weaker framing cannot be quoted without the stronger one next to it. The README
 carried "0 of 8" in its summary and intro for a while after the run finished
@@ -475,7 +475,7 @@ is now stated that way.**
 
 Seed 0 looked decisive. Seed 1 has base holding comfortably. Seed 2 has Thinking
 failing three months itself. Paired by seed the gap is 2.0 ± 1.2 months,
-t ≈ 1.7 at n = 3 — **directional, not established**.
+t ≈ 1.7 at n = 3, **directional, not established**.
 
 What can honestly be said: Thinking was never worse than base on any seed and
 strictly better on two of three, at about 5% wider sets.
@@ -485,7 +485,7 @@ promoted to the README summary table **on one seed**, because it was the
 cleanest TabPFN-specific result in the project and it matched what Prior Labs
 documents about Thinking on temporal data. Two things saved it: the pre-committed
 decision to replicate before submitting, and fixing `analyze_e3` to aggregate
-over seeds first — keyed on month alone, it would have silently kept only the
+over seeds first; keyed on month alone, it would have silently kept only the
 last seed and shown an unchanged table.
 
 **Wanting a result to be true is exactly when replication matters.**
@@ -502,7 +502,7 @@ artifact, at least in part.**
 
 Seed 0 looked decisive. Seed 1 shows the base model holding comfortably, so all
 four failures come from one draw. Thinking has still never fallen below its
-promised level — 0 of 10 seed-months — but "base fails and Thinking fixes it" is
+promised level, 0 of 10 seed-months, but "base fails and Thinking fixes it" is
 not what two seeds support.
 
 Corrected in the README to a directional statement with the seed structure shown,
@@ -515,7 +515,7 @@ TabPFN-specific finding in the project and it matched what Prior Labs documents
 about Thinking on temporal data. Wanting a result to be true is exactly when
 replication matters most.
 
-## E7 — a second domain, and the price of approximate validity — 22 September
+## E7, a second domain, and the price of approximate validity, 22 September
 
 **The gap addressed.** Every result was Bank Account Fraud; E6's "four datasets"
 share BAF's 32 columns. E7 is Forest Cover Type (Blackard & Dean, UCI): 581,012
@@ -526,7 +526,7 @@ scikit-learn, so it needs no extra credentials. Priced at 960k tokens before
 spending; 24/24 configurations ran.
 
 **The halving transfers.** Cross-conformal is significantly wider in **0 of 3**
-matched comparisons, narrower in 0 — three ties. The halving is structural, so it
+matched comparisons, narrower in 0, three ties. The halving is structural, so it
 transfers by construction; what E7 tests is whether it *costs* anything on a
 domain the method was not tuned on, and it does not.
 
@@ -551,15 +551,15 @@ That is a better claim than a free lunch, and it is the one the data supports.
 
 **Two errors on the way there, both mine, both caught before publication.**
 
-First I blamed BAF's temporal split — exchangeability violated by construction,
-which is E3's whole subject — and ran a CPU control on BAF with a random split
+First I blamed BAF's temporal split, exchangeability violated by construction,
+which is E3's whole subject, and ran a CPU control on BAF with a random split
 instead. It did **not** reproduce the effect: both splits held. The hypothesis was
 wrong and the control said so.
 
 Then, checking why, I found my own statistics were unsound. I had treated E1's 40
 runs as 40 independent observations. They are not: within a seed the split and
 cross arms share an evaluation set, and budgets draw from the same months.
-Aggregating to the seed first — 5 independent units, not 40 — the finding
+Aggregating to the seed first, 5 independent units, not 40, the finding
 survives (t = −2.97), and **separating by strategy is what made the real cause
 visible**. Pooling the arms had hidden it: split's +0.007 was cancelling cross's
 −0.024.
@@ -567,7 +567,7 @@ visible**. Pooling the arms had hidden it: split's +0.007 was cancelling cross's
 This is the fifth time in this project that the unit of analysis was the whole
 question. It is now the first line of `analyze_validity.py`.
 
-## Results integrity, and cross-conformal against MAPIE — 22 September
+## Results integrity, and cross-conformal against MAPIE, 22 September
 
 **Asked directly whether changing the library invalidated the results.** It is
 the right question: `src/` changed in four commits after the API runs finished,
@@ -575,7 +575,7 @@ and the extensions payload is generated from `src/`, so if behaviour had moved,
 every number in the README would be quoting code that no longer produces it.
 
 Answered with evidence rather than reasoning. The three behavioural changes are
-guards — an invalid `positive_idx`, non-finite probabilities, and `_as_idx`
+guards, an invalid `positive_idx`, non-finite probabilities, and `_as_idx`
 switching from `np.searchsorted` to a positional lookup, which is identical
 whenever `classes` is sorted, and `classes_ = np.unique(y)` always is. Checked
 by extracting the library at the commit that produced the results and running
@@ -583,16 +583,16 @@ both versions side by side:
 
 - **3,760 metric comparisons** over all 188 saved probability files, at five
   score thresholds: largest difference **0.0**.
-- **48 full-pipeline configurations** on the real BAF pools — two budgets, three
-  seeds, two strategies, four alphas — prediction sets **bit-identical**.
+- **48 full-pipeline configurations** on the real BAF pools, two budgets, three
+  seeds, two strategies, four alphas, prediction sets **bit-identical**.
 
 `tests/test_results_integrity.py` now pins this permanently: golden aggregates
 over the real saved probabilities, plus a rebuild of E3's frozen arm from its
 persisted calibration. A 0.01% drift in `average_set_size` fails it.
 
 **Cross-conformal now has an external check, which is the one that was missing.**
-The suite verified the *split* path against MAPIE — exact equality, since with the
-same estimator and calibration set the sets must match — and the headline result
+The suite verified the *split* path against MAPIE, exact equality, since with the
+same estimator and calibration set the sets must match, and the headline result
 is about *cross*. MAPIE ships `CrossConformalClassifier`, but it is CV+
 (Barber et al. 2021), which aggregates the fold models, where ours is Vovk (2015),
 which pools out-of-fold scores and predicts with the full-data model. Different
@@ -609,12 +609,12 @@ Two independently written implementations of two different cross-conformal
 constructions landing on the same sets is stronger evidence for the headline
 than either agreeing with itself.
 
-## Fourth audit — 21 September
+## Fourth audit, 21 September
 
 **The drift figure drew the wrong target line, and it is the figure in the
 README.** Both E3 figures put their dashed target at the nominal
 `1 - alpha = 0.95`. Every point in both sits above 0.95, so each figure read
-*the guarantee always holds* — printed directly above a table stating that base
+*the guarantee always holds*, printed directly above a table stating that base
 misses the level in 4 months of 5. The level a month actually has to clear is
 `ceil((n+1)(1-alpha))/n = 97.83%` at 46 calibration positives, which is the
 project's own central arithmetic, stated in the paragraph beneath the figure and
@@ -630,18 +630,18 @@ number at all: the certified level is `ceil((n_cal+1)(1-alpha))/n_cal` and
 `n_cal` *is* the x-axis, so at 100 frauds it runs from **100% at cal_size 0.2
 down to 96.25% at 0.8**. A single flat line at 0.95 was wrong at every point and
 wrong by a different amount at each. At cal_size 0.2 the promise is 100% coverage
-and the measurement is 0.979 — below its own promise, while sitting three
+and the measurement is 0.979, below its own promise, while sitting three
 gridlines above the line drawn. Both figures now plot the certified level as a
 curve per budget, with the nominal demoted to a faint reference; E2's is now a
 considerably better figure than it was, because the moving target *is* the
 subject of that experiment.
 
-E2's footer also explained hollow markers — "the level cannot be certified at
-that split" — when every setting in the data is certifiable and no hollow marker
+E2's footer also explained hollow markers, "the level cannot be certified at
+that split", when every setting in the data is certifiable and no hollow marker
 is ever drawn. A reader would have gone looking for them among the white-ringed
 solid markers. The note is now printed only when one exists.
 
-Three smaller things fell out of looking at the figures at all — something none
+Three smaller things fell out of looking at the figures at all, something none
 of the previous five passes had done.
 
 *Five of nine committed figures were never referenced anywhere.* Two deserved to
@@ -652,21 +652,21 @@ claim that is entirely about base versus Thinking and was showing only base.
 Both added. The remaining three are alpha-variant alternates, which is fine.
 
 *The first caption I wrote for the Thinking figure was wrong.* "Clears the line
-in four months of five" describes the re-encoded arm; the frozen arm — the one a
-reader takes as the headline — clears all five. Checked against the data before
+in four months of five" describes the re-encoded arm; the frozen arm, the one a
+reader takes as the headline, clears all five. Checked against the data before
 it shipped, which is the only reason it did not.
 
 *The footer then collided with the legend*, and before that the target label
 collided with the data. Both caught by rendering the PNG and looking at it,
 not by reading the code that generates it.
 
-## Third audit — 21 September
+## Third audit, 21 September
 
 Prompted by a question with an obvious answer and a non-obvious cause: *why are
 there empty folders?*
 
 `experiments/kaggle/` was the tier-2 wall-clock table from §12 of the plan. It
-was never built, so it sat as an empty directory in the working copy — and since
+was never built, so it sat as an empty directory in the working copy, and since
 git does not track empty directories, it never existed in a clone at all. Two
 readers of this repository would have seen different trees. Removed.
 
@@ -678,13 +678,13 @@ under `docs/` where there are seven; and it had no `demo/` or `contrib/` at all,
 which are two of the four deliverables. A judge reading the plan and then the
 tree would have found four mismatches. Rewritten as built, with the two
 never-built items named as never-built, and `verify_claims` now walks the
-diagram and asserts every path exists — plus the reverse, that no shipped module
+diagram and asserts every path exists, plus the reverse, that no shipped module
 is missing from it. Both directions confirmed to fail on the exact errors that
 were there.
 
 **The P5 confound was not in `limitations.md`.** It is tagged on all 36 rows of
-`results/e4.jsonl`, described in `STATUS.md`, and named in the P5 scoreboard row
-— but absent from the document titled *Limitations*, which is where a reader
+`results/e4.jsonl`, described in `STATUS.md`, and named in the P5 scoreboard row,
+but absent from the document titled *Limitations*, which is where a reader
 goes looking for it. Added, with the comparable number (0 gradient fits against
 6) separated from the incomparable one (6 s against 50 s, remote versus local).
 
@@ -695,7 +695,7 @@ calling the fit count "the hardware-independent number". Now it says so outright
 Writing the caveat is what exposed the gap in the thing being caveated.
 
 **The README never told anyone to download the data.** Its experiment block
-installs `[experiments]` and initialises the TabPFN client, and stops — while
+installs `[experiments]` and initialises the TabPFN client, and stops, while
 every runner needs `data/Base.csv`, which is gitignored because it is a million
 rows. The step existed in `docs/method.md` and in the error message
 `_common.load_frames` raises, but not on the path a reader actually follows.
@@ -705,17 +705,17 @@ pricing a run before spending on it is the thing a reader most wants to know.
 
 `verify_claims` now extracts every `python path/to/script.py` the README
 instructs a reader to run and asserts it exists, asserts the data download is
-among them, and checks that all six experiments really do accept `--dry-run` —
+among them, and checks that all six experiments really do accept `--dry-run`,
 a promise about not spending money should not be taken on trust.
 
-## Second audit — 21 September
+## Second audit, 21 September
 
 Three more, all of the same family: a statistic that was not measuring what its
 label said.
 
 **`replay_aci` still used the metric this project had already rejected.** Mean
 absolute deviation from the *nominal* 95%, which punishes over-coverage exactly
-as hard as under-coverage — the metric that once scored Thinking worse for
+as hard as under-coverage, the metric that once scored Thinking worse for
 holding its guarantee, fixed in `analyze_e3` and never fixed here. It also
 compared against 95% rather than the 97.83% that 46 calibration positives
 actually certify. Both corrected, and the script now cross-checks against E3:
@@ -730,20 +730,20 @@ month-to-month coverage swing goes 0.023 → 0.074 → **0.106** as γ rises, an
 oscillation. The README now reports the swing column instead of asserting
 "worse", and `verify_claims` reads the sweep table cell by cell.
 
-**`e6_variants` carried its own copy of `make_eval`** — the duplication
+**`e6_variants` carried its own copy of `make_eval`**, the duplication
 `_common.py` exists to prevent, and E6 is exactly where it would bite, since its
 headline pairs variants against a Base row computed by E1 from the shared
 function. Proven identical on four datasets × three seeds, then deleted.
 
 See also the E2 entry above, corrected the same day.
 
-## Pre-submission audit — 20 September
+## Pre-submission audit, 20 September
 
 A sweep over everything a judge would actually open, after the experiments were
 done. Four real defects, none of them in the library.
 
 **The video script and the submission text still carried the falsified drift
-claim.** Both said base fails "four of five months" and Thinking "zero" — the
+claim.** Both said base fails "four of five months" and Thinking "zero", the
 single-seed version, corrected in the README days earlier but not in the two
 documents a judge reads and hears. A video is the worst place to leave a stale
 number, because it cannot be edited after the fact and it is checkable against
@@ -753,7 +753,7 @@ at n = 3, and the do-not-say list names the old phrasing explicitly.
 **`analyze_e3` compared arms averaged over different seed sets.** `frozen` had
 three seeds, `aci` and `refit` one. Aggregating each over whatever it happened
 to have and plotting them together drew ACI as a line that visibly diverged from
-frozen — the opposite of the project's own finding that at 46 calibration
+frozen, the opposite of the project's own finding that at 46 calibration
 positives ACI cannot move the threshold at all. The figure would have contradicted
 the paragraph beneath it. Arms are now restricted to the seeds they all share,
 and the caption states which. This is the same standing rule as before, in a new
@@ -768,8 +768,8 @@ a figure labelled as one of them. It now reports each model separately.
 clean clone could not rebuild the demo and nothing checked its numbers against
 `results/`. `scripts/build_demo.py` now rebuilds both, and `verify_claims.py`
 fails if the committed data differs from what the generator produces. Recovering
-the recipe confirmed the data was honest — the calibration scores and the E1
-block reproduce bit-for-bit — but "honest and unverifiable" is not the standard
+the recipe confirmed the data was honest, the calibration scores and the E1
+block reproduce bit-for-bit, but "honest and unverifiable" is not the standard
 the rest of the repository is held to.
 
 Also corrected: a stale test count in four documents (86 → 99), an "installs in
@@ -785,12 +785,12 @@ that produced it. It is now printed by `analyze_e3` and checked by
 | | prediction, registered before the experiments ran | outcome |
 |---|---|---|
 | P1 | cross-conformal has lower seed-variance of fraud coverage | **falsified** |
-| P2 | cross-conformal costs under 2× split in tokens | **falsified** — exactly K× |
+| P2 | cross-conformal costs under 2× split in tokens | **falsified**, exactly K× |
 | P3 | marginal CP under-covers the fraud class; Mondrian fixes it | held (already published) |
-| P4 | static thresholds decay under drift; ACI holds coverage | **falsified** — threshold quantization |
-| P5 | LightGBM cross-conformal costs far more wall-clock | **falsified** — ~6s vs TabPFN's ~51s. Confounded (remote vs local), but the intuition was wrong: LightGBM trains on 9,000 rows in under a second. |
+| P4 | static thresholds decay under drift; ACI holds coverage | **falsified**, threshold quantization |
+| P5 | LightGBM cross-conformal costs far more wall-clock | **falsified**, ~6s vs TabPFN's ~51s. Confounded (remote vs local), but the intuition was wrong: LightGBM trains on 9,000 rows in under a second. |
 
 Four of five resolved predictions failed. What survived is sturdier for it: the
-feasibility ceiling and level fidelity are *deterministic* — checkable on paper,
-not falsifiable by more data — and the half-the-labels result is measured at
+feasibility ceiling and level fidelity are *deterministic*, checkable on paper,
+not falsifiable by more data, and the half-the-labels result is measured at
 matched level, with the only asymmetry favouring the baseline.

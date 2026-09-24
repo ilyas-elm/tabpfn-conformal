@@ -12,7 +12,7 @@ of fraud will this catch, and can you prove it."**
 
 Conformal prediction answers that. Given a calibration set drawn exchangeably
 with the test data, it produces a **prediction set** `C(x) ⊆ {legitimate, fraud}`
-with `P(Y ∈ C(X)) ≥ 1 − α`, distribution-free and finite-sample — no asymptotics,
+with `P(Y ∈ C(X)) ≥ 1 − α`, distribution-free and finite-sample, no asymptotics,
 no assumption about the model or the data-generating process beyond
 exchangeability.
 
@@ -36,7 +36,7 @@ calibration scores and a monotone map preserves that ordering.
 Given calibration scores `s₁ … sₙ` for the true labels, the threshold is the
 **⌈(n+1)(1−α)⌉-th smallest**, not the plain empirical `(1−α)` quantile. Using
 `np.quantile(scores, 1-alpha)` is the most common conformal bug in the wild and
-it silently loses the guarantee at small `n` — exactly the regime a fraud desk
+it silently loses the guarantee at small `n`, exactly the regime a fraud desk
 lives in.
 
 Two consequences follow directly from that index, and both drive this project's
@@ -49,13 +49,13 @@ can only certify
 α ≥ 1 / (n + 1)
 ```
 
-Below that no threshold exists. The library returns `+inf` — the trivial
-all-labels set, still valid, merely useless — and raises
+Below that no threshold exists. The library returns `+inf`, the trivial
+all-labels set, still valid, merely useless, and raises
 `InsufficientCalibrationWarning`. It never clips silently.
 
 **Level fidelity.** The index rounds *up*, so the level actually targeted is
 `⌈(n+1)(1−α)⌉ / n`, which is above `1−α`. With 13 calibration positives at
-α = 0.10 the index is 13 — the maximum score — so the predictor targets **100%**
+α = 0.10 the index is 13, the maximum score, so the predictor targets **100%**
 coverage, not 90%. Any comparison of two methods' realised coverage that ignores
 this is comparing them at different levels.
 
@@ -63,7 +63,7 @@ this is comparing them at different levels.
 
 **Marginal** takes one threshold over all calibration points. It guarantees
 coverage *averaged over classes*, which at a 1% base rate is dominated by the
-majority class — the fraud class can be badly under-covered while the headline
+majority class, the fraud class can be badly under-covered while the headline
 number looks healthy.
 
 **Mondrian** partitions the calibration set by class and takes a quantile per
@@ -84,7 +84,7 @@ Cross-conformal removes the choice. `K` stratified folds; each row is scored by 
 model that did not see it; all out-of-fold scores form the calibration set; the
 model used at test time is fitted on the whole pool.
 
-The reason this is not routine is cost — `K` refits. **TabPFN has no training
+The reason this is not routine is cost, `K` refits. **TabPFN has no training
 step.** `fit` stores the in-context set and takes no gradient, so `K` folds are
 `K` forward passes. The library's `crossconformal.py` is model-agnostic, but the
 economics only work for a model that does not train.
@@ -111,7 +111,7 @@ ACI (Gibbs & Candès, 2021) adapts the *level* rather than refitting:
 ```
 
 The long-run empirical error converges to `α_target` for any sequence, including
-adversarial ones — a regret bound, not a distributional assumption. The price is
+adversarial ones, a regret bound, not a distributional assumption. The price is
 that coverage holds on average over time, not at every step.
 
 `ACI` is **class-conditional by default**. One shared level would be driven
@@ -123,7 +123,7 @@ only when a label of that class arrives.
 *order statistic* of the calibration scores, so with `n` calibration positives
 only `n` distinct thresholds exist and α must move by roughly `1/n` before the
 prediction sets change at all. At 46 positives that is 0.0139. Across the five
-drift months ACI moves the level by **0.003** — a fifth of what is needed — so
+drift months ACI moves the level by **0.003**, a fifth of what is needed, so
 at usable γ it is numerically identical to doing nothing. Turn γ up far enough
 to move the threshold and it stops tracking the drift and starts oscillating:
 the month-to-month coverage swing goes from 0.023 to **0.106**. This is not a
@@ -135,7 +135,7 @@ One implementation note that is easy to get wrong, and which we did get wrong
 first: `update`/`update_batch` take one step **per observation**, while
 `update_round`/`update_rounds` take one step **per batch** from the observed
 miscoverage rate. Driving ACI once per row over a month of ~1,400 transactions
-applies ~1,400 steps and slams the level into its clip bounds — observed going
+applies ~1,400 steps and slams the level into its clip bounds, observed going
 0.05 → 0.5 → 0.0001 → 0.5 across five months before the distinction existed.
 
 ## 7. Decision layer
@@ -147,9 +147,9 @@ A prediction set is not a decision. Under a fixed analyst budget `K`:
 - ambiguous → **review**, if a slot is free
 
 Two cases are ambiguous and they are not the same. `{legitimate, fraud}` means
-neither label could be ruled out. The **empty set** means *both* were ruled out —
+neither label could be ruled out. The **empty set** means *both* were ruled out;
 the point is unlike anything in calibration, the most informative signal a
-conformal predictor produces — so empty sets take priority for review. Overflow
+conformal predictor produces, so empty sets take priority for review. Overflow
 behaviour is an explicit parameter, defaulting to the model's own point
 prediction, which is what an unaided desk would do.
 
@@ -160,7 +160,7 @@ prediction, which is what an unaided desk would do.
 download by `scripts/download_data.py`, which checks rather than assumes.
 
 **Split.** Months 0–5 are the labelled pool, months 6–7 the evaluation set.
-**Never random** — the fraud rate climbs across the window, so a random split
+**Never random**, the fraud rate climbs across the window, so a random split
 leaks the future.
 
 **Evaluation set.** Every fraud from months 6–7 (2,878 of them) plus 3,000
@@ -172,8 +172,8 @@ would cost.
 **Label budgets.** A pool holding exactly `F` positives at the base rate, so
 `F ∈ {25, 50, 100, 200}` corresponds to pools of roughly 2,300 to 18,000 rows.
 
-The matched comparison — split at `2F` against cross at `F`, which calibrate on
-the same number of positives and so target the same level — carries one
+The matched comparison, split at `2F` against cross at `F`, which calibrate on
+the same number of positives and so target the same level, carries one
 asymmetry, and it runs against cross: a budget of `2F` is a pool of `2F/0.011`
 rows, so split also gets **twice the in-context rows**. The better-resourced
 arm is the one being beaten, which makes those margins conservative.
@@ -185,20 +185,20 @@ for free.
 
 **Seeds.** Five per configuration for E1 and E2; three for E3, E4, E5 and E6.
 Bands in every figure span min–max across seeds. Where two conditions are
-compared they are **paired on the seeds they share** and tested pairwise —
+compared they are **paired on the seeds they share** and tested pairwise;
 comparing means over different seed sets flattered a result four separate times
 in this project, and the paired test took it back every time.
 
 **Pre-registration.** Predictions and their falsification conditions were written
 into [`CAHIER-DES-CHARGES.md`](CAHIER-DES-CHARGES.md) §7.1 before the experiments
 ran. **Four of the five were falsified**, including two of our own about cost,
-and all four are reported as such — see the scoreboard in the README and
+and all four are reported as such; see the scoreboard in the README and
 [`FINDINGS.md`](FINDINGS.md).
 
 ## 9. Compute
 
 TabPFN-3.5 through the managed Prior Labs API (`tabpfn-client`), not local
-weights — **TabPFN-3.5-Thinking and -Plus have no local weights at all**, and
+weights, **TabPFN-3.5-Thinking and -Plus have no local weights at all**, and
 Thinking is the variant Prior Labs documents as strongest on temporal data, which
 is the E3 setting. `time_col` is rejected outside thinking mode, so native
 temporal handling is a Thinking-only capability.

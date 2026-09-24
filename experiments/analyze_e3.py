@@ -193,14 +193,14 @@ def figure(by_arm, rows, path: pathlib.Path, common, dropped):
 
 def table(by_arm):
     months = sorted({m for a in by_arm for m in by_arm[a]})
-    print("\n### Coverage by month (table view — required by the contrast relief rule)\n")
+    print("\n### Coverage by month (table view, required by the contrast relief rule)\n")
     header = "| month | fraud rate | " + " | ".join(ARM_STYLE[a][1] for a in by_arm) + " |"
     print(header)
     print("|---:|---:|" + "---:|" * len(by_arm))
     for m in months:
         rate = next(by_arm[a][m]["month_fraud_rate"] for a in by_arm if m in by_arm[a])
         cells = " | ".join(
-            f"{by_arm[a][m]['coverage_fraud']:.3f}" if m in by_arm[a] else "—" for a in by_arm
+            f"{by_arm[a][m]['coverage_fraud']:.3f}" if m in by_arm[a] else "n/a" for a in by_arm
         )
         print(f"| {m} | {rate:.2%} | {cells} |")
 
@@ -262,7 +262,7 @@ def seed_table():
         for s in seeds:
             rs = [r for r in rows if r["model"] == model and r["seed"] == s]
             if not rs:
-                cells.append("—")
+                cells.append("n/a")
                 continue
             b = sum(1 for r in rs if r["coverage_fraud"] < target)
             cells.append(f"{b} of {len(rs)}")

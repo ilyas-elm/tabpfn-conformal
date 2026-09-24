@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E7 — the matched comparison on a second domain.
+"""E7, the matched comparison on a second domain.
 
 Same analysis as E1, on Forest Cover Type instead of Bank Account Fraud. The
 question is narrow: does *the halving* survive a dataset with no shared column,
@@ -100,8 +100,8 @@ def main() -> int:
 
     print(f"\n**Cross-conformal is significantly wider in {wider} of {len(paired)} "
           f"comparisons on this dataset**, and significantly narrower in {narrower}.")
-    print("\nThe halving is structural — it follows from where the calibration set "
-          "comes from, not from the data — so it transfers by construction. What "
+    print("\nThe halving is structural, it follows from where the calibration set "
+          "comes from, not from the data, so it transfers by construction. What "
           "this tests is whether it costs anything in width on a domain the "
           "method was not tuned on.")
     return 0

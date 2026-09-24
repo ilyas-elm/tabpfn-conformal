@@ -8,7 +8,7 @@ coverage at ``1 - 2*alpha`` (Barber et al. 2021). This project cites that caveat
 throughout and, until now, never measured it.
 
 This measures it. For every run, realized coverage of the positive class minus
-**the level that run actually certifies**, ``ceil((n+1)(1-alpha))/n`` — not the
+**the level that run actually certifies**, ``ceil((n+1)(1-alpha))/n``, not the
 nominal ``1-alpha``, because the index rounds up.
 
 The seed is the unit of analysis. Within one seed the split and cross arms share
@@ -70,7 +70,7 @@ def main() -> int:
             for strategy in ("split", "cross"):
                 g = gaps(rows, strategy, alpha)
                 if len(g) < 2:
-                    cells.append("—")
+                    cells.append("n/a")
                     continue
                 v, mean, se, _ = verdict(g)
                 mark = "**" if v == "below" else ""

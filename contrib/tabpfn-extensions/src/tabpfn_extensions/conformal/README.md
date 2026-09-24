@@ -22,7 +22,7 @@ coverage_by_class(sets, y_test, cc.classes_)     # per-class realised coverage
 | | |
 |---|---|
 | `ConformalClassifier` | scikit-learn compatible wrapper around any `predict_proba` estimator |
-| `method="mondrian"` | class-conditional calibration — one threshold per class |
+| `method="mondrian"` | class-conditional calibration, one threshold per class |
 | `strategy="cross"` | K-fold cross-conformal: no labels spent on calibration |
 | `ACI` | adaptive conformal inference for drifting streams |
 | `route` | prediction sets to approve / block / review under a review budget |
@@ -43,7 +43,7 @@ comparisons.
 
 **`alpha` is supplied at prediction time**, not calibration time. The calibration
 scores are stored and thresholds derived on demand, so sweeping `alpha` costs no
-further calls to the estimator — which matters when each call is a metered API
+further calls to the estimator, which matters when each call is a metered API
 request. `predict_set_from_proba` goes further: score once, sweep offline.
 
 **Too few calibration points raises rather than clips.** A calibration set of
