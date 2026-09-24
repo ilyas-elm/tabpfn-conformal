@@ -153,6 +153,17 @@ submission does not depend on it.
 - API token in `.env` (gitignored). Budget: 5M/day, 20M/month, resets 1 Oct
 - TabPFN runs on Prior Labs' GPUs via `tabpfn-client`; nothing local needs a GPU
 
+## The published demo is a second copy, and nothing can check it automatically
+
+`scripts/build_demo.py` rebuilds `figures/demo_data.json` and `demo/index.html`,
+and `verify_claims.py` fails if the committed data differs from the generator.
+It cannot reach the *published* artifact, which is a separate copy behind an
+account. Checked by hand on 24 Sept: the published page's embedded data is
+identical to `figures/demo_data.json` and its script is byte-identical to the
+locally built page. **If `build_demo.py` output ever changes, re-publish the
+artifact** — otherwise the README links to a demo showing older numbers, and
+nothing in CI will say so.
+
 ## Repository presentation — not set, and it is the first thing seen
 
 GitHub's API reports `description: null`, `topics: []`, `homepage: null`. On a
