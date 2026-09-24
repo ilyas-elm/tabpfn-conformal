@@ -176,17 +176,9 @@ locally built page. **If `build_demo.py` output ever changes, re-publish the
 artifact**, otherwise the README links to a demo showing older numbers, and
 nothing in CI will say so.
 
-## Repository presentation, not set, and it is the first thing seen
+## Repository presentation, done 24 Sept
 
-GitHub's API reports `description: null`, `topics: []`, `homepage: null`. On a
-submission judged 50% on showcase, the one-line description is what appears in
-search, in the org feed, and in every link preview. Only the web UI can set
-these (no `gh` on this machine). On the repo page, "About" → the gear icon:
-
-- **Description:**
-  `Distribution-free coverage guarantees for TabPFN-3.5. Cross-conformal reaches the same targeted level from half the confirmed positives, with the cost measured and stated.`
-- **Website:** the published demo URL (the one in the README's "Try the
-  interactive demo" link)
-- **Topics:** `conformal-prediction`, `tabpfn`, `uncertainty-quantification`,
-  `tabular`, `fraud-detection`, `prediction-sets`, `imbalanced-classification`,
-  `machine-learning`
+Description and topics are set. **Homepage is still empty**; it should point at
+the demo, so it is blocked on the demo being shared (above). Check with
+`curl -s https://api.github.com/repos/ilyas-elm/tabpfn-conformal | python3 -c
+"import sys,json;d=json.load(sys.stdin);print(d['description'],d['homepage'],d['topics'])"`.
