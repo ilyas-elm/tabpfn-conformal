@@ -91,10 +91,16 @@ def make_eval(ev: pd.DataFrame, seed: int):
 
 
 def to_numeric(X: pd.DataFrame) -> pd.DataFrame:
-    """LightGBM needs categoricals encoded; TabPFN takes the frame as it is."""
+    """LightGBM needs categoricals encoded; TabPFN takes the frame as it is.
+
+    Tested against what the column *is*, not against ``dtype == object``: under
+    pandas 3 a text column comes back as ``str`` rather than ``object``, so the
+    old test silently encoded nothing and LightGBM rejected the frame. Which
+    pandas a Kaggle image ships is not something this script gets to choose.
+    """
     X = X.copy()
     for col in X.columns:
-        if X[col].dtype == object:
+        if not (pd.api.types.is_numeric_dtype(X[col]) or pd.api.types.is_bool_dtype(X[col])):
             X[col] = X[col].astype("category").cat.codes
     return X
 
@@ -105,6 +111,56 @@ def build(family: str, device: str):
         return TabPFNClassifier(device=device)
     from lightgbm import LGBMClassifier
     return LGBMClassifier(n_estimators=200, verbose=-1, random_state=0)
+
+
+def warm_up(device: str) -> None:
+    """Fit both families once on throwaway data, before anything is timed.
+
+    TabPFN does not load its weights until ``fit``, and on a fresh machine that
+    first call also *downloads* them. Timing it would have charged TabPFN a few
+    hundred megabytes of network for the one measurement whose entire purpose is
+    to have no network in it. LightGBM is warmed too, so neither family pays a
+    first-call import cost the other does not.
+
+    It fails early and loudly as a side effect: TabPFN needs a one-time licence
+    acceptance before it will fetch weights, and a notebook is not an
+    interactive terminal, so without ``TABPFN_TOKEN`` this raises here, in the
+    first seconds, rather than part-way through a GPU session.
+    """
+    rng = np.random.default_rng(0)
+    X = pd.DataFrame(rng.normal(size=(32, 4)), columns=list("abcd"))
+    # BAF has five string columns, which go into TabPFN untouched and are
+    # encoded for LightGBM. A purely numeric warm-up would prove nothing about
+    # the frame this actually runs on, so carry one text column here too.
+    X["text"] = ["alpha", "beta"] * 16
+    y = np.array([0, 1] * 16)
+    for family in ("tabpfn", "lightgbm"):
+        t0 = time.perf_counter()
+        Xw = to_numeric(X) if family == "lightgbm" else X
+        try:
+            build(family, device).fit(Xw, y)
+        except Exception as exc:                                  # noqa: BLE001
+            if family != "tabpfn":
+                raise
+            blurb = f"{type(exc).__name__}: {exc}".lower()
+            if "licen" in blurb or "tabpfn_token" in blurb or "api key" in blurb:
+                raise SystemExit(
+                    f"TabPFN could not load its weights: {exc}\n\n"
+                    "Local inference needs a one-time licence acceptance at "
+                    "https://ux.priorlabs.ai (Licenses tab), and then the API key "
+                    "from https://ux.priorlabs.ai/account in TABPFN_TOKEN. On "
+                    "Kaggle put it in Add-ons -> Secrets, never in a cell.\n"
+                    "The token only authorises the download; inference stays local, "
+                    "which is what keeps this measurement clean."
+                ) from exc
+            raise SystemExit(
+                f"TabPFN failed on the warm-up frame, before any timing: {exc}\n\n"
+                "This is not a licence problem. The warm-up frame is four numeric "
+                "columns and one text column, which is the shape BAF has, so "
+                "whatever this is would have hit the real run too. Nothing was "
+                "measured and no GPU time was spent."
+            ) from exc
+        print(f"warm-up: {family} ready in {time.perf_counter() - t0:.1f}s", flush=True)
 
 
 def main() -> int:
@@ -121,6 +177,8 @@ def main() -> int:
         print("WARNING: no GPU. The whole point of this script is to put both "
               "models on the same accelerator; on CPU it settles nothing.",
               file=sys.stderr)
+
+    warm_up(dev["device"])
 
     pool_df, eval_df = load_frames(args.data)
     out, rows = REPO / "results" / "kaggle_wallclock.json", []
@@ -175,7 +233,8 @@ def main() -> int:
                           f"fit={t_fit:6.1f}s pred={t_pred:5.1f}s "
                           f"grad_fits={n_grad}", flush=True)
                     out.parent.mkdir(parents=True, exist_ok=True)
-                    out.write_text(json.dumps({"device": dev, "rows": rows}, indent=2))
+                    out.write_text(json.dumps(
+                        {"device": dev, "warmed_up": True, "rows": rows}, indent=2))
 
     print(f"\nWritten to {out.relative_to(REPO)} ({len(rows)} rows)")
     return 0

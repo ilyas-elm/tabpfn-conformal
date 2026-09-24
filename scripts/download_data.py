@@ -132,7 +132,8 @@ def verify() -> int:
 
     dtypes = df.dtypes.value_counts()
     print(f"\n  dtypes: {dict(zip(dtypes.index.astype(str), dtypes.values))}")
-    cats = [c for c in df.columns if df[c].dtype == object]
+    # Not `dtype == object`: pandas 3 reports text columns as `str`.
+    cats = [c for c in df.columns if not pd.api.types.is_numeric_dtype(df[c])]
     if cats:
         print(f"  categorical columns ({len(cats)}): {cats}")
 
