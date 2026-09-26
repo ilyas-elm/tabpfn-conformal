@@ -18,6 +18,7 @@ Every deliverable exists in draft or better.
 | E5 scale + KV cache | complete, 24 rows |
 | E6 variant replication | complete, 36/36 |
 | E7 second domain (Forest Cover Type) | complete, 24/24, cross wider in 0 of 3 |
+| P5 fair-hardware wall-clock (Kaggle T4) | complete, 24/24, **P5 falsified and settled** |
 | Validity audit (what cross costs) | complete, `experiments/analyze_validity.py` |
 | Calibration analysis | complete |
 | README | complete, all claims verified |
@@ -96,22 +97,27 @@ recomputes both counts.
    `scripts/verify_claims.py`, so re-run that before recording.
 5. **Submit**; [`SUBMISSION.md`](SUBMISSION.md) is the description field.
 
-**Optional, and only after the four above: P5 on fair hardware.** The wall-clock
-comparison against LightGBM is confounded (TabPFN remote, LightGBM local) and all
-36 E4 rows are tagged `wallclock_comparable: false`.
+## P5 is settled, 26 September
 
-The run that settles it is written and tested; what it needs is a GPU, which this
-laptop does not have. It is a **Kaggle notebook**, a free Jupyter notebook that
-runs on Kaggle's machines, and it needs a free Kaggle account with **phone
-verification**, which is what unlocks the GPU. About fifteen minutes.
-[`../experiments/kaggle/README.md`](../experiments/kaggle/README.md) is the
-step-by-step, written for someone who has never opened Kaggle.
+The fair-hardware run is done: both models on one Tesla T4, local TabPFN
+weights, no network inside the measurement. **TabPFN is slower in all four
+configurations, by 22 s to 221 s, a factor of 35 to 73.** Removing the confound
+moved the result further against TabPFN rather than rescuing it.
 
-The repository is public as of 24 Sept, so the notebook can clone it. This is
-no longer blocked on anything but a Kaggle account.
+Twenty-four rows are committed in `results/kaggle_wallclock.json`, every one
+tagged `wallclock_comparable: true`, and `experiments/analyze_kaggle.py`
+recomputes the verdict from them with no GPU and no key. Ten checks in
+`verify_claims.py` recompute every P5 number the docs quote.
 
-Until it is actually run, P5 stays open and `docs/limitations.md` says so. The
-submission does not depend on it.
+One effect survives inside the loss, and the README says so: split to cross
+costs TabPFN 4.46× against LightGBM's 6.42×, so cross-conformal *is* relatively
+cheaper without a training step. It is swamped at this scale because LightGBM
+trains on 9,000 rows in under a second.
+
+The notebook [`experiments/kaggle/wallclock.ipynb`](../experiments/kaggle/wallclock.ipynb)
+is committed and reproduces it. **It should be made public on Kaggle and its URL
+added next to the P5 row**, since a public notebook with saved output shows a
+reader the GPU, the timings and the log without them running anything.
 
 ## Standing rules learned the hard way
 

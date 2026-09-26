@@ -48,7 +48,11 @@ checks: list[tuple[str, bool, str]] = []
 
 
 def check(label: str, claimed, actual, tol=TOL):
-    ok = claimed is not None and abs(claimed - actual) <= tol
+    # bool() is not decoration. `actual` is often a numpy scalar, which makes
+    # the comparison a numpy bool, and `np.False_ is False` is False, so a
+    # failing check printed FAIL and was then not counted as one. The script
+    # exited 0 with a visible failure on screen.
+    ok = bool(claimed is not None and abs(claimed - actual) <= tol)
     checks.append((label, ok, f"README {claimed} vs computed {actual:.4f}"))
 
 
@@ -789,6 +793,68 @@ m = re.search(r"(\d+) tests? collected", out.stdout)
 if m:
     check("test count", in_readme(r"(\d+) tests, CPU"), float(m.group(1)), 0.5)
 
+# ---- 5n. P5, settled on fair hardware -------------------------------------
+# Every number the README and limitations.md quote about the T4 run is
+# recomputed here from the 24 committed rows, so none of them is typed.
+_kag = REPO / "results" / "kaggle_wallclock.json"
+if _kag.exists():
+    _blob = json.loads(_kag.read_text())
+    _krows = _blob["rows"]
+    checks.append(("the fair-hardware run is 24 rows on a GPU",
+                   len(_krows) == 24 and _blob["device"]["device"] == "cuda"
+                   and all(r["wallclock_comparable"] for r in _krows),
+                   f"{len(_krows)} rows on {_blob['device'].get('gpu')}"))
+
+    def _cell(fam, strat, budget):
+        return {r["seed"]: r for r in _krows if r["family"] == fam
+                and r["strategy"] == strat and r["n_frauds"] == budget}
+
+    _diffs, _ratios = [], []
+    for _strat in ("split", "cross"):
+        for _b in sorted({r["n_frauds"] for r in _krows}):
+            _t, _g = _cell("tabpfn", _strat, _b), _cell("lightgbm", _strat, _b)
+            _seeds = sorted(set(_t) & set(_g))
+            _diffs += [_t[s]["seconds"] - _g[s]["seconds"] for s in _seeds]
+            _ratios.append(np.mean([_t[s]["seconds"] for s in _seeds])
+                           / np.mean([_g[s]["seconds"] for s in _seeds]))
+    checks.append(("TabPFN is slower in every fair-hardware configuration",
+                   all(d > 0 for d in _diffs),
+                   f"{sum(d > 0 for d in _diffs)} of {len(_diffs)} runs slower"))
+
+    # "by 22 s to 221 s, a factor of 35 to 73"
+    _gaps = []
+    for _strat in ("split", "cross"):
+        for _b in sorted({r["n_frauds"] for r in _krows}):
+            _t, _g = _cell("tabpfn", _strat, _b), _cell("lightgbm", _strat, _b)
+            _seeds = sorted(set(_t) & set(_g))
+            _gaps.append(np.mean([_t[s]["seconds"] - _g[s]["seconds"] for s in _seeds]))
+    check("P5 smallest gap in seconds",
+          in_readme(r"by (\d+) s to \d+ s, a factor"), min(_gaps), 0.5)
+    check("P5 largest gap in seconds",
+          in_readme(r"by \d+ s to (\d+) s, a factor"), max(_gaps), 0.5)
+    check("P5 smallest speed factor",
+          in_readme(r"a factor of (\d+) to \d+"), min(_ratios), 0.5)
+    check("P5 largest speed factor",
+          in_readme(r"a factor of \d+ to (\d+)"), max(_ratios), 0.5)
+
+    # The split-to-cross multiplier, the one effect that survives.
+    for _fam, _pat in (("tabpfn", r"costs TabPFN\n\*\*([\d.]+)×\*\*"),
+                       ("lightgbm", r"and LightGBM \*\*([\d.]+)×\*\*")):
+        _m = np.mean([np.mean([_cell(_fam, "cross", _b)[s]["seconds"] for s in (0, 1, 2)])
+                      / np.mean([_cell(_fam, "split", _b)[s]["seconds"] for s in (0, 1, 2)])
+                      for _b in sorted({r["n_frauds"] for r in _krows})])
+        check(f"{_fam} split-to-cross multiplier", in_readme(_pat), _m, 0.01)
+
+    _cr = _cell("tabpfn", "cross", 200); _lg = _cell("lightgbm", "cross", 200)
+    check("TabPFN cross at 200 frauds, seconds",
+          in_readme(r"([\d.]+) s for cross-conformal at 200 confirmed frauds"),
+          float(np.mean([_cr[s]["seconds"] for s in sorted(_cr)])), 0.5)
+    check("LightGBM cross at 200 frauds, seconds",
+          in_readme(r"\*\*: ([\d.]+) s against"),
+          float(np.mean([_lg[s]["seconds"] for s in sorted(_lg)])), 0.05)
+else:
+    checks.append(("P5 fair-hardware run", None, "results/kaggle_wallclock.json absent"))
+
 # ---- 5m. The falsification counts in prose match the scoreboard -----------
 # One sentence said "three of four" for three days after a fifth prediction was
 # added and a fourth was falsified, two screens below a table saying otherwise.
@@ -917,12 +983,17 @@ else:
           in_video(r"moves from \*\*\d+% to (\d+)%\*\*"), round(caught_hi), 0.5)
 
 # ---- report ---------------------------------------------------------------
-bad = [c for c in checks if c[1] is False]
+# Identity tests against False are what let a numpy bool slip through; ask for
+# truthiness instead, and treat only an explicit None as "not runnable".
 skipped = [c for c in checks if c[1] is None]
+bad = [c for c in checks if c[1] is not None and not c[1]]
 for label, ok, detail in checks:
     mark = "ok  " if ok else ("skip" if ok is None else "FAIL")
     if not ok:
         print(f"{mark}  {label:<38} {detail}")
+_odd = [c[0] for c in checks if c[1] is not None and not isinstance(c[1], bool)]
+if _odd:
+    print(f"warning: {len(_odd)} checks have a non-bool verdict: {_odd[:3]}")
 print(f"\n{len(checks) - len(bad) - len(skipped)} verified, "
       f"{len(bad)} mismatched, {len(skipped)} not yet runnable")
 sys.exit(1 if bad else 0)
