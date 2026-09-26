@@ -618,11 +618,11 @@ and labels are the resource that is actually scarce.
 
 ```bash
 pip install -e ".[dev]"   # tests, plus everything needed to redraw the figures
-pytest                    # 126 tests, CPU, ~3s warm (~10s on a cold clone)
+pytest                    # 129 tests, CPU, ~3s warm (~10s on a cold clone)
 ```
 
 The core depends on **numpy, pandas and scikit-learn only**, no torch, no
-`tabpfn`, no GPU. 126 tests in about three seconds on a laptop. TabPFN appears in
+`tabpfn`, no GPU. 129 tests in about three seconds on a laptop. TabPFN appears in
 `experiments/` and is never imported by `src/`.
 
 For the experiments you additionally need the dataset and a free Prior Labs
@@ -679,6 +679,34 @@ binary, because the motivating problem is.
 | cross | ours is Vovk (2015), pool out-of-fold scores, predict with the full-data model. MAPIE's is CV+ (Barber et al. 2021), which aggregates the fold models instead. **Different constructions**, so exact agreement would be suspicious | **99.7% of prediction sets identical**; coverage within 0.002 and set size within 0.002 at α ∈ {0.05, 0.1, 0.2} |
 
 The second row is the one that matters, because cross-conformal is the headline.
+
+**And it is where the two constructions stop being interchangeable, in a way a
+TabPFN user pays for.** CV+ builds each prediction set from the K fold models,
+so it must query every one of them for every test row. Pooled cross-conformal
+derives its thresholds from the out-of-fold scores and then predicts with the
+single full-data model, so a test row is scored once whatever K is. Measured by
+counting calls to the base estimator, in
+[`tests/test_agreement_with_mapie.py`](tests/test_agreement_with_mapie.py):
+
+| K | rows scored per test row, ours | CV+ |
+|---:|---:|---:|
+| 2 | 1 | 3 |
+| 3 | 1 | 4 |
+| 5 | 1 | 6 |
+| 10 | 1 | 11 |
+
+Exactly `K+1` against `1`, and it is structural rather than an inefficiency in
+MAPIE: CV+ cannot form its set without asking each fold model. On a local model
+this is a footnote. **On a model billed per row predicted, which is what the
+Prior Labs API is, it is a K+1 multiplier on inference cost for as long as the
+thing is in production**, and the two produce 99.7% identical sets, so it buys
+nothing back in accuracy.
+
+What CV+ buys instead is theory: a worst-case bound of `1 - 2*alpha`. Pooling
+is only approximately valid, and
+[we measured what that costs](#what-cross-conformal-actually-costs) rather than
+waving at it. That is the trade, and it is the reason this is a separate
+implementation rather than a wrapper.
 Two independently written implementations of two different cross-conformal
 constructions landing on the same sets is stronger evidence than either agreeing
 with itself.

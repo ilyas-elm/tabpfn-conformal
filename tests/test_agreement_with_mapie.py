@@ -104,3 +104,61 @@ def test_cross_conformal_lands_where_mapies_cv_plus_does(alpha):
     # Measured at 99.7% across three alphas; 0.98 leaves room for a MAPIE
     # release changing its aggregation without this becoming a flaky failure.
     assert np.mean(agree) > 0.98, f"only {np.mean(agree):.1%} of sets agree"
+
+
+@pytest.mark.parametrize("n_folds", [2, 3, 5])
+def test_cv_plus_scores_every_test_row_k_plus_one_times_and_ours_scores_it_once(n_folds):
+    """The one place the two constructions differ in a way a user pays for.
+
+    CV+ builds its sets from the K fold models, so it must query each of them
+    for every test row. Pooled cross-conformal derives thresholds from the
+    out-of-fold scores and then predicts with the single full-data model, so a
+    test row is scored once no matter how large K is.
+
+    On a local model this is a footnote. On a metered API billed per row
+    predicted, which is what TabPFN is, it is a K+1 multiplier on inference
+    cost that lasts for as long as the model is in production. The two agree on
+    the sets themselves, which the test above establishes, so this is a cost
+    difference rather than an accuracy one.
+    """
+    from sklearn.base import BaseEstimator, ClassifierMixin
+
+    calls = {"n": 0}
+
+    class Counting(BaseEstimator, ClassifierMixin):
+        def __init__(self):
+            self._m = LogisticRegression(max_iter=500)
+
+        def fit(self, X, y):
+            self._m.fit(X, y)
+            self.classes_ = self._m.classes_
+            return self
+
+        def predict_proba(self, X):
+            calls["n"] += len(X)
+            return self._m.predict_proba(X)
+
+        def predict(self, X):
+            return self._m.predict(X)
+
+    X, y = make_imbalanced(n_samples=1500, minority_rate=0.1, seed=0)
+    X_pool, X_test, y_pool, _ = train_test_split(
+        X, y, test_size=0.3, random_state=0, stratify=y)
+
+    ours = ConformalClassifier(Counting(), method="mondrian", strategy="cross",
+                               n_folds=n_folds, random_state=0).fit(X_pool, y_pool)
+    calls["n"] = 0
+    ours.predict_set(X_test, alpha=0.1)
+    ours_per_row = calls["n"] / len(X_test)
+
+    theirs = mapie_classification.CrossConformalClassifier(
+        estimator=Counting(), confidence_level=0.9, conformity_score="lac",
+        cv=n_folds, random_state=0)
+    theirs.fit_conformalize(X_pool, y_pool)
+    calls["n"] = 0
+    theirs.predict_set(X_test)
+    theirs_per_row = calls["n"] / len(X_test)
+
+    assert ours_per_row == 1.0, f"ours scored {ours_per_row} times per row"
+    assert theirs_per_row == n_folds + 1, (
+        f"expected CV+ to score each row {n_folds + 1} times, got {theirs_per_row}")

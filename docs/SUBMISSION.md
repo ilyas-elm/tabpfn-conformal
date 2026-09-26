@@ -22,7 +22,7 @@ measuring what that buys on TabPFN-3.5 and the Bank Account Fraud dataset
 (Jesus et al., NeurIPS 2022; 1M rows, 1.1% fraud, real temporal drift).
 
 The core depends only on numpy, pandas and scikit-learn. It never imports TabPFN
-or torch, installs in seconds, and its 126 tests run on a laptop CPU in
+or torch, installs in seconds, and its 129 tests run on a laptop CPU in
 about three. TabPFN appears only in `experiments/`, reached through the managed
 Prior Labs API, so **every figure regenerates from committed results with no API
 key and no GPU.**

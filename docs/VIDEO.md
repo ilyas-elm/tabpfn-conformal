@@ -105,7 +105,7 @@ our own about cost."
 > *Terminal: `pytest`, then the extensions PR page, or
 > `contrib/tabpfn-extensions/` if the PR is not open yet.*
 
-"A hundred and twenty-six tests, CPU only, a few seconds. The core is numpy, pandas
+"A hundred and twenty-nine tests, CPU only, a few seconds. The core is numpy, pandas
 and scikit-learn, no TabPFN, no GPU, and every figure regenerates from
 committed results without an API key.
 
