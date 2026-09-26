@@ -29,7 +29,9 @@ class InsufficientCalibrationWarning(UserWarning):
     """
 
 
-def conformal_quantile(scores: np.ndarray, alpha: float, *, group: object = None) -> float:
+def conformal_quantile(
+    scores: np.ndarray, alpha: float, *, group: object = None
+) -> float:
     """The ``ceil((n + 1)(1 - alpha))``-th smallest calibration score.
 
     Returns ``+inf`` when ``n`` is too small for the requested ``alpha`` (the

@@ -33,8 +33,7 @@ __all__ = ["ACI"]
 class ACI:
     """Online per-class conformal level.
 
-    Parameters
-    ----------
+    Args:
     alpha_target : float
         The miscoverage rate to converge to, per class.
     gamma : float
@@ -48,8 +47,7 @@ class ACI:
         prediction set degenerates to everything or nothing, which is valid but
         uninformative. Clipping keeps it interpretable and is standard practice.
 
-    Examples
-    --------
+    Examples:
     >>> aci = ACI(alpha_target=0.05, gamma=0.02, n_classes=2)
     >>> aci.alpha(1)
     0.05
@@ -172,7 +170,7 @@ class ACI:
             raise ValueError(
                 f"y_idx {y_idx.shape} and covered {covered.shape} must align."
             )
-        for k, c in zip(y_idx, covered):
+        for k, c in zip(y_idx, covered, strict=False):
             self.update(int(k), bool(c))
         return self.alpha_dict()
 

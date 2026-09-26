@@ -192,11 +192,10 @@ import os
 
 import numpy as np
 import pytest
+from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.datasets import make_classification
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-
-from sklearn.base import BaseEstimator, ClassifierMixin
 
 from tabpfn_extensions.conformal import (
     ACI,
@@ -210,8 +209,8 @@ from tabpfn_extensions.conformal import (
     out_of_fold_proba,
     route,
 )
-from tabpfn_extensions.conformal.crossconformal import aligned_proba
 from tabpfn_extensions.conformal.calibration import InsufficientCalibrationWarning
+from tabpfn_extensions.conformal.crossconformal import aligned_proba
 
 FAST = os.environ.get("FAST_TEST_MODE") == "1"
 N_SEEDS = 3 if FAST else 8
@@ -221,9 +220,15 @@ ALPHA = 0.1
 
 def imbalanced(n=N_SAMPLES, minority_rate=0.02, seed=0):
     return make_classification(
-        n_samples=n, n_features=12, n_informative=6, n_redundant=2,
-        n_clusters_per_class=2, weights=[1 - minority_rate, minority_rate],
-        flip_y=0.01, class_sep=1.0, random_state=seed,
+        n_samples=n,
+        n_features=12,
+        n_informative=6,
+        n_redundant=2,
+        n_clusters_per_class=2,
+        weights=[1 - minority_rate, minority_rate],
+        flip_y=0.01,
+        class_sep=1.0,
+        random_state=seed,
     )
 
 
@@ -233,8 +238,10 @@ def run(method, seed, strategy="split", minority_rate=0.02):
         X, y, test_size=0.4, stratify=y, random_state=seed
     )
     cc = ConformalClassifier(
-        LogisticRegression(max_iter=1000), method=method,
-        strategy=strategy, random_state=seed,
+        LogisticRegression(max_iter=1000),
+        method=method,
+        strategy=strategy,
+        random_state=seed,
     ).fit(X_fit, y_fit)
     sets = cc.predict_set(X_test, ALPHA)
     return sets, y_test, cc
@@ -244,7 +251,9 @@ def test_quantile_uses_the_finite_sample_correction():
     scores = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
     assert conformal_quantile(scores, 0.2) == pytest.approx(0.5)
     assert conformal_quantile(scores, 0.5) == pytest.approx(0.3)
-    assert conformal_quantile(scores, 0.1) != pytest.approx(float(np.quantile(scores, 0.9)))
+    assert conformal_quantile(scores, 0.1) != pytest.approx(
+        float(np.quantile(scores, 0.9))
+    )
 
 
 def test_too_few_calibration_points_warns_and_is_conservative():
@@ -253,8 +262,10 @@ def test_too_few_calibration_points_warns_and_is_conservative():
 
 
 def test_marginal_method_achieves_marginal_coverage():
-    cov = [marginal_coverage(*run("marginal", s)[:2], run("marginal", s)[2].classes_)
-           for s in range(N_SEEDS)]
+    cov = [
+        marginal_coverage(*run("marginal", s)[:2], run("marginal", s)[2].classes_)
+        for s in range(N_SEEDS)
+    ]
     assert np.mean(cov) >= 1 - ALPHA - 0.03
 
 
@@ -269,6 +280,7 @@ def test_mondrian_covers_both_classes():
 
 def test_marginal_under_covers_the_minority_class():
     """The failure mode class-conditional calibration exists to fix."""
+
     def minority(method):
         out = []
         for s in range(N_SEEDS):
@@ -282,10 +294,12 @@ def test_marginal_under_covers_the_minority_class():
 
 def test_cross_conformal_spends_no_labels_on_calibration():
     X, y = imbalanced(seed=0)
-    split = ConformalClassifier(LogisticRegression(max_iter=1000),
-                                strategy="split", random_state=0).fit(X, y)
-    cross = ConformalClassifier(LogisticRegression(max_iter=1000),
-                                strategy="cross", n_folds=5, random_state=0).fit(X, y)
+    split = ConformalClassifier(
+        LogisticRegression(max_iter=1000), strategy="split", random_state=0
+    ).fit(X, y)
+    cross = ConformalClassifier(
+        LogisticRegression(max_iter=1000), strategy="cross", n_folds=5, random_state=0
+    ).fit(X, y)
     assert sum(cross.n_calibration_.values()) == len(y)
     assert cross.n_calibration_[1] > split.n_calibration_[1]
 
@@ -307,7 +321,9 @@ def test_route_respects_the_review_budget():
     proba = np.array([[0.9, 0.1], [0.2, 0.8], [0.45, 0.55], [0.7, 0.3], [0.5, 0.5]])
     for k in range(6):
         assert (route(sets, proba, budget_k=k) == "review").sum() <= k
-    summary = decision_summary(route(sets, proba, budget_k=2), [0, 1, 1, 0, 1], budget_k=2)
+    summary = decision_summary(
+        route(sets, proba, budget_k=2), [0, 1, 1, 0, 1], budget_k=2
+    )
     assert summary["n_review"] == 2
 
 
@@ -315,6 +331,7 @@ def test_route_respects_the_review_budget():
 # Each of the following was written after a mutation of the library passed the
 # rest of this file. They are the tests that make the module's own docstrings
 # true, so they travel with it.
+
 
 class _Memoriser(BaseEstimator, ClassifierMixin):
     """Answers 1.0 on the true class of any row it was fitted on.
@@ -327,7 +344,7 @@ class _Memoriser(BaseEstimator, ClassifierMixin):
     def fit(self, X, y):
         X, y = np.asarray(X, dtype=float), np.asarray(y)
         self.classes_ = np.unique(y)
-        self.seen_ = {row.tobytes(): label for row, label in zip(X, y)}
+        self.seen_ = {row.tobytes(): label for row, label in zip(X, y, strict=False)}
         return self
 
     def predict_proba(self, X):
@@ -344,16 +361,18 @@ class _Memoriser(BaseEstimator, ClassifierMixin):
 def test_no_row_is_scored_by_a_model_that_saw_it():
     """Cross-conformal's defining property, asserted rather than assumed."""
     X, y = imbalanced(n=600, minority_rate=0.1)
-    proba = out_of_fold_proba(_Memoriser(), X, y, np.array([0, 1]),
-                              n_folds=5, random_state=0)
+    proba = out_of_fold_proba(
+        _Memoriser(), X, y, np.array([0, 1]), n_folds=5, random_state=0
+    )
     np.testing.assert_allclose(proba, 0.5)
 
 
 def test_the_final_model_is_fitted_on_every_row():
     """Its second property: no label is spent, so none leaves the context."""
     X, y = imbalanced(n=600, minority_rate=0.1)
-    cc = ConformalClassifier(_Memoriser(), strategy="cross", n_folds=5,
-                             random_state=0).fit(X, y)
+    cc = ConformalClassifier(
+        _Memoriser(), strategy="cross", n_folds=5, random_state=0
+    ).fit(X, y)
     seen = cc.estimator_.predict_proba(X)
     np.testing.assert_allclose(seen[np.arange(len(y)), y], 1.0)
 
@@ -365,6 +384,7 @@ def test_a_score_exactly_on_the_threshold_is_inside_the_set():
     test here while dropping the boundary point. Discrete scores make ties
     routine, and there it loses the guarantee.
     """
+
     class Grid(BaseEstimator, ClassifierMixin):
         classes_ = np.array([0, 1])
 
@@ -385,6 +405,7 @@ def test_a_score_exactly_on_the_threshold_is_inside_the_set():
 
 def test_a_folds_missing_class_is_realigned_not_trusted_positionally():
     """`classes_` in another order must not be read by column position."""
+
     class Reversed(BaseEstimator, ClassifierMixin):
         classes_ = np.array([1, 0])
 
@@ -405,7 +426,7 @@ def test_metrics_are_what_they_say():
 
 def test_classes_are_read_positionally_not_assumed_sorted():
     """`coverage_by_class` keys by position, so resolution must too."""
-    classes = np.array(["legit", "fraud"])      # deliberately unsorted
+    classes = np.array(["legit", "fraud"])  # deliberately unsorted
     y = np.array(["fraud", "legit"])
     sets = np.array([[False, True], [True, False]])
     cov = coverage_by_class(sets, y, classes)
@@ -418,21 +439,26 @@ def test_a_dataframe_with_a_non_default_index_is_taken_positionally():
     pd = pytest.importorskip("pandas")
     X, y = imbalanced(n=600, minority_rate=0.15)
     cols = [f"f{i}" for i in range(X.shape[1])]
-    ref = ConformalClassifier(LogisticRegression(max_iter=1000), strategy="cross",
-                              n_folds=3, random_state=0)
+    ref = ConformalClassifier(
+        LogisticRegression(max_iter=1000), strategy="cross", n_folds=3, random_state=0
+    )
     ref.fit(pd.DataFrame(X, columns=cols), y)
     base = ref.predict_set(pd.DataFrame(X, columns=cols), ALPHA)
 
-    scrambled = pd.DataFrame(X, columns=cols,
-                             index=np.random.default_rng(0).permutation(len(X)))
-    other = ConformalClassifier(LogisticRegression(max_iter=1000), strategy="cross",
-                                n_folds=3, random_state=0).fit(scrambled, y)
+    scrambled = pd.DataFrame(
+        X, columns=cols, index=np.random.default_rng(0).permutation(len(X))
+    )
+    other = ConformalClassifier(
+        LogisticRegression(max_iter=1000), strategy="cross", n_folds=3, random_state=0
+    ).fit(scrambled, y)
     np.testing.assert_array_equal(base, other.predict_set(scrambled, ALPHA))
 
 
 def test_non_finite_probabilities_are_rejected():
     """NaN scores would otherwise yield silently empty sets, which `route`
-    treats as the highest priority for human review."""
+    treats as the highest priority for human review.
+    """
+
     class NaNEstimator(BaseEstimator, ClassifierMixin):
         classes_ = np.array([0, 1])
 
@@ -470,7 +496,6 @@ of the scarce positive labels on calibration.
 
 from __future__ import annotations
 
-import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 
@@ -484,8 +509,12 @@ from tabpfn_extensions.conformal import (
 ALPHA = 0.1
 
 X, y = make_classification(
-    n_samples=2000, n_features=12, n_informative=6, weights=[0.98, 0.02],
-    flip_y=0.01, random_state=0,
+    n_samples=2000,
+    n_features=12,
+    n_informative=6,
+    weights=[0.98, 0.02],
+    flip_y=0.01,
+    random_state=0,
 )
 X_pool, X_test, y_pool, y_test = train_test_split(
     X, y, test_size=0.4, stratify=y, random_state=0
@@ -494,8 +523,11 @@ print(f"pool: {len(y_pool)} rows, {int(y_pool.sum())} positives")
 
 for strategy in ("split", "cross"):
     cc = ConformalClassifier(
-        TabPFNClassifier(), method="mondrian", strategy=strategy,
-        n_folds=5, random_state=0,
+        TabPFNClassifier(),
+        method="mondrian",
+        strategy=strategy,
+        n_folds=5,
+        random_state=0,
     ).fit(X_pool, y_pool)
 
     sets = cc.predict_set(X_test, ALPHA)
