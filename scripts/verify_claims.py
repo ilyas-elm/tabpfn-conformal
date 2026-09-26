@@ -982,6 +982,15 @@ else:
     check("video demo caught (K=200)",
           in_video(r"moves from \*\*\d+% to (\d+)%\*\*"), round(caught_hi), 0.5)
 
+# ---- 8. The verifier's own advertised size ---------------------------------
+# The README said 135 while this script ran 176, because nothing compared them.
+# Counted last, and counts itself, so the figure in the README is the number of
+# checks this file actually performs.
+_claimed_n = in_readme(r"recomputes\s*>?\s*(\d+) of them")
+checks.append(("the README states how many claims this script checks",
+               _claimed_n is not None and int(_claimed_n) == len(checks) + 1,
+               f"README says {_claimed_n and int(_claimed_n)}, this run has {len(checks) + 1}"))
+
 # ---- report ---------------------------------------------------------------
 # Identity tests against False are what let a numpy bool slip through; ask for
 # truthiness instead, and treat only an explicit None as "not runnable".
