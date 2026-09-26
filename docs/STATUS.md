@@ -89,9 +89,16 @@ recomputes both counts.
    `tabpfn_extensions.conformal`, 18 tests pass under `FAST_TEST_MODE=1`
    (locally: `FAST_TEST_MODE=1 PYTHONPATH=contrib/tabpfn-extensions/src pytest
    contrib/tabpfn-extensions/tests`).
-3. **Share the demo artifact.** Still private, unlike the Kaggle notebook. See the section below: it is private, and the
-   README links to it prominently. One menu, thirty seconds, and it is the
-   difference between the showcase criterion landing and 404ing.
+3. ~~**Share the demo artifact.**~~ **Done 26 September.** It is shared with
+   anyone who has the link, verified the way a judge sees it: loaded in a
+   browser with no Claude session, which shows a Sign in button and renders the
+   page anyway, in dark mode, with every panel and every number present.
+
+   A note on how this was checked, because the obvious method is wrong.
+   `curl` returns **403 for every** claude.ai artifact URL, including ones that
+   do not exist, so an HTTP status says nothing about sharing. The reliable
+   signals are the Artifact tool's own metadata and a signed-out browser.
+
 4. **Record the video**; [`VIDEO.md`](VIDEO.md) has the script and a list of
    nine claims not to make on camera. Its numbers are checked by
    `scripts/verify_claims.py`, so re-run that before recording.
@@ -164,15 +171,6 @@ only, never its value.
 - API token in `.env` (gitignored). Budget: 5M/day, 20M/month, resets 1 Oct
 - TabPFN runs on Prior Labs' GPUs via `tabpfn-client`; nothing local needs a GPU
 
-## The demo artifact is PRIVATE, and the README links to it
-
-The publish API reports it as private: *only its owner and the people the owner
-has given access can open the link.* The README's "Try the interactive demo"
-link is the showcase centrepiece of a submission judged 50% on showcase, so
-until this is changed a judge clicking it gets nothing. It has to be set to
-"anyone with the link" from the page's own Share menu; no tooling can do it.
-Check it the way a judge would: open the link in a private window, signed out.
-
 ## The published demo is a second copy, and nothing can check it automatically
 
 `scripts/build_demo.py` rebuilds `figures/demo_data.json` and `demo/index.html`,
@@ -186,7 +184,8 @@ nothing in CI will say so.
 
 ## Repository presentation, done 24 Sept
 
-Description and topics are set. **Homepage is still empty**; it should point at
-the demo, so it is blocked on the demo being shared (above). Check with
+Description and topics are set. **Homepage is still empty.** It should point at
+the demo, which is now shared, so nothing blocks it:
+`https://claude.ai/artifact/RQdPAtjvKefEv1iUT1RB1q` in the About panel. Check with
 `curl -s https://api.github.com/repos/ilyas-elm/tabpfn-conformal | python3 -c
 "import sys,json;d=json.load(sys.stdin);print(d['description'],d['homepage'],d['topics'])"`.
