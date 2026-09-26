@@ -60,23 +60,35 @@ GPU.
 > comparisons it was significantly wider in **zero** and significantly narrower
 > in one, at the scarcest label budget.
 >
-> **On "why not just use MAPIE".** A fair question, and the split-conformal
-> part of this genuinely is MAPIE: our marginal sets are bit-identical to
-> `SplitConformalClassifier` with `lac`, which is how correctness is tested
-> here. Cross is where the two diverge. The MAPIE `CrossConformalClassifier`
-> is CV+ (Barber et al. 2021), which forms each set from the K fold models and
-> so must query every one of them for every test row. This is Vovk (2015):
-> thresholds from pooled out-of-fold scores, prediction from the single
-> full-data model, so a test row is scored once whatever K is. Counted:
-> `K+1` base-model calls per test row against `1`, at K in {2, 3, 5, 10}.
+> **On "why not just use MAPIE".** A fair question. For split conformal the
+> answer is that you should: the marginal sets here are bit-identical to
+> `SplitConformalClassifier` with `lac`, which is how correctness is tested.
+> Cross-conformal is where the two stop being interchangeable, for two
+> reasons.
 >
-> On a local model that is a footnote. On a model billed per row predicted it
-> is a `K+1` multiplier on inference cost for as long as it is deployed, and
-> the two agree on 99.7% of the sets, so it buys nothing back. CV+ buys theory
-> instead, a `1 - 2*alpha` worst-case bound; pooling is only approximately
-> valid, and the cost of that is measured below rather than waved at. That
-> trade is why this is an implementation rather than a wrapper, and MAPIE is
-> not currently a dependency of this repository.
+> *Capability.* Every conformity score `CrossConformalClassifier` accepts
+> (lac, aps, raps, top_k, naive) is marginal, and it exposes no
+> class-conditional option, so cross-conformal and Mondrian cannot be
+> combined there. On a 4% minority at a 90% target that is measurable: MAPIE
+> CV+ gives the minority class **0.043** coverage, this gives it **0.957**.
+> Not a MAPIE defect, just what marginal calibration does, but the minority
+> class is the one that matters in an imbalanced problem.
+>
+> *Cost per prediction.* MAPIE cross-conformal is CV+ (Barber et al. 2021),
+> which forms each set from the K fold models and so must query every one of
+> them for every test row. This is Vovk (2015): thresholds from pooled
+> out-of-fold scores, prediction from the single full-data model, so a test
+> row is scored once whatever K is. Counted by instrumenting the base
+> estimator: `K+1` calls per test row against `1`, exactly, at K in
+> {2, 3, 5, 10}. On a local model that is a footnote. On a model billed per
+> row predicted it is a `K+1` multiplier on inference cost for as long as it
+> is deployed, and the two agree on 99.7% of sets, so it buys nothing back.
+>
+> What CV+ buys instead is theory, a `1 - 2*alpha` worst-case bound. Pooling
+> is only approximately valid and the cost of that is measured below rather
+> than waved at. Neither the speed of the conformal code nor its memory is an
+> argument: both are a rounding error next to the base model. MAPIE is also
+> not currently a dependency of this repository, so adopting this adds none.
 >
 > **Dependencies:** none beyond numpy and scikit-learn, both already required
 > here. Nothing in the module imports TabPFN, so it adds nothing to the base
