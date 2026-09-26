@@ -1,4 +1,4 @@
-<title>Calibrated Fraud Desk</title>
+<title>TabPFN-3.5, with a coverage guarantee</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 :root{
@@ -114,7 +114,7 @@ a{color:var(--accent)}
 <div class="wrap">
 
   <div class="bar">
-    <span class="mark"><span class="dot"></span>Calibrated Fraud Desk</span>
+    <span class="mark"><span class="dot"></span>TabPFN-3.5 &middot; conformal</span>
     <span class="spacer"></span>
     <span class="chip">TabPFN-3.5</span>
     <span class="chip">Bank Account Fraud</span>
@@ -145,6 +145,7 @@ a{color:var(--accent)}
   <section class="panel">
     <div class="phead"><span class="pnum">02</span>
       <span class="pname">Why TabPFN, and not a gradient-boosted tree</span>
+      <span class="chip">cross-conformal, &alpha; 0.05</span>
       <span class="spacer"></span>
       <span class="seg" id="seg-budget" role="group" aria-label="Label budget">
         <button type="button" data-f="100" aria-pressed="true">100 frauds</button>
@@ -176,6 +177,11 @@ a{color:var(--accent)}
           <div class="v" id="tpFits">&hellip;</div>
           <div class="s">fit swaps the in-context set, no gradient</div></div>
       </div>
+      <p style="margin:11px 0 0;font:400 11.5px/1.5 'IBM Plex Mono',monospace;color:var(--ink-3)">
+        These two are arithmetic, not a measurement: K folds need K+1 fits of a
+        model that trains, and none of a model that does not. K=5 is the
+        configuration everything else on this page was measured at.
+      </p>
     </div>
   </section>
 
@@ -279,7 +285,7 @@ a{color:var(--accent)}
   </section>
 
   <footer>
-    <code>results/proba/e4/tabpfn_cross_200_0.npz</code> &middot; TabPFN-3.5 via the
+    <code>results/</code> (e1, e4, calibration, kaggle_wallclock) &middot; TabPFN-3.5 via the
     Prior Labs API &middot; Bank Account Fraud (Jesus et al., NeurIPS 2022), months
     6&ndash;7 &middot; calibration and displayed cases are disjoint halves of one
     held-out set &middot; cross-conformal is approximately valid &middot;
