@@ -12,7 +12,7 @@
 }
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
   --ground:#0a0d13; --panel:#141921; --sunk:#0f141b;
-  --ink:#eef1f6; --ink-2:#a5aebd; --ink-3:#737d8f;
+  --ink:#eef1f6; --ink-2:#a5aebd; --ink-3:#8a94a6;
   --line:#222935; --line-2:#323a49;
   --accent:#7aa2e3; --accent-soft:#182131;
   --approve:#4cc294; --review:#dda94a; --block:#e37c7c;
@@ -21,7 +21,7 @@
 }}
 :root[data-theme="dark"]{
   --ground:#0a0d13; --panel:#141921; --sunk:#0f141b;
-  --ink:#eef1f6; --ink-2:#a5aebd; --ink-3:#737d8f;
+  --ink:#eef1f6; --ink-2:#a5aebd; --ink-3:#8a94a6;
   --line:#222935; --line-2:#323a49;
   --accent:#7aa2e3; --accent-soft:#182131;
   --approve:#4cc294; --review:#dda94a; --block:#e37c7c;
@@ -182,6 +182,10 @@ a{color:var(--accent)}
         model that trains, and none of a model that does not. K=5 is the
         configuration everything else on this page was measured at.
       </p>
+
+      <div class="scroll" style="margin-top:16px"><table id="surface">
+        <thead><tr><th>TabPFN-3.5 capability</th><th>what it was worth</th></tr></thead>
+        <tbody></tbody></table></div>
     </div>
   </section>
 
@@ -445,6 +449,33 @@ function whyTabpfn(){
   $("tpFits").textContent = "0";
 }
 
+/* Which of the model's own features were exercised, and to what effect. */
+function surface(){
+  const A = D.api || {}, T = D.tabpfn;
+  const cache = A.cache, th = A.thinking;
+  const rows = [
+    ["no training step",
+     `<b>${T.grad_fits.tabpfn_cross}</b> gradient-trained fits against LightGBM's `
+     + `<b>${T.grad_fits.lightgbm_cross}</b> at K=5`],
+    ["<code>fit_mode=\"fit_with_cache\"</code>",
+     cache ? `<b>${cache.speedup}\u00d7</b> faster evaluation pass at `
+             + `${cache.context.toLocaleString()} context `
+             + `(${cache.cold} s to ${cache.warm} s)` : "not measured here"],
+    ["<code>thinking_mode=True</code>",
+     th ? `under drift, below target in <b>${th.thinking} of ${th.of}</b> `
+          + `seed-months against base's <b>${th.base}</b>` : "not measured here"],
+    ["<code>estimate_cost()</code>",
+     "prices a run from array dimensions before spending anything"],
+    ["<code>time_col</code>",
+     "native temporal handling; Thinking only, the base model rejects it"],
+    ["<code>balance_probabilities</code>",
+     "the model's own imbalance tooling, used as the baseline to beat"],
+  ];
+  $("surface").tBodies[0].innerHTML = rows
+    .map(([k, v]) => `<tr><td>${k}</td><td style="text-align:left">${v}</td></tr>`)
+    .join("");
+}
+
 /* 06 -- the honest side, including the comparison TabPFN loses */
 function costs(){
   const P = D.p5;
@@ -469,5 +500,5 @@ $("budget").addEventListener("input", ceiling);
 $("kfold").addEventListener("input", whyTabpfn);
 $("alpha").addEventListener("input", desk);
 $("k").addEventListener("input", desk);
-ceiling(); whyTabpfn(); matched(); desk(); costs();
+ceiling(); whyTabpfn(); surface(); matched(); desk(); costs();
 </script>

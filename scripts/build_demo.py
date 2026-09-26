@@ -141,6 +141,47 @@ def p5_block() -> dict:
     return out
 
 
+def api_block() -> dict:
+    """The TabPFN-3.5 surface this project actually exercised, with effects.
+
+    Recomputed here so the page cannot quote a capability whose number has
+    moved. The qualitative rows carry no number because there is none to
+    recompute; they are facts about the API, checked in verify_claims.
+    """
+    out: dict = {}
+
+    e5 = [json.loads(l) for l in open(REPO / "results/e5.jsonl")]
+    # Pair like with like, exactly as verify_claims does for the README table:
+    # the cached run against the uncached run at the same context, seed 0,
+    # split. Averaging every uncached row instead mixes seeds and strategies
+    # and quietly moves the number, which is how this first produced 6.7
+    # against the 6.8 the README states.
+    warm = {r["n_context"]: r for r in e5 if r["cache"]}
+    cold = {r["n_context"]: r for r in e5
+            if not r["cache"] and r["seed"] == 0 and r["strategy"] == "split"}
+    shared = sorted(set(warm) & set(cold))
+    if shared:
+        big = shared[-1]
+        c, u = warm[big], cold[big]
+        out["cache"] = {"context": big,
+                        "cold": u["predict_seconds"],
+                        "warm": c["predict_seconds"],
+                        "speedup": round(u["predict_seconds"] / c["predict_seconds"], 1)}
+
+    e3 = [json.loads(l) for l in open(REPO / "results/e3.jsonl")]
+    frozen = [r for r in e3 if r["arm"] == "frozen"]
+    if frozen:
+        n_cal, alpha = 46, frozen[0]["alpha_target"]
+        target = np.ceil((n_cal + 1) * (1 - alpha)) / n_cal
+        seeds = sorted({r["seed"] for r in frozen})
+        below = {m: sum(1 for r in frozen
+                        if r["model"] == m and r["coverage_fraud"] < target)
+                 for m in ("base", "thinking")}
+        out["thinking"] = {"base": below["base"], "thinking": below["thinking"],
+                           "of": len(seeds) * 5}
+    return out
+
+
 def build_data() -> dict:
     """The whole payload, in one place.
 
@@ -153,6 +194,7 @@ def build_data() -> dict:
     data["e1"] = e1_block()
     data["tabpfn"] = tabpfn_block()
     data["p5"] = p5_block()
+    data["api"] = api_block()
     return data
 
 
