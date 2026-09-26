@@ -618,11 +618,11 @@ and labels are the resource that is actually scarce.
 
 ```bash
 pip install -e ".[dev]"   # tests, plus everything needed to redraw the figures
-pytest                    # 129 tests, CPU, ~3s warm (~10s on a cold clone)
+pytest                    # 130 tests, CPU, ~3s warm (~10s on a cold clone)
 ```
 
 The core depends on **numpy, pandas and scikit-learn only**, no torch, no
-`tabpfn`, no GPU. 129 tests in about three seconds on a laptop. TabPFN appears in
+`tabpfn`, no GPU. 130 tests in about three seconds on a laptop. TabPFN appears in
 `experiments/` and is never imported by `src/`.
 
 For the experiments you additionally need the dataset and a free Prior Labs
@@ -680,8 +680,24 @@ binary, because the motivating problem is.
 
 The second row is the one that matters, because cross-conformal is the headline.
 
-**And it is where the two constructions stop being interchangeable, in a way a
-TabPFN user pays for.** CV+ builds each prediction set from the K fold models,
+**The two are not interchangeable, and the first reason is capability, not
+cost.** Every conformity score `CrossConformalClassifier` accepts (`lac`,
+`aps`, `raps`, `top_k`, `naive`) is marginal, and the class exposes no
+class-conditional option. On a 4% minority at a 90% target, measured:
+
+| | minority coverage | majority | mean set size |
+|---|---:|---:|---:|
+| MAPIE CV+, `lac` | **0.043** | 0.933 | 0.910 |
+| ours, Mondrian + cross | **0.957** | 0.900 | 1.464 |
+
+That is not a MAPIE defect, it is what marginal calibration does: it buys its
+headline number from the majority class, which is the published failure this
+README describes in section 4. It does mean that for an imbalanced problem,
+pairing cross-conformal with class-conditional thresholds is something MAPIE
+cannot currently do in one object, and the minority class is the one anybody
+cares about in fraud.
+
+**The second reason is cost, and it is one a TabPFN user pays per prediction.** CV+ builds each prediction set from the K fold models,
 so it must query every one of them for every test row. Pooled cross-conformal
 derives its thresholds from the out-of-fold scores and then predicts with the
 single full-data model, so a test row is scored once whatever K is. Measured by

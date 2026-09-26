@@ -12,12 +12,14 @@ MAPIE is a dev dependency only; the test skips if it is absent.
 
 from __future__ import annotations
 
+import inspect
+
 import numpy as np
 import pytest
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 
-from tabpfn_conformal import ConformalClassifier
+from tabpfn_conformal import ConformalClassifier, coverage_by_class
 from conftest import make_imbalanced
 
 mapie_classification = pytest.importorskip("mapie.classification")
@@ -162,3 +164,49 @@ def test_cv_plus_scores_every_test_row_k_plus_one_times_and_ours_scores_it_once(
     assert ours_per_row == 1.0, f"ours scored {ours_per_row} times per row"
     assert theirs_per_row == n_folds + 1, (
         f"expected CV+ to score each row {n_folds + 1} times, got {theirs_per_row}")
+
+
+def test_mapie_cross_conformal_has_no_class_conditional_option():
+    """The capability gap, which matters more than any timing.
+
+    Every conformity score ``CrossConformalClassifier`` accepts (lac, aps,
+    raps, top_k, naive) is marginal, and the class has no Mondrian or
+    class-wise parameter. Marginal conformal spends its error budget where the
+    probability mass is, so under heavy imbalance it buys its headline coverage
+    from the majority class and abandons the minority one. That is the
+    published behaviour, not a MAPIE defect: it is what marginal calibration
+    does, and it is why this package pairs cross-conformal with class-conditional
+    thresholds in one object.
+
+    Asserted rather than described, because it is the load-bearing reason this
+    is not a MAPIE wrapper.
+    """
+    alpha = 0.1
+    X, y = make_imbalanced(n_samples=4000, minority_rate=0.04, seed=0)
+    X_pool, X_test, y_pool, y_test = train_test_split(
+        X, y, test_size=0.4, random_state=0, stratify=y)
+
+    assert "class_wise" not in inspect.signature(
+        mapie_classification.CrossConformalClassifier.__init__).parameters, (
+        "MAPIE gained a class-conditional option; revisit this comparison")
+
+    theirs = mapie_classification.CrossConformalClassifier(
+        estimator=LogisticRegression(max_iter=500), confidence_level=1 - alpha,
+        conformity_score="lac", cv=5, random_state=0)
+    theirs.fit_conformalize(X_pool, y_pool)
+    _, raw = theirs.predict_set(X_test)
+    their_sets = np.asarray(raw).reshape(len(X_test), 2, -1)[:, :, 0]
+    their_cov = coverage_by_class(their_sets, y_test, np.array([0, 1]))
+
+    ours = ConformalClassifier(LogisticRegression(max_iter=500),
+                               method="mondrian", strategy="cross",
+                               n_folds=5, random_state=0).fit(X_pool, y_pool)
+    our_cov = coverage_by_class(ours.predict_set(X_test, alpha=alpha),
+                                y_test, ours.classes_)
+
+    # Marginal holds overall and abandons the minority class; Mondrian holds it.
+    assert their_cov[1] < 0.5, (
+        f"expected marginal CV+ to under-cover the minority class, got "
+        f"{their_cov[1]:.3f}")
+    assert our_cov[1] >= 1 - alpha - 0.02, (
+        f"ours should hold the minority class, got {our_cov[1]:.3f}")
