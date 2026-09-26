@@ -39,6 +39,12 @@ jobs:
         # CPU only, no GPU, no TabPFN: the core package must stay this light.
         run: pytest -q
 
+      - name: Run the documented example
+        # The README's quickstart is the first thing a reader runs. An example
+        # nobody executes drifts from the API it is meant to teach, so CI runs
+        # it: no API key, no GPU, no dataset.
+        run: python examples/quickstart.py
+
       - name: Scan for anything credential-shaped
         # This repository is public and its experiments are API-backed, so the
         # failure mode is a token pasted into a script or a log captured

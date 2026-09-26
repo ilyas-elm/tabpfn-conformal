@@ -86,6 +86,56 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 the label budget and watch the certifiable ceiling move, then route 400 real
 TabPFN predictions through the decision layer under an analyst budget you set.
 
+## Quickstart
+
+Thirty seconds, no API key, no GPU, no dataset:
+
+```bash
+git clone https://github.com/ilyas-elm/tabpfn-conformal.git
+cd tabpfn-conformal && pip install -e ".[dev]"
+python examples/quickstart.py
+```
+
+[`examples/quickstart.py`](examples/quickstart.py) runs the whole library on
+synthetic imbalanced data and prints, in order: marginal calibration giving the
+minority class **0.000** coverage while its overall number looks healthy,
+class-conditional calibration repairing it, split calibrating on half the
+positives against cross calibrating on all of them, the feasibility floor
+`1/(n+1)` making a tight alpha unavailable, and prediction sets turned into
+approve / block / review under an analyst budget. CI runs this file, so it
+cannot rot.
+
+The API itself is four lines:
+
+```python
+from tabpfn_conformal import ConformalClassifier
+
+cc = ConformalClassifier(model, method="mondrian", strategy="cross", n_folds=5)
+cc.fit(X_pool, y_pool)                     # no gradient step if `model` is TabPFN
+sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the set?
+```
+
+`model` is any estimator with `predict_proba`. Swap in `TabPFNClassifier` and
+nothing else changes, which is the version in
+[`examples/with_tabpfn.py`](examples/with_tabpfn.py):
+
+```bash
+pip install -e ".[experiments]"
+python -c "import tabpfn_client; tabpfn_client.init()"   # one-time, free account
+python examples/with_tabpfn.py
+```
+
+`alpha` is a prediction-time argument, not a constructor argument: scores are
+stored at fit time, so sweeping it costs no refit and, on a metered API, no
+extra calls.
+
+**Data.** The benchmarks use Bank Account Fraud (Jesus et al., NeurIPS 2022),
+which is public at
+<https://www.kaggle.com/datasets/sgpjesus/bank-account-fraud-dataset-neurips-2022>
+and fetched by `python scripts/download_data.py`. It is not vendored here
+because it is a million rows. Nothing above needs it, and neither does any
+figure: every result is committed under `results/`.
+
 ## What of TabPFN-3.5 this actually uses
 
 Conformal prediction is model-agnostic, so it would be easy to claim TabPFN
@@ -597,7 +647,7 @@ Everything downstream of the results is rebuildable without an API key:
 ```bash
 python experiments/analyze_e1.py      # …e2 … e6, analyze_calibration, replay_aci
 python scripts/build_demo.py          # figures/demo_data.json + demo/index.html
-python scripts/verify_claims.py       # recomputes 49 README/script claims; non-zero on drift
+python scripts/verify_claims.py       # recomputes every claim below; non-zero on drift
 ```
 
 ## Library
