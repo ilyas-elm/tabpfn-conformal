@@ -93,7 +93,7 @@ recomputes both counts.
    README links to it prominently. One menu, thirty seconds, and it is the
    difference between the showcase criterion landing and 404ing.
 4. **Record the video**; [`VIDEO.md`](VIDEO.md) has the script and a list of
-   seven claims not to make on camera. Its numbers are checked by
+   nine claims not to make on camera. Its numbers are checked by
    `scripts/verify_claims.py`, so re-run that before recording.
 5. **Submit**; [`SUBMISSION.md`](SUBMISSION.md) is the description field.
 
