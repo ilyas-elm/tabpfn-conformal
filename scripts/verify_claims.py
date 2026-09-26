@@ -705,7 +705,15 @@ checks.append(("SUBMISSION does not claim identical cache sets",
 _status = (REPO / "docs/STATUS.md").read_text()
 _video = (REPO / "docs/VIDEO.md").read_text()
 _n_donts = len(re.findall(r"^- (?:Do \*\*not\*\*|Only say)", _video, re.M))
-_words = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight"}
+# Spelled out to twenty. A short map here has silently broken this check
+# twice, once missing "seven" and once missing "nine", each time reading as
+# a mismatch in the document rather than a gap in the map.
+_words = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+          7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven",
+          12: "twelve", 13: "thirteen", 14: "fourteen", 15: "fifteen",
+          16: "sixteen", 17: "seventeen", 18: "eighteen", 19: "nineteen",
+          20: "twenty"}
+assert _n_donts in _words, f"extend _words: the list now has {_n_donts} items"
 checks.append(("STATUS counts the do-not-say list correctly",
                f"{_words.get(_n_donts, _n_donts)} claims not to make" in _status,
                f"VIDEO.md lists {_n_donts}; STATUS.md says otherwise"))
