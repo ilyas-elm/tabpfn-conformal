@@ -27,8 +27,7 @@ def route(
 ) -> np.ndarray:
     """Map prediction sets to approve / block / review under a review budget.
 
-    Parameters
-    ----------
+    Args:
     pred_sets : (n, 2) bool
         From :meth:`ConformalClassifier.predict_set`.
     proba : (n, 2) float
@@ -45,8 +44,7 @@ def route(
     overflow : {"model", "approve", "block"}
         What happens to ambiguous cases with no slot left.
 
-    Returns
-    -------
+    Returns:
     (n,) array of ``"approve"``, ``"block"`` or ``"review"``.
     """
     pred_sets = np.asarray(pred_sets, dtype=bool)
@@ -67,7 +65,9 @@ def route(
     # positive_idx=-1 surfaced as "index 2 is out of bounds", because the
     # negative column is derived as 1 - positive_idx.
     if positive_idx not in (0, 1):
-        raise ValueError(f"positive_idx must be 0 or 1 for a binary problem, got {positive_idx}.")
+        raise ValueError(
+            f"positive_idx must be 0 or 1 for a binary problem, got {positive_idx}."
+        )
 
     negative_idx = 1 - positive_idx
     size = pred_sets.sum(axis=1)
@@ -128,16 +128,20 @@ def decision_summary(
         "n_block": int((actions == BLOCK).sum()),
         "n_review": int(reviewed.sum()),
         "review_rate": float(reviewed.mean()),
-        "fraud_caught": float((caught & is_fraud).sum() / n_fraud) if n_fraud else float("nan"),
+        "fraud_caught": float((caught & is_fraud).sum() / n_fraud)
+        if n_fraud
+        else float("nan"),
         "fraud_missed": int((~caught & is_fraud).sum()),
         "false_block_rate": float(
             ((actions == BLOCK) & ~is_fraud).sum() / max((~is_fraud).sum(), 1)
         ),
-        "review_precision": float(
-            (reviewed & is_fraud).sum() / reviewed.sum()
-        ) if reviewed.any() else float("nan"),
+        "review_precision": float((reviewed & is_fraud).sum() / reviewed.sum())
+        if reviewed.any()
+        else float("nan"),
     }
     if budget_k is not None:
         out["budget_k"] = int(budget_k)
-        out["budget_used"] = float(out["n_review"] / budget_k) if budget_k else float("nan")
+        out["budget_used"] = (
+            float(out["n_review"] / budget_k) if budget_k else float("nan")
+        )
     return out

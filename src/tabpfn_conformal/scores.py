@@ -21,7 +21,7 @@ study.
 
 from __future__ import annotations
 
-from typing import Callable, Union
+from collections.abc import Callable
 
 import numpy as np
 
@@ -47,7 +47,7 @@ SCORES: dict[str, ScoreFn] = {
 }
 
 
-def get_score(score: Union[str, ScoreFn]) -> ScoreFn:
+def get_score(score: str | ScoreFn) -> ScoreFn:
     """Resolve a score name or pass a callable straight through."""
     if callable(score):
         return score

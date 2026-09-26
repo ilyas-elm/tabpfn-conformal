@@ -41,8 +41,7 @@ def _check_finite(proba, where: str) -> np.ndarray:
 class ConformalClassifier(BaseEstimator, ClassifierMixin):
     """Wrap any ``predict_proba`` classifier in a coverage guarantee.
 
-    Parameters
-    ----------
+    Args:
     base_estimator
         Any estimator exposing ``predict_proba``. Nothing here is specific to
         TabPFN -- the core package deliberately imports neither ``tabpfn`` nor
@@ -72,8 +71,7 @@ class ConformalClassifier(BaseEstimator, ClassifierMixin):
     random_state : int or None
         Controls the split and the folds.
 
-    Notes
-    -----
+    Notes:
     ``alpha`` is supplied at prediction time, not calibration time: the
     calibration *scores* are stored, and thresholds are derived on demand. This
     means a whole sweep over ``alpha`` costs no extra calls to the base

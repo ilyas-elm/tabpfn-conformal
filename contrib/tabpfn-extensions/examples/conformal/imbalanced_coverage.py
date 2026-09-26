@@ -9,7 +9,6 @@ of the scarce positive labels on calibration.
 
 from __future__ import annotations
 
-import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 
@@ -23,8 +22,12 @@ from tabpfn_extensions.conformal import (
 ALPHA = 0.1
 
 X, y = make_classification(
-    n_samples=2000, n_features=12, n_informative=6, weights=[0.98, 0.02],
-    flip_y=0.01, random_state=0,
+    n_samples=2000,
+    n_features=12,
+    n_informative=6,
+    weights=[0.98, 0.02],
+    flip_y=0.01,
+    random_state=0,
 )
 X_pool, X_test, y_pool, y_test = train_test_split(
     X, y, test_size=0.4, stratify=y, random_state=0
@@ -33,8 +36,11 @@ print(f"pool: {len(y_pool)} rows, {int(y_pool.sum())} positives")
 
 for strategy in ("split", "cross"):
     cc = ConformalClassifier(
-        TabPFNClassifier(), method="mondrian", strategy=strategy,
-        n_folds=5, random_state=0,
+        TabPFNClassifier(),
+        method="mondrian",
+        strategy=strategy,
+        n_folds=5,
+        random_state=0,
     ).fit(X_pool, y_pool)
 
     sets = cc.predict_set(X_test, ALPHA)
