@@ -144,9 +144,46 @@ a{color:var(--accent)}
 
   <section class="panel">
     <div class="phead"><span class="pnum">02</span>
+      <span class="pname">Why TabPFN, and not a gradient-boosted tree</span>
+      <span class="spacer"></span>
+      <span class="seg" id="seg-budget" role="group" aria-label="Label budget">
+        <button type="button" data-f="100" aria-pressed="true">100 frauds</button>
+        <button type="button" data-f="200" aria-pressed="false">200 frauds</button>
+      </span></div>
+    <div class="pbody">
+      <div class="tiles c3">
+        <div class="tile lead"><div class="k">Calibration error</div>
+          <div class="v" id="eceVal">&hellip;</div>
+          <div class="s" id="eceSub">&hellip;</div></div>
+        <div class="tile"><div class="k">Prediction set size</div>
+          <div class="v" id="sizeVal">&hellip;</div>
+          <div class="s" id="sizeSub">&hellip;</div></div>
+        <div class="tile"><div class="k">Gradient-trained fits</div>
+          <div class="v" id="gradVal">&hellip;</div>
+          <div class="s" id="gradSub">&hellip;</div></div>
+      </div>
+
+      <div class="ctl" style="margin-top:16px">
+        <div class="ctl-top"><label for="kfold">Cross-conformal folds K</label>
+          <output id="kfoldOut" for="kfold">5</output></div>
+        <input type="range" id="kfold" min="2" max="20" step="1" value="5">
+      </div>
+      <div class="tiles c2">
+        <div class="tile"><div class="k">LightGBM must train</div>
+          <div class="v" id="lgbFits">&hellip;</div>
+          <div class="s">models, one per fold plus the final</div></div>
+        <div class="tile lead"><div class="k">TabPFN must train</div>
+          <div class="v" id="tpFits">&hellip;</div>
+          <div class="s">fit swaps the in-context set, no gradient</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="phead"><span class="pnum">03</span>
       <span class="pname">Set size at matched calibration size</span>
       <span class="spacer"></span>
-      <span class="seg" role="group" aria-label="Miscoverage level">
+      <span class="seg" id="seg-alpha" role="group" aria-label="Miscoverage level">
         <button type="button" data-a="0.05" aria-pressed="false">&alpha; 0.05</button>
         <button type="button" data-a="0.1" aria-pressed="true">&alpha; 0.10</button>
       </span></div>
@@ -160,7 +197,7 @@ a{color:var(--accent)}
   </section>
 
   <section class="panel">
-    <div class="phead"><span class="pnum">03</span>
+    <div class="phead"><span class="pnum">04</span>
       <span class="pname">Live routing of 400 held-out transactions</span></div>
     <div class="pbody">
       <div class="ctl">
@@ -205,7 +242,7 @@ a{color:var(--accent)}
   </section>
 
   <section class="panel">
-    <div class="phead"><span class="pnum">04</span>
+    <div class="phead"><span class="pnum">05</span>
       <span class="pname">Analyst queue</span>
       <span class="spacer"></span>
       <span class="chip" id="queueChip">&hellip;</span></div>
@@ -214,6 +251,30 @@ a{color:var(--accent)}
         <thead><tr><th>#</th><th>Case</th><th>p(fraud)</th>
         <th>Prediction set</th><th>True label</th><th>Action</th></tr></thead>
         <tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="phead"><span class="pnum">06</span>
+      <span class="pname">What it cost, and what we got wrong</span></div>
+    <div class="pbody">
+      <div class="tiles c3">
+        <div class="tile"><div class="k">Wall clock, one Tesla T4</div>
+          <div class="v" id="p5Val">&hellip;</div>
+          <div class="s" id="p5Sub">&hellip;</div></div>
+        <div class="tile"><div class="k">Approximate validity</div>
+          <div class="v">3 of 6</div>
+          <div class="s">cross below its own certified level; split 0 of 6</div></div>
+        <div class="tile"><div class="k">Pre-registered predictions</div>
+          <div class="v">4 of 5</div>
+          <div class="s">falsified, two of them ours about cost</div></div>
+      </div>
+      <p style="margin:14px 0 0;font:400 12.5px/1.5 'IBM Plex Mono',monospace;color:var(--ink-2)">
+        Cross-conformal halves the confirmed frauds a guarantee needs. It is not
+        free: its guarantee is approximate where split conformal is exact, and on
+        one accelerator TabPFN is the slower model. Every number on this page is
+        recomputed from committed results by scripts/build_demo.py.
+      </p>
     </div>
   </section>
 
@@ -255,7 +316,7 @@ function ceiling(){
 
 /* 02 -- measured widths at matched calibration size */
 function matched(){
-  const a = +document.querySelector(".seg button[aria-pressed=true]").dataset.a;
+  const a = +document.querySelector("#seg-alpha button[aria-pressed=true]").dataset.a;
   const byN = {};
   D.e1.filter(r => Math.abs(r.a - a) < 1e-9).forEach(r => {
     (byN[r.ncal] = byN[r.ncal] || {})[r.s] = r;
@@ -346,13 +407,61 @@ function desk(){
     || "<tr><td colspan=\"6\">no cases queued at this budget</td></tr>";
 }
 
-document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
-  document.querySelectorAll(".seg button").forEach(o =>
-    o.setAttribute("aria-pressed", String(o === b)));
-  matched();
-}));
+/* 02 -- the case for TabPFN specifically, from committed results */
+function whyTabpfn(){
+  const T = D.tabpfn;
+  const f = +document.querySelector("#seg-budget button[aria-pressed=true]").dataset.f;
+  const key = "cross_" + f;
+  const e = T.ece[key];
+  const drop = 100 * (1 - e.tabpfn / e.lightgbm);
+  $("eceVal").textContent = e.tabpfn.toFixed(4);
+  $("eceSub").innerHTML = "vs " + e.lightgbm.toFixed(4) + " LightGBM &middot; "
+    + drop.toFixed(0) + "% lower";
+
+  // Same strategy, same label budget, same targeted level: only the model differs.
+  const at = (fam) => T.size.find(r => r.fam === fam && r.s === "cross"
+                                    && r.f === f && r.a === 0.05);
+  const tp = at("tabpfn"), lg = at("lightgbm");
+  if(tp && lg){
+    const narrower = 100 * (1 - tp.w / lg.w);
+    $("sizeVal").textContent = tp.w.toFixed(3);
+    $("sizeSub").innerHTML = "vs " + lg.w.toFixed(3) + " LightGBM &middot; "
+      + narrower.toFixed(1) + "% narrower";
+  }
+
+  $("gradVal").textContent = T.grad_fits.tabpfn_cross;
+  $("gradSub").innerHTML = "vs " + T.grad_fits.lightgbm_cross
+    + " for LightGBM cross-conformal at K=5";
+
+  const K = +$("kfold").value;
+  $("kfoldOut").textContent = K;
+  $("lgbFits").textContent = K + 1;
+  $("tpFits").textContent = "0";
+}
+
+/* 06 -- the honest side, including the comparison TabPFN loses */
+function costs(){
+  const P = D.p5;
+  if(!P || !P.runs || !P.runs.length){ return; }
+  const pick = (fam) => P.runs.find(r => r.fam === fam && r.s === "cross" && r.f === 200);
+  const tp = pick("tabpfn"), lg = pick("lightgbm");
+  if(!tp || !lg){ return; }
+  $("p5Val").textContent = (tp.sec / lg.sec).toFixed(0) + "\u00d7 slower";
+  $("p5Sub").innerHTML = "TabPFN " + tp.sec.toFixed(0) + " s vs LightGBM "
+    + lg.sec.toFixed(1) + " s &middot; " + (P.gpu || "one accelerator");
+}
+
+// Two independent segmented controls, so scope each to its own group.
+document.querySelectorAll(".seg").forEach(group => {
+  group.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    group.querySelectorAll("button").forEach(o =>
+      o.setAttribute("aria-pressed", String(o === b)));
+    if(group.id === "seg-budget"){ whyTabpfn(); } else { matched(); }
+  }));
+});
 $("budget").addEventListener("input", ceiling);
+$("kfold").addEventListener("input", whyTabpfn);
 $("alpha").addEventListener("input", desk);
 $("k").addEventListener("input", desk);
-ceiling(); matched(); desk();
+ceiling(); whyTabpfn(); matched(); desk(); costs();
 </script>
