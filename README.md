@@ -28,38 +28,20 @@ That trade only ever made sense because the alternative meant retraining.
 gradient, so K-fold cross-conformal is K forward passes, and every fraud label
 can be both context *and* calibration.
 
-Being precise about cost, because an earlier draft of this README overclaimed
-it: cross-conformal is **exactly K× the API cost of split conformal**, measured,
-2.0× at K=2 and 20.0× at K=20, at both 10k and 100k pools
-([`cost_kfold.py`](experiments/api/cost_kfold.py), free: `estimate_cost` sends
-dimensions only), and it is **not** the case that only TabPFN can
-afford it. Put both on one Tesla T4 with local weights and no network in the
-measurement, and **LightGBM is faster by a factor of 35 to 73**: 3.8 s against
-225 s for cross-conformal at 200 confirmed frauds
-([`results/kaggle_wallclock.json`](results/kaggle_wallclock.json)).
-
-One real effect survives inside that. Going from split to cross costs TabPFN
-**4.46×** and LightGBM **6.42×**, so cross-conformal *is* relatively cheaper on a
-model with no training step, which is the mechanism this project is built on. It
-is simply swamped by TabPFN being far slower in absolute terms at this scale.
 What TabPFN removes is the training: **0 gradient-trained fits against
-LightGBM's 6**. That is the hardware-independent number, and the one that scales
-when the pool does.
+LightGBM's 6** at K=5. That is the hardware-independent number and the reason
+the method is affordable at all.
 
-```python
-from tabpfn_conformal import ConformalClassifier
+It does not make TabPFN *fast*, and this README is precise about that because an
+earlier draft of it was not:
+[what cross-conformal actually costs](#cost-measured-rather-than-claimed), in
+tokens and in seconds on hardware where the comparison is fair, is measured
+below. LightGBM wins the stopwatch.
 
-cc = ConformalClassifier(model, method="mondrian", strategy="cross", n_folds=5)
-cc.fit(X_pool, y_pool)
-sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the set?
-```
-
-`strategy="split"` → `"cross"` is the whole diff.
-
-> Built for the Prior Labs TabPFN-3.5 Hackathon. **All six experiments are
+> Built for the Prior Labs TabPFN-3.5 Hackathon. **All seven experiments are
 > complete** and their results are committed, so every number below can be
 > recomputed without an API key: `python scripts/verify_claims.py` recomputes
-> 177 of them from `results/` and exits non-zero on any drift.
+> 178 of them from `results/` and exits non-zero on any drift.
 > **Four of five pre-registered predictions were falsified**, including two of
 > our own about cost, and they are reported as such; see the
 > [scoreboard](#what-we-predicted-and-what-happened),
@@ -79,6 +61,7 @@ sets = cc.predict_set(X_new, alpha=0.05)   # (n, 2) bool: is each label in the s
 | Under drift, Thinking loses coverage less often than base | 3 of 15 seed-months below target vs 9 of 15; never worse on any seed, better on 2 of 3, **directional, t ≈ 1.7 at n=3** | [E3](#drift-adaptive-calibration-cannot-help-at-this-label-budget) |
 | The **KV cache** makes the evaluation pass **6.8× faster** at 200k context, same answer to 4 decimals | 36.9 s → 5.4 s | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
 | **Abundant data does not substitute for confirmed positives**, 20× more context changes nothing | slope −0.017 vs seed SD 0.046 | [E5](#scale-abundant-data-does-not-substitute-for-confirmed-positives) |
+| **MAPIE's cross-conformal cannot do class-conditional calibration**, so on an imbalanced problem it abandons the minority class | minority coverage **0.043** against ours at **0.957**, 4% minority, 90% target | [vs MAPIE](#relation-to-mapie-and-crepes) |
 | Where a scarce label budget should go: **nowhere, don't split it** | best split ratio still loses to cross at both budgets | [E2](#where-should-a-scarce-label-budget-go-mostly-nowhere) |
 | **Four of five pre-registered predictions were falsified** | including two of our own about cost | [scoreboard](#what-we-predicted-and-what-happened) |
 
@@ -598,6 +581,25 @@ falsifiable by more data, and the half-the-labels and baseline results are
 measured at matched level, with the only asymmetry favouring the baseline.
 
 ### Cost, measured rather than claimed
+
+Being precise about cost, because an earlier draft of this README overclaimed
+it: cross-conformal is **exactly K× the API cost of split conformal**, measured,
+2.0× at K=2 and 20.0× at K=20, at both 10k and 100k pools
+([`cost_kfold.py`](experiments/api/cost_kfold.py), free: `estimate_cost` sends
+dimensions only), and it is **not** the case that only TabPFN can
+afford it. Put both on one Tesla T4 with local weights and no network in the
+measurement, and **LightGBM is faster by a factor of 35 to 73**: 3.8 s against
+225 s for cross-conformal at 200 confirmed frauds
+([`results/kaggle_wallclock.json`](results/kaggle_wallclock.json)).
+
+One real effect survives inside that. Going from split to cross costs TabPFN
+**4.46×** and LightGBM **6.42×**, so cross-conformal *is* relatively cheaper on a
+model with no training step, which is the mechanism this project is built on. It
+is simply swamped by TabPFN being far slower in absolute terms at this scale.
+What TabPFN removes is the training: **0 gradient-trained fits against
+LightGBM's 6**. That is the hardware-independent number, and the one that scales
+when the pool does.
+
 
 `estimate_cost()` transmits dimensions only, so these cost nothing to obtain:
 
