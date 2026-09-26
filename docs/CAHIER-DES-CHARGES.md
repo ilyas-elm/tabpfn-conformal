@@ -5,16 +5,12 @@
 > **Findings live in [`FINDINGS.md`](FINDINGS.md).** This document is the *plan*;
 > the log is what actually happened, in order. Where they disagree, the log wins.
 >
-> Status: **v2 (19 Sept), positioning locked, API shape signed off, library and tests done. Blocked on an API token (M0b).** This document is the contract. If a decision is not written here, it has not been made; if it is written here, do not relitigate it mid-build without editing this file first.
-
----
-
-## 1. Objective
-
-Wrap TabPFN-3.5's probability outputs in a **distribution-free, finite-sample coverage guarantee** for binary fraud detection under extreme class imbalance and temporal drift, and route that guarantee into an approve / block / review decision under a fixed analyst budget.
-
-**The one-line pitch (README first screen, video first 30 s):**
-
+> **This is the plan as drafted on 18 September, kept unedited.** It is here
+> as a record of what was intended, including the parts that turned out
+> wrong, so the milestone dates and counts below are those of the plan and
+> not of the finished work. For what actually happened see
+> [`STATUS.md`](STATUS.md) and [`FINDINGS.md`](FINDINGS.md); for the current
+> state, the [README](../README.md). All seven experiments are complete.
 > *Split conformal spends your scarcest resource, confirmed fraud labels, to save your cheapest one. With a model that never trains, that trade is simply wrong.*
 >
 > **⚠ Rewritten 19 Sept.** The original pitch claimed K folds cost about the same as one. Measured false: cross-conformal costs **exactly K×** split in API tokens. See §7.2 for what survives and why it is stronger.
