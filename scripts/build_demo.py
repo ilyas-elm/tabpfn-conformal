@@ -89,9 +89,75 @@ def e1_block() -> list[dict]:
     return out
 
 
-def main() -> None:
+def tabpfn_block() -> dict:
+    """Why TabPFN rather than a gradient-boosted tree, from committed results.
+
+    Three numbers, all recomputed here rather than typed into the page: the
+    calibration gap that is the mechanism, the set-size gap it produces at a
+    matched targeted level, and the gradient-fit count that is the reason
+    cross-conformal is affordable at all.
+    """
+    cal = json.loads((REPO / "results/calibration.json").read_text())["head_to_head"]
+
+    rows = [json.loads(l) for l in open(REPO / "results/e4.jsonl")]
+    size: dict[tuple, list[float]] = defaultdict(list)
+    grads: dict[tuple, set] = defaultdict(set)
+    for r in rows:
+        if r.get("strategy") is None:
+            continue                      # the no-guarantee arms are not comparable
+        for a, m in r["alphas"].items():
+            size[(r["family"], r["strategy"], r["n_frauds"], float(a))].append(
+                m["set_size"])
+        grads[(r["family"], r["strategy"])].add(r["n_grad_fits"])
+
+    out = {"ece": {}, "size": [], "grad_fits": {}}
+    for setting, v in cal.items():
+        out["ece"][setting] = {"tabpfn": round(v["tabpfn_ece"], 5),
+                               "lightgbm": round(v["lightgbm_ece"], 5),
+                               "tabpfn_auc": round(v["tabpfn_auc"], 4),
+                               "lightgbm_auc": round(v["lightgbm_auc"], 4)}
+    for (fam, strat, f, a), vals in sorted(size.items()):
+        out["size"].append({"fam": fam, "s": strat, "f": f, "a": a,
+                            "w": round(float(np.mean(vals)), 4)})
+    for (fam, strat), v in sorted(grads.items()):
+        assert len(v) == 1, f"{fam}/{strat} has mixed gradient-fit counts: {v}"
+        out["grad_fits"][f"{fam}_{strat}"] = next(iter(v))
+    return out
+
+
+def p5_block() -> dict:
+    """The fair-hardware wall-clock result, which went against TabPFN."""
+    path = REPO / "results/kaggle_wallclock.json"
+    if not path.exists():
+        return {}
+    blob = json.loads(path.read_text())
+    secs: dict[tuple, list[float]] = defaultdict(list)
+    for r in blob["rows"]:
+        secs[(r["family"], r["strategy"], r["n_frauds"])].append(r["seconds"])
+    out = {"gpu": blob["device"].get("gpu"), "runs": []}
+    for (fam, strat, f), v in sorted(secs.items()):
+        out["runs"].append({"fam": fam, "s": strat, "f": f,
+                            "sec": round(float(np.mean(v)), 2)})
+    return out
+
+
+def build_data() -> dict:
+    """The whole payload, in one place.
+
+    verify_claims.py calls this rather than reassembling the blocks itself.
+    It used to list them by hand, so adding a block to the page silently made
+    the "demo regenerates from results" check compare against a payload that
+    was missing it.
+    """
     data = scores_and_cases()
     data["e1"] = e1_block()
+    data["tabpfn"] = tabpfn_block()
+    data["p5"] = p5_block()
+    return data
+
+
+def main() -> None:
+    data = build_data()
 
     out_json = REPO / "figures/demo_data.json"
     out_json.write_text(json.dumps(data, separators=(",", ":")))

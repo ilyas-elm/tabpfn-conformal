@@ -938,8 +938,7 @@ except Exception as exc:                                    # pragma: no cover
     checks.append(("demo regenerates", None, f"build_demo import failed: {exc}"))
 else:
     committed = json.loads((REPO / "figures/demo_data.json").read_text())
-    rebuilt = build_demo.scores_and_cases()
-    rebuilt["e1"] = build_demo.e1_block()
+    rebuilt = build_demo.build_data()
     checks.append(("demo data regenerates from results", committed == rebuilt,
                    "figures/demo_data.json differs from scripts/build_demo.py output"))
 
