@@ -98,8 +98,8 @@ without leaning on it. Specifically:
   baseline to beat, since it produces no coverage guarantee.
 - **`estimate_cost`**, prices a run from array dimensions before spending. It is
   how we caught our own K× cost overclaim, for free.
-- **Local weights**, used only to take the network out of the wall-clock
-  comparison.
+- **Local weights**, to take the network out of the wall-clock comparison. On
+  one T4 they settle it against TabPFN, which is the point of running it.
 
 Two incompatibilities we had to design around, both settled by a dimension-only
 probe before any experiment depended on them: `time_col`/`group_col` are
@@ -113,8 +113,10 @@ falsified**, including two of our own about cost, cross-conformal turned out to
 be exactly K× the API tokens, not cheaper, and adaptive conformal inference
 cannot help at a 46-positive calibration set because only 46 distinct thresholds
 exist. All of it is in the README and in `docs/FINDINGS.md`, with the numbers.
-`scripts/verify_claims.py` recomputes every figure in the README from the
-committed results and fails if any has drifted.
+`scripts/verify_claims.py` recomputes **178 claims** from the committed
+results and exits non-zero on any drift; it runs in CI, needs no API key, and
+`python examples/quickstart.py` runs the whole library on synthetic data in
+seconds with no key, no GPU and no dataset.
 
 ### Library
 
@@ -137,19 +139,35 @@ within 0.002 at α ∈ {0.05, 0.1, 0.2}.
 The extensions repo ships `cp_missing_data`, a conformal *regression* interval
 estimator specialised to missing-data patterns. There is no conformal prediction
 for **classification**, no prediction sets, no class-conditional calibration, no
-cross-conformal. This fills that gap and is offered upstream as a PR;
+cross-conformal. The obvious question is why not MAPIE, and for split conformal
+the answer is that you should: our sets are bit-identical to it. For cross it
+has no class-conditional option at all, which on a 4% minority at a 90% target
+is **0.043** coverage of the minority class against **0.957** here, and its CV+
+construction queries `K+1` models per test row where this queries one, which on
+a metered model is a standing multiplier on inference. This fills that gap and
+is offered upstream as a PR;
 `scripts/build_extension_pr.py` generates the contribution from the library so
 the two cannot drift.
 
 ### Honest scope
 
-One dataset family. Cross-conformal is approximately valid rather than exactly
-valid (Vovk 2015; CV+ worst case 1−2α), and the README says so wherever the
-numbers appear. The wall-clock comparison against LightGBM is confounded;
-TabPFN runs remotely on Prior Labs' GPUs, LightGBM locally on a laptop CPU, and
-all 36 result rows are tagged `wallclock_comparable: false` rather than presented
-as a speed claim. The rerun that would settle it, both models on one accelerator,
-is written and tested but not run, so it stays open. What *is* comparable is the
-count: **0 gradient-trained fits against LightGBM's 6**. The
-methods are standard; the contribution is measurement and packaging, not new
+Cross-conformal is approximately valid rather than exactly valid (Vovk 2015;
+CV+ worst case 1−2α), and that is measured, not just noted: against the level
+each run actually certifies, cross sits below in **3 of 6** dataset-α
+combinations by 1.5 to 2.4 points where split sits below in **0 of 6**. The
+headline replicates on a second domain, Forest Cover Type, which shares no
+column with fraud, but both are tabular binary problems with a rare positive
+class and nothing here speaks to anything else.
+
+**TabPFN is the slower model, and we measured that rather than leaving it
+confounded.** The API-based timings were not a race, since TabPFN ran remotely
+and LightGBM on a laptop CPU, so all 36 of those rows stay tagged
+`wallclock_comparable: false`. Putting both on one Tesla T4 with local weights
+settles it against us: **TabPFN is 35 to 73 times slower**, and removing the
+confound moved the result further against it rather than rescuing it. The run
+is public, with its log and hardware, at
+https://www.kaggle.com/code/ilyaselmaazouzi/tabpfn-conformal. What no hardware
+changes is the count: **0 gradient-trained fits against LightGBM's 6**.
+
+The methods are standard; the contribution is measurement and packaging, not new
 statistics.
