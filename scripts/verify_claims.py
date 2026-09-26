@@ -982,6 +982,17 @@ else:
     check("video demo caught (K=200)",
           in_video(r"moves from \*\*\d+% to (\d+)%\*\*"), round(caught_hi), 0.5)
 
+# ---- 7b. The number of experiments the README claims ----------------------
+# It said six for the three days after E7 landed, because the sentence was
+# written when there were six and nothing counted the directory.
+_words = {5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine"}
+_n_exp = len(sorted((REPO / "experiments" / "api").glob("e[0-9]*.py")))
+_m_exp = re.search(r"All (\w+) experiments are\s*>?\s*complete", README)
+checks.append(("the README states how many experiments there are",
+               _m_exp is not None and _m_exp.group(1).lower() == _words.get(_n_exp),
+               f"README says {_m_exp and _m_exp.group(1)!r}, "
+               f"experiments/api has {_n_exp}"))
+
 # ---- 8. The verifier's own advertised size ---------------------------------
 # The README said 135 while this script ran 176, because nothing compared them.
 # Counted last, and counts itself, so the figure in the README is the number of
