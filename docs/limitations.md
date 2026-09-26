@@ -76,30 +76,34 @@ and uncached calls; the documented 75% saving only appears from about 200k rows
 up. At very small contexts the cache is actively slower, 9.7s versus 1.8s for a
 repeat prediction on a 200-row context.
 
-**The LightGBM wall-clock comparison is confounded, and we did not settle it.**
-P5 predicted LightGBM cross-conformal would cost far more wall-clock than
-TabPFN's. It measured the other way, about 6 s against TabPFN's 50 s at the same
-budget, but the two are not comparable: **TabPFN runs remotely on Prior Labs'
-GPUs, over the network, and LightGBM runs locally on this laptop's CPU.** The
-TabPFN figure is dominated by upload and round-trip, not by inference. Every one
-of the 36 rows in `results/e4.jsonl` carries `wallclock_comparable: false` for
-this reason. The README quotes these numbers in exactly two places, the opening
-cost paragraph and the P5 scoreboard row, and both say the comparison is
-confounded rather than resting a claim on it.
+**The LightGBM wall-clock comparison was confounded. It has been settled, and
+it went against us.** P5 predicted LightGBM cross-conformal would cost far more
+wall-clock than TabPFN's. Through the API it measured the other way, about 6 s
+against TabPFN's 50 s, and the two were not comparable: TabPFN ran remotely on
+Prior Labs' GPUs while LightGBM ran on this laptop's CPU, so the TabPFN figure
+was dominated by round-trip rather than inference. All 36 rows in
+`results/e4.jsonl` still carry `wallclock_comparable: false`, and they always
+will, because that run genuinely was not comparable.
 
-What *is* comparable, because it is a count rather than a duration, is gradient
-fits: **0 for TabPFN against 6 for LightGBM cross-conformal** at K=5, and 1 for
-LightGBM split. Settling the timing properly needs both models on one machine
-with one accelerator.
+The rerun put both models on one Tesla T4 with local TabPFN weights and no
+network inside the measurement. **TabPFN is slower in all four configurations,
+by 22 s to 221 s, a factor of 35 to 73.** Removing the confound moved the result
+further against TabPFN rather than rescuing it: the network was not what made
+TabPFN look slow. Twenty-four rows are in `results/kaggle_wallclock.json`, every
+one tagged `wallclock_comparable: true`, produced by
+[`wallclock.ipynb`](../experiments/kaggle/wallclock.ipynb).
 
-That run is now written and tested end to end,
-[`experiments/kaggle/wallclock.py`](../experiments/kaggle/wallclock.py), with
-[`analyze_kaggle.py`](../experiments/analyze_kaggle.py) to read it, but it has
-not been *run*, because it needs one GPU session. **So P5 remains open, and the
-numbers above remain the confounded ones.** The script refuses to pretend
-otherwise: on CPU it warns on stderr and the analysis says in its own output
-that the run settles nothing. It measures local TabPFN rather than the managed
-API, deliberately, since removing the network is the entire point.
+Two honest qualifications. The measurement uses *local* weights, not the managed
+API, so it does not reproduce the API timings and is not meant to. And one real
+effect does survive: split to cross costs TabPFN 4.46× against LightGBM's 6.42×,
+so cross-conformal is relatively cheaper on a model with no training step, which
+is the mechanism this project rests on. At this scale that effect is swamped,
+because LightGBM trains on 9,000 rows in under a second.
+
+What was never in doubt, because it is a count rather than a duration, is
+gradient fits: **0 for TabPFN against 6 for LightGBM cross-conformal** at K=5,
+and 1 for LightGBM split. That is the number the README leads with, and no
+choice of hardware changes it.
 
 **The KV cache and Thinking mode are mutually exclusive** on the managed API,
 server-enforced: `HTTP 422, FIT_WITH_CACHE fit mode is not compatible with

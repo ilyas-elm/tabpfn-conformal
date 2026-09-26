@@ -33,9 +33,15 @@ it: cross-conformal is **exactly K× the API cost of split conformal**, measured
 2.0× at K=2 and 20.0× at K=20, at both 10k and 100k pools
 ([`cost_kfold.py`](experiments/api/cost_kfold.py), free: `estimate_cost` sends
 dimensions only), and it is **not** the case that only TabPFN can
-afford it. In our own baselines LightGBM cross-conformal finished in about six
-seconds, though that is not a fair race, since TabPFN runs remotely over the
-network and LightGBM runs on this laptop's CPU ([limitations](docs/limitations.md)).
+afford it. Put both on one Tesla T4 with local weights and no network in the
+measurement, and **LightGBM is faster by a factor of 35 to 73**: 3.8 s against
+225 s for cross-conformal at 200 confirmed frauds
+([`results/kaggle_wallclock.json`](results/kaggle_wallclock.json)).
+
+One real effect survives inside that. Going from split to cross costs TabPFN
+**4.46×** and LightGBM **6.42×**, so cross-conformal *is* relatively cheaper on a
+model with no training step, which is the mechanism this project is built on. It
+is simply swamped by TabPFN being far slower in absolute terms at this scale.
 What TabPFN removes is the training: **0 gradient-trained fits against
 LightGBM's 6**. That is the hardware-independent number, and the one that scales
 when the pool does.
@@ -534,7 +540,7 @@ before the experiments ran.
 | **P2** | cross-conformal costs under 2× split in API tokens | **falsified**, measured exactly K×: 2.0× at K=2, 20.0× at K=20. The API prices a call by total rows touched, so each fold is a full pass over the pool. |
 | **P3** | marginal CP under-covers the fraud class; Mondrian does not | holds (and was already published) |
 | **P4** | static thresholds decay under drift; ACI holds coverage | **falsified**; ACI is identical to frozen at usable γ, for the quantization reason above. |
-| **P5** | LightGBM cross-conformal costs far more wall-clock | **falsified**, ~6s against TabPFN's ~51s. Confounded (local CPU vs remote GPU), but the intuition was wrong: LightGBM trains on 9,000 rows in under a second. The fair-hardware rerun is written and tested ([`experiments/kaggle/`](experiments/kaggle/README.md)); it needs one GPU session, so P5 is **still open**. |
+| **P5** | LightGBM cross-conformal costs far more wall-clock | **falsified, and now settled on fair hardware.** Both models on one Tesla T4, local TabPFN weights, no network in the measurement: TabPFN is slower in all four configurations, by 22 s to 221 s, a factor of 35 to 73. Removing the confound moved the result *against* TabPFN, not for it. 24 rows in [`results/kaggle_wallclock.json`](results/kaggle_wallclock.json), reproduced by [`experiments/kaggle/wallclock.ipynb`](experiments/kaggle/wallclock.ipynb). |
 
 **Four of five failed.** What survives is sturdier for it: the feasibility
 ceiling and level fidelity are *deterministic*, checkable on paper, not

@@ -1,0 +1,658 @@
+{
+  "device": {
+    "torch": "2.10.0+cu128",
+    "device": "cuda",
+    "gpu": "Tesla T4"
+  },
+  "warmed_up": true,
+  "rows": [
+    {
+      "family": "tabpfn",
+      "strategy": "split",
+      "n_frauds": 100,
+      "seed": 0,
+      "n_pool": 9091,
+      "n_cal_fraud": 50,
+      "n_grad_fits": 0,
+      "fit_seconds": 12.09,
+      "predict_seconds": 9.57,
+      "seconds": 21.67,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9788047255038221,
+          "coverage_legit": 0.946,
+          "set_size": 1.59782238856754
+        },
+        "0.1": {
+          "coverage_fraud": 0.9576094510076442,
+          "coverage_legit": 0.901,
+          "set_size": 1.4282068730860837
+        }
+      }
+    },
+    {
+      "family": "tabpfn",
+      "strategy": "cross",
+      "n_frauds": 100,
+      "seed": 0,
+      "n_pool": 9091,
+      "n_cal_fraud": 100,
+      "n_grad_fits": 0,
+      "fit_seconds": 70.04,
+      "predict_seconds": 21.16,
+      "seconds": 91.2,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9430159833217512,
+          "coverage_legit": 0.9466666666666667,
+          "set_size": 1.438584552568901
+        },
+        "0.1": {
+          "coverage_fraud": 0.9027102154273802,
+          "coverage_legit": 0.898,
+          "set_size": 1.2521265736645117
+        }
+      }
+    },
+    {
+      "family": "lightgbm",
+      "strategy": "split",
+      "n_frauds": 100,
+      "seed": 0,
+      "n_pool": 9091,
+      "n_cal_fraud": 50,
+      "n_grad_fits": 1,
+      "fit_seconds": 0.32,
+      "predict_seconds": 0.04,
+      "seconds": 0.37,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9770674079221682,
+          "coverage_legit": 0.9566666666666667,
+          "set_size": 1.715379380741749
+        },
+        "0.1": {
+          "coverage_fraud": 0.8293954134815844,
+          "coverage_legit": 0.8946666666666667,
+          "set_size": 1.3116706362708404
+        }
+      }
+    },
+    {
+      "family": "lightgbm",
+      "strategy": "cross",
+      "n_frauds": 100,
+      "seed": 0,
+      "n_pool": 9091,
+      "n_cal_fraud": 100,
+      "n_grad_fits": 6,
+      "fit_seconds": 2.54,
+      "predict_seconds": 0.06,
+      "seconds": 2.6,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9541348158443363,
+          "coverage_legit": 0.9443333333333334,
+          "set_size": 1.6192582511058182
+        },
+        "0.1": {
+          "coverage_fraud": 0.906184850590688,
+          "coverage_legit": 0.8643333333333333,
+          "set_size": 1.408132017693093
+        }
+      }
+    },
+    {
+      "family": "tabpfn",
+      "strategy": "split",
+      "n_frauds": 100,
+      "seed": 1,
+      "n_pool": 9091,
+      "n_cal_fraud": 50,
+      "n_grad_fits": 0,
+      "fit_seconds": 11.79,
+      "predict_seconds": 10.69,
+      "seconds": 22.48,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9732453092425295,
+          "coverage_legit": 0.954,
+          "set_size": 1.59782238856754
+        },
+        "0.1": {
+          "coverage_fraud": 0.9127866574009729,
+          "coverage_legit": 0.914,
+          "set_size": 1.3482477033004423
+        }
+      }
+    },
+    {
+      "family": "tabpfn",
+      "strategy": "cross",
+      "n_frauds": 100,
+      "seed": 1,
+      "n_pool": 9091,
+      "n_cal_fraud": 100,
+      "n_grad_fits": 0,
+      "fit_seconds": 73.5,
+      "predict_seconds": 20.53,
+      "seconds": 94.03,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9447533009034051,
+          "coverage_legit": 0.955,
+          "set_size": 1.478053759782239
+        },
+        "0.1": {
+          "coverage_fraud": 0.8985406532314107,
+          "coverage_legit": 0.9103333333333333,
+          "set_size": 1.2723715549506636
+        }
+      }
+    },
+    {
+      "family": "lightgbm",
+      "strategy": "split",
+      "n_frauds": 100,
+      "seed": 1,
+      "n_pool": 9091,
+      "n_cal_fraud": 50,
+      "n_grad_fits": 1,
+      "fit_seconds": 0.34,
+      "predict_seconds": 0.05,
+      "seconds": 0.39,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.980542043085476,
+          "coverage_legit": 0.9483333333333334,
+          "set_size": 1.7434501531133038
+        },
+        "0.1": {
+          "coverage_fraud": 0.9412786657400973,
+          "coverage_legit": 0.889,
+          "set_size": 1.5003402517863218
+        }
+      }
+    },
+    {
+      "family": "lightgbm",
+      "strategy": "cross",
+      "n_frauds": 100,
+      "seed": 1,
+      "n_pool": 9091,
+      "n_cal_fraud": 100,
+      "n_grad_fits": 6,
+      "fit_seconds": 2.64,
+      "predict_seconds": 0.06,
+      "seconds": 2.69,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.95135510771369,
+          "coverage_legit": 0.9476666666666667,
+          "set_size": 1.6206192582511059
+        },
+        "0.1": {
+          "coverage_fraud": 0.9152189020152884,
+          "coverage_legit": 0.8806666666666667,
+          "set_size": 1.430418509697176
+        }
+      }
+    },
+    {
+      "family": "tabpfn",
+      "strategy": "split",
+      "n_frauds": 100,
+      "seed": 2,
+      "n_pool": 9091,
+      "n_cal_fraud": 50,
+      "n_grad_fits": 0,
+      "fit_seconds": 11.67,
+      "predict_seconds": 10.87,
+      "seconds": 22.55,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9878387769284225,
+          "coverage_legit": 0.944,
+          "set_size": 1.6345695814903027
+        },
+        "0.1": {
+          "coverage_fraud": 0.9544822793606671,
+          "coverage_legit": 0.88,
+          "set_size": 1.3921401837359646
+        }
+      }
+    },
+    {
+      "family": "tabpfn",
+      "strategy": "cross",
+      "n_frauds": 100,
+      "seed": 2,
+      "n_pool": 9091,
+      "n_cal_fraud": 100,
+      "n_grad_fits": 0,
+      "fit_seconds": 73.38,
+      "predict_seconds": 20.6,
+      "seconds": 93.98,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9440583738707435,
+          "coverage_legit": 0.9423333333333334,
+          "set_size": 1.441136440966315
+        },
+        "0.1": {
+          "coverage_fraud": 0.9193884642112579,
+          "coverage_legit": 0.8993333333333333,
+          "set_size": 1.2948281728479074
+        }
+      }
+    },
+    {
+      "family": "lightgbm",
+      "strategy": "split",
+      "n_frauds": 100,
+      "seed": 2,
+      "n_pool": 9091,
+      "n_cal_fraud": 50,
+      "n_grad_fits": 1,
+      "fit_seconds": 0.33,
+      "predict_seconds": 0.05,
+      "seconds": 0.37,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9826268241834607,
+          "coverage_legit": 0.921,
+          "set_size": 1.6808438244300783
+        },
+        "0.1": {
+          "coverage_fraud": 0.9704656011118833,
+          "coverage_legit": 0.8553333333333333,
+          "set_size": 1.5302824089826472
+        }
+      }
+    },
+    {
+      "family": "lightgbm",
+      "strategy": "cross",
+      "n_frauds": 100,
+      "seed": 2,
+      "n_pool": 9091,
+      "n_cal_fraud": 100,
+      "n_grad_fits": 6,
+      "fit_seconds": 2.61,
+      "predict_seconds": 0.06,
+      "seconds": 2.67,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9850590687977763,
+          "coverage_legit": 0.9426666666666667,
+          "set_size": 1.709424974481116
+        },
+        "0.1": {
+          "coverage_fraud": 0.9332870048644892,
+          "coverage_legit": 0.8766666666666667,
+          "set_size": 1.4630826811840763
+        }
+      }
+    },
+    {
+      "family": "tabpfn",
+      "strategy": "split",
+      "n_frauds": 200,
+      "seed": 0,
+      "n_pool": 18182,
+      "n_cal_fraud": 100,
+      "n_grad_fits": 0,
+      "fit_seconds": 26.83,
+      "predict_seconds": 20.49,
+      "seconds": 47.32,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9801945795691452,
+          "coverage_legit": 0.953,
+          "set_size": 1.5879550867642056
+        },
+        "0.1": {
+          "coverage_fraud": 0.9232105628908964,
+          "coverage_legit": 0.902,
+          "set_size": 1.2929567880231372
+        }
+      }
+    },
+    {
+      "family": "tabpfn",
+      "strategy": "cross",
+      "n_frauds": 200,
+      "seed": 0,
+      "n_pool": 18182,
+      "n_cal_fraud": 200,
+      "n_grad_fits": 0,
+      "fit_seconds": 176.82,
+      "predict_seconds": 48.45,
+      "seconds": 225.27,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9680333564975677,
+          "coverage_legit": 0.9416666666666667,
+          "set_size": 1.460871044572984
+        },
+        "0.1": {
+          "coverage_fraud": 0.940236275191105,
+          "coverage_legit": 0.8826666666666667,
+          "set_size": 1.2696495406600885
+        }
+      }
+    },
+    {
+      "family": "lightgbm",
+      "strategy": "split",
+      "n_frauds": 200,
+      "seed": 0,
+      "n_pool": 18182,
+      "n_cal_fraud": 100,
+      "n_grad_fits": 1,
+      "fit_seconds": 0.6,
+      "predict_seconds": 0.06,
+      "seconds": 0.66,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9788047255038221,
+          "coverage_legit": 0.922,
+          "set_size": 1.6202790064647838
+        },
+        "0.1": {
+          "coverage_fraud": 0.9600416956219597,
+          "coverage_legit": 0.8583333333333333,
+          "set_size": 1.4612112963593058
+        }
+      }
+    },
+    {
+      "family": "lightgbm",
+      "strategy": "cross",
+      "n_frauds": 200,
+      "seed": 0,
+      "n_pool": 18182,
+      "n_cal_fraud": 200,
+      "n_grad_fits": 6,
+      "fit_seconds": 3.59,
+      "predict_seconds": 0.06,
+      "seconds": 3.65,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9836692147324531,
+          "coverage_legit": 0.905,
+          "set_size": 1.5583531813542022
+        },
+        "0.1": {
+          "coverage_fraud": 0.9704656011118833,
+          "coverage_legit": 0.825,
+          "set_size": 1.3957128274923443
+        }
+      }
+    },
+    {
+      "family": "tabpfn",
+      "strategy": "split",
+      "n_frauds": 200,
+      "seed": 1,
+      "n_pool": 18182,
+      "n_cal_fraud": 100,
+      "n_grad_fits": 0,
+      "fit_seconds": 26.67,
+      "predict_seconds": 20.94,
+      "seconds": 47.61,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9704656011118833,
+          "coverage_legit": 0.9466666666666667,
+          "set_size": 1.5190541000340252
+        },
+        "0.1": {
+          "coverage_fraud": 0.9565670604586518,
+          "coverage_legit": 0.892,
+          "set_size": 1.3564137461721675
+        }
+      }
+    },
+    {
+      "family": "tabpfn",
+      "strategy": "cross",
+      "n_frauds": 200,
+      "seed": 1,
+      "n_pool": 18182,
+      "n_cal_fraud": 200,
+      "n_grad_fits": 0,
+      "fit_seconds": 176.06,
+      "predict_seconds": 48.43,
+      "seconds": 224.49,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.957956914523975,
+          "coverage_legit": 0.9556666666666667,
+          "set_size": 1.4598502892140184
+        },
+        "0.1": {
+          "coverage_fraud": 0.9252953439888811,
+          "coverage_legit": 0.908,
+          "set_size": 1.2815583531813541
+        }
+      }
+    },
+    {
+      "family": "lightgbm",
+      "strategy": "split",
+      "n_frauds": 200,
+      "seed": 1,
+      "n_pool": 18182,
+      "n_cal_fraud": 100,
+      "n_grad_fits": 1,
+      "fit_seconds": 0.6,
+      "predict_seconds": 0.06,
+      "seconds": 0.66,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9767199444058374,
+          "coverage_legit": 0.9306666666666666,
+          "set_size": 1.6769309288873766
+        },
+        "0.1": {
+          "coverage_fraud": 0.9600416956219597,
+          "coverage_legit": 0.8716666666666667,
+          "set_size": 1.5205852330724736
+        }
+      }
+    },
+    {
+      "family": "lightgbm",
+      "strategy": "cross",
+      "n_frauds": 200,
+      "seed": 1,
+      "n_pool": 18182,
+      "n_cal_fraud": 200,
+      "n_grad_fits": 6,
+      "fit_seconds": 3.88,
+      "predict_seconds": 0.05,
+      "seconds": 3.93,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9836692147324531,
+          "coverage_legit": 0.9323333333333333,
+          "set_size": 1.6471588975842124
+        },
+        "0.1": {
+          "coverage_fraud": 0.9589993050729674,
+          "coverage_legit": 0.8466666666666667,
+          "set_size": 1.4513439945559714
+        }
+      }
+    },
+    {
+      "family": "tabpfn",
+      "strategy": "split",
+      "n_frauds": 200,
+      "seed": 2,
+      "n_pool": 18182,
+      "n_cal_fraud": 100,
+      "n_grad_fits": 0,
+      "fit_seconds": 26.89,
+      "predict_seconds": 20.81,
+      "seconds": 47.7,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9576094510076442,
+          "coverage_legit": 0.9396666666666667,
+          "set_size": 1.4436883293637293
+        },
+        "0.1": {
+          "coverage_fraud": 0.9325920778318276,
+          "coverage_legit": 0.8833333333333333,
+          "set_size": 1.2732221844164682
+        }
+      }
+    },
+    {
+      "family": "tabpfn",
+      "strategy": "cross",
+      "n_frauds": 200,
+      "seed": 2,
+      "n_pool": 18182,
+      "n_cal_fraud": 200,
+      "n_grad_fits": 0,
+      "fit_seconds": 177.07,
+      "predict_seconds": 48.47,
+      "seconds": 225.54,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9593467685892981,
+          "coverage_legit": 0.9423333333333334,
+          "set_size": 1.4431779516842465
+        },
+        "0.1": {
+          "coverage_fraud": 0.9197359277275886,
+          "coverage_legit": 0.8856666666666667,
+          "set_size": 1.2490643075876149
+        }
+      }
+    },
+    {
+      "family": "lightgbm",
+      "strategy": "split",
+      "n_frauds": 200,
+      "seed": 2,
+      "n_pool": 18182,
+      "n_cal_fraud": 100,
+      "n_grad_fits": 1,
+      "fit_seconds": 0.58,
+      "predict_seconds": 0.06,
+      "seconds": 0.64,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9447533009034051,
+          "coverage_legit": 0.939,
+          "set_size": 1.5884654644436884
+        },
+        "0.1": {
+          "coverage_fraud": 0.8929812369701181,
+          "coverage_legit": 0.8853333333333333,
+          "set_size": 1.3873766587274583
+        }
+      }
+    },
+    {
+      "family": "lightgbm",
+      "strategy": "cross",
+      "n_frauds": 200,
+      "seed": 2,
+      "n_pool": 18182,
+      "n_cal_fraud": 200,
+      "n_grad_fits": 6,
+      "fit_seconds": 3.73,
+      "predict_seconds": 0.05,
+      "seconds": 3.78,
+      "wallclock_comparable": true,
+      "device": "cuda",
+      "gpu": "Tesla T4",
+      "alphas": {
+        "0.05": {
+          "coverage_fraud": 0.9909659485753995,
+          "coverage_legit": 0.9063333333333333,
+          "set_size": 1.6126233412725417
+        },
+        "0.1": {
+          "coverage_fraud": 0.9666435024322446,
+          "coverage_legit": 0.8136666666666666,
+          "set_size": 1.4145968016332087
+        }
+      }
+    }
+  ]
+}
