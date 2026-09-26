@@ -1,7 +1,12 @@
-# The fair-hardware wall-clock run (optional)
+# The fair-hardware wall-clock run
 
-**This is optional.** It settles P5, the one prediction still reported as
-confounded. The submission does not depend on it, and `docs/limitations.md` says
+**Already run, and public: <https://www.kaggle.com/code/ilyaselmaazouzi/tabpfn-conformal>** (21m 1s on a Tesla T4 x2). What
+follows is how to reproduce it. The result is in
+[`../../results/kaggle_wallclock.json`](../../results/kaggle_wallclock.json)
+and `python experiments/analyze_kaggle.py` recomputes the verdict from it
+with no GPU and no key.
+
+It settles P5, the one prediction that was still reported as confounded. The submission does not depend on it, and `docs/limitations.md` says
 plainly that it has not been run. Do the four things in
 [`../../docs/STATUS.md`](../../docs/STATUS.md) first.
 
@@ -33,7 +38,7 @@ protocol is E4's, unchanged.
   running. `wallclock.py` downloads and loads the weights in a warm-up phase
   before it times anything.
 
-- About **half an hour** of GPU quota. Kaggle shows what you have left in the
+- About **twenty minutes** of GPU quota (the run above took 21m 1s). Kaggle shows what you have left in the
   session sidebar. The run is 24 configurations and writes its JSON after every
   one, so a session that dies part-way still leaves usable rows.
 

@@ -89,7 +89,7 @@ recomputes both counts.
    `tabpfn_extensions.conformal`, 18 tests pass under `FAST_TEST_MODE=1`
    (locally: `FAST_TEST_MODE=1 PYTHONPATH=contrib/tabpfn-extensions/src pytest
    contrib/tabpfn-extensions/tests`).
-3. **Share the demo artifact.** See the section below: it is private, and the
+3. **Share the demo artifact.** Still private, unlike the Kaggle notebook. See the section below: it is private, and the
    README links to it prominently. One menu, thirty seconds, and it is the
    difference between the showcase criterion landing and 404ing.
 4. **Record the video**; [`VIDEO.md`](VIDEO.md) has the script and a list of
@@ -115,9 +115,11 @@ cheaper without a training step. It is swamped at this scale because LightGBM
 trains on 9,000 rows in under a second.
 
 The notebook [`experiments/kaggle/wallclock.ipynb`](../experiments/kaggle/wallclock.ipynb)
-is committed and reproduces it. **It should be made public on Kaggle and its URL
-added next to the P5 row**, since a public notebook with saved output shows a
-reader the GPU, the timings and the log without them running anything.
+is committed, and the run is **public** at
+<https://www.kaggle.com/code/ilyaselmaazouzi/tabpfn-conformal>, linked from the P5 row and
+from `docs/limitations.md`. Verified signed out: the cells, outputs and
+timings all render, and the credentials cell prints the secret's label
+only, never its value.
 
 ## Standing rules learned the hard way
 

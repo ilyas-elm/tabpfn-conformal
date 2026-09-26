@@ -91,7 +91,9 @@ by 22 s to 221 s, a factor of 35 to 73.** Removing the confound moved the result
 further against TabPFN rather than rescuing it: the network was not what made
 TabPFN look slow. Twenty-four rows are in `results/kaggle_wallclock.json`, every
 one tagged `wallclock_comparable: true`, produced by
-[`wallclock.ipynb`](../experiments/kaggle/wallclock.ipynb).
+[`wallclock.ipynb`](../experiments/kaggle/wallclock.ipynb). The run is
+public, so the hardware, the log and the timings can be read without
+rerunning anything: <https://www.kaggle.com/code/ilyaselmaazouzi/tabpfn-conformal>.
 
 Two honest qualifications. The measurement uses *local* weights, not the managed
 API, so it does not reproduce the API timings and is not meant to. And one real
