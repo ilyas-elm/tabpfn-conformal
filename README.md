@@ -41,7 +41,7 @@ below. LightGBM wins the stopwatch.
 > Built for the Prior Labs TabPFN-3.5 Hackathon. **All seven experiments are
 > complete** and their results are committed, so every number below can be
 > recomputed without an API key: `python scripts/verify_claims.py` recomputes
-> 178 of them from `results/` and exits non-zero on any drift.
+> 180 of them from `results/` and exits non-zero on any drift.
 > **Four of five pre-registered predictions were falsified**, including two of
 > our own about cost, and they are reported as such; see the
 > [scoreboard](#what-we-predicted-and-what-happened),
@@ -111,6 +111,28 @@ python examples/with_tabpfn.py
 `alpha` is a prediction-time argument, not a constructor argument: scores are
 stored at fit time, so sweeping it costs no refit and, on a metered API, no
 extra calls.
+
+**As a `tabpfn-extensions` module.** The same code is packaged for Prior Labs'
+extensions repo, where it imports under their namespace and adds **no
+dependency they do not already have**, numpy and scikit-learn being core there
+already:
+
+```python
+from tabpfn_extensions import TabPFNClassifier
+from tabpfn_extensions.conformal import ConformalClassifier, coverage_by_class
+
+cc = ConformalClassifier(TabPFNClassifier(), method="mondrian", strategy="cross")
+cc.fit(X_pool, y_pool)
+sets = cc.predict_set(X_test, alpha=0.05)        # (n, n_classes) boolean
+coverage_by_class(sets, y_test, cc.classes_)     # per-class realised coverage
+```
+
+Until that PR is merged the payload lives in
+[`contrib/tabpfn-extensions/`](contrib/tabpfn-extensions/), generated from
+`src/` by `scripts/build_extension_pr.py` so the two cannot drift, with its own
+[module README](contrib/tabpfn-extensions/src/tabpfn_extensions/conformal/README.md).
+It passes their pre-commit unmodified: ruff 0.8.6 check and format, and mypy
+1.15.0 under their settings.
 
 **Data.** The benchmarks use Bank Account Fraud (Jesus et al., NeurIPS 2022),
 which is public at

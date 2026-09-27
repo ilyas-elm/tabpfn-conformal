@@ -36,8 +36,17 @@ step, so it costs K forward passes.
 
 Measured on Bank Account Fraud (NeurIPS 2022) with TabPFN-3.5, comparing at an
 identical targeted coverage level: cross-conformal reached the same level from
-**half the confirmed fraud labels**, with narrower prediction sets in five of six
-comparisons.
+**half the confirmed fraud labels**. Across four datasets and nine paired
+comparisons it was significantly wider in **zero** and significantly narrower in
+one, at the scarcest label budget. The raw win count is higher, but the seeds
+are shared, so the paired test is the one reported.
+
+**It is not free.** Pooling out-of-fold scores gives *approximate* validity
+where split conformal is exact (Vovk 2015; CV+ worst case `1 - 2*alpha`).
+Measured against the level each run actually certifies, cross sat below it in
+**3 of 6** dataset-alpha combinations by 1.5 to 2.4 points, concentrated at
+tight alpha, where split sat below in **0 of 6**. Report empirical coverage
+alongside the guarantee rather than in place of it.
 
 ## Two behaviours worth knowing
 

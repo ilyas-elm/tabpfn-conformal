@@ -920,6 +920,22 @@ if _fig_dir.exists():
         checks.append(("no figure predates its generator", not _stale,
                        "; ".join(_stale) or "every figure was committed with or after its script"))
 
+# ---- 6c. The module README that ships upstream ----------------------------
+# It is the first thing a tabpfn-extensions user reads, and nothing checked it.
+# It carried "narrower prediction sets in five of six comparisons", a raw win
+# count, which is exactly the framing this project retracted two screens away
+# in its own README.
+_mod_readme = REPO / "contrib/tabpfn-extensions/src/tabpfn_extensions/conformal/README.md"
+if _mod_readme.exists():
+    _mr = _mod_readme.read_text()
+    _num = r"(?:\\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
+    _raw = re.findall(rf"narrower[^.]{{0,60}}in {_num} of {_num}", _mr, re.I)
+    checks.append(("the upstream module README reports the paired test, not a win count",
+                   not _raw, f"raw win count phrasing: {_raw}"))
+    checks.append(("the upstream module README states the measured validity cost",
+                   "3 of 6" in _mr and "0 of 6" in _mr,
+                   "it describes cross-conformal without what approximate validity costs"))
+
 # ---- 6b. The vendored payload still carries its caveat --------------------
 # build_extension_pr.py replaces every module docstring with a vendoring header,
 # which silently deleted the approximate-validity caveat from the module Prior
