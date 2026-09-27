@@ -338,6 +338,28 @@ if _total:
     check("E6 significantly narrower",
           in_readme(r"Significantly narrower in (\d+)\*\*"), float(_tally["narrower"]), 0.5)
 
+    # Every cell of the detail table, not just the counts drawn from it. Those
+    # eighteen numbers were the largest block in the README that nothing
+    # recomputed, and the table does not carry its own alpha, so reproducing it
+    # by hand means guessing the sign convention and the level. Pinned here.
+    _e6_rows = re.findall(
+        r"^\| (Base|Variant [IV]+) \| (\d+) \| ([+\u2212-][\d.]+) ± ([\d.]+) \(n=(\d+)\)",
+        README, re.M)
+    checks.append(("the E6 table has all nine rows", len(_e6_rows) == 9,
+                   f"parsed {len(_e6_rows)} rows from the README table"))
+    for _v, _nc, _m, _se, _n in _e6_rows:
+        pr = _paired.get((_v, int(_nc)), {})
+        seeds = sorted(set(pr.get("split", {})) & set(pr.get("cross", {})))
+        if len(seeds) < 2:
+            checks.append((f"E6 table {_v}@{_nc}", None, "no paired seeds for this cell"))
+            continue
+        d = np.array([pr["split"][s] - pr["cross"][s] for s in seeds], dtype=float)
+        check(f"E6 table {_v}@{_nc} mean", float(_m.replace("\u2212", "-")),
+              float(d.mean()), 0.001)
+        check(f"E6 table {_v}@{_nc} stderr", float(_se),
+              float(d.std(ddof=1) / np.sqrt(len(d))), 0.001)
+        check(f"E6 table {_v}@{_nc} n", float(_n), float(len(d)), 0.5)
+
 # ---- 5e. The multiclass figures the README attributes to the test suite ---
 # The README says tests/test_multiclass.py "pins this"; make that literally so.
 _mc = REPO / "tests/test_multiclass.py"

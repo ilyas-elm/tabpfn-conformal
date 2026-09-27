@@ -6,9 +6,10 @@ follows is how to reproduce it. The result is in
 and `python experiments/analyze_kaggle.py` recomputes the verdict from it
 with no GPU and no key.
 
-It settles P5, the one prediction that was still reported as confounded. The submission does not depend on it, and `docs/limitations.md` says
-plainly that it has not been run. Do the four things in
-[`../../docs/STATUS.md`](../../docs/STATUS.md) first.
+It settles P5, the one prediction that had been reported as confounded, and it
+settled it against TabPFN: 35 to 73 times slower than LightGBM on the same
+accelerator. [`../../docs/limitations.md`](../../docs/limitations.md) states
+that result rather than the confound it replaced.
 
 ## Why it exists
 
@@ -103,7 +104,8 @@ reproduce it. That is worth more than the JSON on its own.
 - **`FileNotFoundError` on `Base.csv`** → the dataset input was not added, or its
   folder is named differently. Run `!ls /kaggle/input/` in a cell and pass the
   real path to `--data`.
-- **`Repository not found` on the clone** → the repo is still private.
+- **`Repository not found` on the clone** → the repository is public, so this
+  should not happen; check the URL for a typo.
 - **Segfault on a Mac** → this is a Linux script. torch and lightgbm each load
   their own libomp on macOS and the process dies when the second one fits. It
   does not happen on Kaggle, and it is why the local dry run below only covers

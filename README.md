@@ -41,7 +41,7 @@ below. LightGBM wins the stopwatch.
 > Built for the Prior Labs TabPFN-3.5 Hackathon. **All seven experiments are
 > complete** and their results are committed, so every number below can be
 > recomputed without an API key: `python scripts/verify_claims.py` recomputes
-> 180 of them from `results/` and exits non-zero on any drift.
+> 208 of them from `results/` and exits non-zero on any drift.
 > **Four of five pre-registered predictions were falsified**, including two of
 > our own about cost, and they are reported as such; see the
 > [scoreboard](#what-we-predicted-and-what-happened),
@@ -314,7 +314,9 @@ against a *fixed* cutoff like 0.5.
 
 One dataset is one result. The BAF suite is six one-million-row datasets at the
 same 1.103% fraud rate, differing in the bias deliberately injected into them,
-a real replication test. Re-running only the matched-level comparison:
+a real replication test. Re-running only the matched-level comparison, at
+**α = 0.1**, pairing each cross run at F confirmed frauds against the split run
+at 2F that calibrates on the same number of positives:
 
 | dataset | calib. positives | paired difference (split − cross) | verdict |
 |---|---:|---:|---|
