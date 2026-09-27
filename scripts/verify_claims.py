@@ -547,12 +547,15 @@ if e4:
                    f"{_flagged} of {len(_rows)} rows carry wallclock_comparable: false"))
     # The count that IS hardware-independent, quoted in the README's opening.
     _fits = {r["arm"]: r.get("n_grad_fits") for r in _rows}
+    _fits_all = [(r["arm"], r.get("n_grad_fits")) for r in _rows]
     check("README gradient fits, LightGBM cross",
           in_readme(r"0 gradient-trained fits against\nLightGBM's (\d+)"),
           float(_fits.get("lightgbm_cross", -1)), 0.5)
+    _bad_fits = [(k, v) for k, v in _fits_all if k.startswith("tabpfn") and v != 0]
     checks.append(("TabPFN arms do zero gradient fits",
-                   all(v == 0 for k, v in _fits.items() if k.startswith("tabpfn")),
-                   f"{ {k: v for k, v in _fits.items() if k.startswith('tabpfn')} }"))
+                   not _bad_fits,
+                   f"{len(_bad_fits)} of {sum(1 for k, _ in _fits_all if k.startswith('tabpfn'))} "
+                   f"tabpfn rows report a gradient fit: {_bad_fits[:4]}"))
 
 # ---- 5l. Package metadata agrees with pyproject ---------------------------
 try:
@@ -984,7 +987,13 @@ except Exception as exc:                                    # pragma: no cover
     checks.append(("demo regenerates", None, f"build_demo import failed: {exc}"))
 else:
     committed = json.loads((REPO / "figures/demo_data.json").read_text())
-    rebuilt = build_demo.build_data()
+    try:
+        rebuilt = build_demo.build_data()
+    except Exception as exc:                                # pragma: no cover
+        rebuilt = None
+        checks.append(("the demo payload can be rebuilt at all", False,
+                       f"build_demo.build_data() raised {type(exc).__name__}: {exc}"))
+if "rebuilt" in dir() and rebuilt is not None:
     checks.append(("demo data regenerates from results", committed == rebuilt,
                    "figures/demo_data.json differs from scripts/build_demo.py output"))
 
