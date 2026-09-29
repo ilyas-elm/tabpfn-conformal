@@ -41,7 +41,7 @@ below. LightGBM wins the stopwatch.
 > Built for the Prior Labs TabPFN-3.5 Hackathon. **All seven experiments are
 > complete** and their results are committed, so every number below can be
 > recomputed without an API key: `python scripts/verify_claims.py` recomputes
-> 309 of them from `results/` and exits non-zero on any drift.
+> 347 of them from `results/` and exits non-zero on any drift.
 > **Four of five pre-registered predictions were falsified**, including two of
 > our own about cost, and they are reported as such; see the
 > [scoreboard](#what-we-predicted-and-what-happened),
@@ -558,7 +558,7 @@ so it compares recommended usage rather than isolating the checkpoint. One seed.
 The reason ACI cannot help is the same scarcity as everywhere else in this project. With `n`
 calibration positives only `n` distinct thresholds exist, so α must move far
 enough to change which order statistic is selected before anything changes at
-all. At the 46 positives available here that step is **0.0139**; ACI moves α by
+all. At the 46 positives available here that step is **0.0138**; ACI moves α by
 0.003 across the whole walk. Raise γ enough to move and it jumps a whole order
 statistic and overshoots.
 
@@ -865,6 +865,14 @@ being nearly free was wrong and is corrected there.
 ## Licence
 
 Apache 2.0; see [`LICENSE`](LICENSE).
+
+**Bank Account Fraud is CC BY-NC-SA 4.0** (Jesus et al., NeurIPS 2022,
+Feedzai), a synthetic dataset. This repository does not redistribute it:
+`data/` is gitignored and `scripts/download_data.py` fetches it from Kaggle.
+What `results/` carries is derived from it, predicted probabilities and, under
+`results/proba/`, the binary label vector of each evaluation set. No features,
+no row identifiers, and nothing from which the dataset could be reconstructed.
+Apache 2.0 above covers this repository's own code, text and figures.
 
 **TabPFN-3.5's model weights are released by Prior Labs under a separate,
 non-commercial licence.** This package does not bundle, depend on, or

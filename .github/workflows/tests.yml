@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
 
+# Nothing here writes to the repository: no release, no comment, no commit.
+# Without this the token's scope is whatever the repository default happens to
+# be, which is not something the workflow should leave to a setting.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest

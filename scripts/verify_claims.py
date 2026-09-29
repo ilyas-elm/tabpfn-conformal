@@ -1128,6 +1128,9 @@ checks.append(("the README states how many experiments there are",
 
 # ---- 8. The verifier's own advertised size ---------------------------------
 # The README said 135 while this script ran 176, because nothing compared them.
+_ANCHOR_MARKS: list = []
+
+
 def anchored(label: str, pattern: str, text: str = None):
     """Find a block anchor, and say so loudly when it is not there.
 
@@ -1138,6 +1141,8 @@ def anchored(label: str, pattern: str, text: str = None):
     the report and in the count instead of evaporating.
     """
     m = re.search(pattern, README if text is None else text)
+    if m is not None:
+        _ANCHOR_MARKS.append((label, len(checks)))
     if m is None:
         # A failure, not a skip. Skips are for work that genuinely cannot run
         # here (an experiment not yet executed, a private document absent from
@@ -1494,6 +1499,299 @@ if _mapf.exists():
                 if _num:
                     check(f"MAPIE table {_lab} {_field}", float(_num.group(1)),
                           _v[_field], 5e-4)
+
+# ---- 8. Claims in prose, not in a table ----------------------------------
+# Same sweep as section 7, run over the sentences instead of the tables: mutate
+# a number, see whether anything notices. Most of what it flagged was a
+# parameter or a citation rather than a measurement; these are the
+# measurements. One of them, the order-statistic step, was wrong in its last
+# digit, which is exactly the size of error this kind of check exists to find.
+
+# 8a. The worked example that carries the argument in prose.
+_wex = anchored(
+    "worked example",
+    r"targets 96%, and delivers \*\*coverage ([\d.]+) with mean set size ([\d.]+)\*\*;"
+    r"\s*\ncross calibrates on all 50, targets 92%, and delivers \*\*([\d.]+) with set size\s*\n([\d.]+)\*\*")
+if _wex and _e1v:
+    for _gi, (_st, _fld) in enumerate(
+            ((("split", "coverage_fraud")), ("split", "set_size"),
+             ("cross", "coverage_fraud"), ("cross", "set_size")), start=1):
+        _rs = [r for r in _e1v if r["strategy"] == _st and r["n_frauds"] == 50
+               and "0.1" in r["alphas"]]
+        if _rs:
+            check(f"worked example {_st} {_fld}", float(_wex.group(_gi)),
+                  float(np.mean([r["alphas"]["0.1"][_fld] for r in _rs])), 5e-4)
+
+# 8b. E2: the best allocation still loses to not splitting. At alpha 0.05,
+# which is the level the section's table is computed at.
+_e2v = load("e2.jsonl")
+_e2p = anchored("E2 best-split sentence",
+                r"splitting at all: ([\d.]+) against cross-conformal's \*\*([\d.]+)\*\*")
+if _e2v and _e2p:
+    _sp, _cr = {}, []
+    for _r in _e2v:
+        _a = _r["alphas"].get("0.05")
+        if not _a or _r["n_frauds"] != 100:
+            continue
+        if _r["strategy"] == "split":
+            _sp.setdefault(_r.get("cal_size"), []).append(_a["set_size"])
+        else:
+            _cr.append(_a["set_size"])
+    if _sp and _cr:
+        check("E2 best split set size", float(_e2p.group(1)),
+              min(float(np.mean(v)) for v in _sp.values()), 5e-4)
+        check("E2 cross set size", float(_e2p.group(2)), float(np.mean(_cr)), 5e-4)
+
+# 8c. The ACI sweep, and why adaptive calibration cannot move at this budget.
+_acif = REPO / "results" / "aci_gamma_sweep.json"
+if _acif.exists():
+    _aci = json.loads(_acif.read_text())
+    _sw = anchored("ACI swing sentence",
+                   r"the month-to-month swing goes from ([\d.]+) to \*\*([\d.]+)\*\*")
+    if _sw:
+        for _gi, _key in ((1, "frozen"), (2, "gamma=1")):
+            _c = [x["coverage_fraud"] for x in _aci.get(_key, [])]
+            if _c:
+                check(f"ACI swing {_key}", float(_sw.group(_gi)), max(_c) - min(_c), 5e-4)
+    _ex = anchored("ACI extremes sentence",
+                   r"widest sets and the wildest swing, ([\d.]+) one month and ([\d.]+)")
+    if _ex:
+        _c = [x["coverage_fraud"] for x in _aci.get("gamma=1", [])]
+        if _c:
+            check("ACI gamma=1 lowest month", float(_ex.group(1)), min(_c), 5e-4)
+            check("ACI gamma=1 highest month", float(_ex.group(2)), max(_c), 5e-4)
+    _mv = anchored("ACI movement sentence", r"ACI moves \u03b1 by\s*\n?([\d.]+) across the whole walk")
+    if _mv:
+        _a = [x["alpha_fraud"] for x in _aci.get("gamma=0.05", []) if "alpha_fraud" in x]
+        if _a:
+            check("ACI alpha movement", float(_mv.group(1)), max(_a) - min(_a), 5e-4)
+
+# 8d. Arithmetic stated in prose. The order-statistic step is how far alpha has
+# to rise before a different calibration score is selected; at 46 positives and
+# alpha 0.05 that is 1 - 44/47 - 0.05, and the README used to round it up.
+_stp = anchored("order-statistic step",
+                r"that step is \*\*([\d.]+)\*\*; ACI moves")
+if _stp:
+    _nn, _aa = 46, 0.05
+    _kk = math.ceil((_nn + 1) * (1 - _aa))
+    check("order-statistic step at 46 positives", float(_stp.group(1)),
+          (1 - (_kk - 1) / (_nn + 1)) - _aa, 5e-5)
+_sa = anchored("feasibility floor", r"fires for every \u03b1 below (\d+\.\d+)")
+if _sa:
+    check("smallest certifiable alpha at 13 positives", float(_sa.group(1)), 1 / 14, 5e-5)
+for _lbl, _pat in (("certified level, results section",
+                    r"positives actually certify \(([\d.]+)%, not 95%\)"),
+                   ("certified level, drift section",
+                    r"actually targeted \(([\d.]+)% with 46 calibration positives")):
+    _m = anchored(_lbl, _pat)
+    if _m:
+        check(_lbl, float(_m.group(1)), 100 * math.ceil(47 * 0.95) / 46, 0.005)
+
+# 8e. The base rate the calibration study reweights to.
+if _cal.exists():
+    _tr = anchored("reweighted base rate", r"reweighted to the true ([\d.]+)% base rate")
+    if _tr:
+        check("reweighted base rate", float(_tr.group(1)),
+              100 * json.loads(_cal.read_text())["true_rate"], 5e-4)
+
+# 8f. The cached round trip, and the K-fold cost multiplier at K=20.
+if e5:
+    _rt = anchored("round trip sentence",
+                   r"round trip is worse overall, ([\d.]+) s cached against ([\d.]+) s uncached")
+    _pp = {(r["n_context"], bool(r["cache"])): r for r in e5
+           if r["strategy"] == "split" and r["seed"] == 0}
+    if _rt and (50200, True) in _pp and (50200, False) in _pp:
+        for _gi, _flag in ((1, True), (2, False)):
+            _r = _pp[(50200, _flag)]
+            check(f"round trip {'cached' if _flag else 'uncached'}", float(_rt.group(_gi)),
+                  _r["fit_seconds"] + _r["predict_seconds"], 0.05)
+
+_ck = REPO / "results" / "cost_kfold.json"
+if _ck.exists():
+    _km = anchored("K multiplier sentence",
+                   r"([\d.]+)\u00d7 at K=2 and ([\d.]+)\u00d7 at K=20")
+    if _km:
+        _rws = json.loads(_ck.read_text())["rows"]
+        for _gi, _kk2 in ((1, 2), (2, 20)):
+            _hit = [r for r in _rws if r["k"] == _kk2]
+            if _hit:
+                check(f"cost multiplier at K={_kk2}", float(_km.group(_gi)),
+                      float(np.mean([r["ratio"] for r in _hit])), 0.05)
+
+# 8g. The size of the approximate-validity shortfall, quoted twice in prose.
+if _vtab:
+    _gapsp = []
+    for _dsn, _rws in _vrows.items():
+        for _al2 in ("0.05", "0.1", "0.2"):
+            _g2 = _gaps(_rws, "cross", _al2)
+            if len(_g2) < 2:
+                continue
+            _m2 = float(np.mean(_g2))
+            _se2 = float(np.std(_g2, ddof=1) / np.sqrt(len(_g2)))
+            if _se2 and _m2 / _se2 < -_CRITV.get(len(_g2), 2.0):
+                _gapsp.append(abs(_m2) * 100)
+    if _gapsp:
+        for _lbl, _pat in (("validity shortfall range, section",
+                            r"by about ([\d.]+) to ([\d.]+) points"),
+                           ("validity shortfall range, closing",
+                            r"combinations by ([\d.]+) to ([\d.]+) points")):
+            _m = anchored(_lbl, _pat)
+            if _m:
+                check(f"{_lbl} low", float(_m.group(1)), min(_gapsp), 0.05)
+                check(f"{_lbl} high", float(_m.group(2)), max(_gapsp), 0.05)
+
+# 8h. TabPFN's own imbalance tooling, the baseline with no guarantee at all.
+_e4v = load("e4.jsonl")
+if _e4v:
+    _tt = anchored("tuned-threshold sentence",
+                   r"reaches ([\d.]+) recall while\s*\nflagging \*\*([\d.]+)% of legitimate traffic\*\*")
+    if _tt:
+        _sub = [r for r in _e4v if r["arm"] == "tabpfn_tuned_threshold"
+                and r["n_frauds"] == 200]
+        if _sub:
+            check("tuned threshold recall", float(_tt.group(1)),
+                  float(np.mean([r["recall"] for r in _sub])), 5e-4)
+            check("tuned threshold flag rate", float(_tt.group(2)),
+                  100 * float(np.mean([r["false_positive_rate"] for r in _sub])), 0.05)
+
+    # The pair of thresholds is one run, not an average: same budget, same seed,
+    # which is the only way the "identical recall" claim beside it means anything.
+    _th = anchored("balance_probabilities threshold shift",
+                   r"threshold shifts from ([\d.]+) to ([\d.]+)\)")
+    if _th:
+        _one = {r["arm"]: r for r in _e4v if r["n_frauds"] == 200 and r["seed"] == 0
+                and "threshold" in r["arm"]}
+        if len(_one) == 2:
+            check("tuned threshold value", float(_th.group(1)),
+                  _one["tabpfn_tuned_threshold"]["threshold"], 5e-5)
+            check("balanced threshold value", float(_th.group(2)),
+                  _one["tabpfn_balanced_threshold"]["threshold"], 5e-3)
+
+    _id = anchored("balance_probabilities identical-seeds claim",
+                   r"identical in (\w+) of (\w+) seeds")
+    if _id:
+        _pairs = {}
+        for _r in _e4v:
+            if "threshold" in _r["arm"]:
+                _pairs.setdefault((_r["n_frauds"], _r["seed"]), {})[_r["arm"]] = _r
+        _same = sum(
+            1 for _v in _pairs.values()
+            if len(_v) == 2
+            and _v["tabpfn_tuned_threshold"]["recall"] == _v["tabpfn_balanced_threshold"]["recall"]
+            and _v["tabpfn_tuned_threshold"]["false_positive_rate"]
+            == _v["tabpfn_balanced_threshold"]["false_positive_rate"])
+        _w2n = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6}
+        checks.append(("balance_probabilities identical in N of six seeds",
+                       _w2n.get(_id.group(1)) == _same
+                       and _w2n.get(_id.group(2)) == len(_pairs),
+                       f"README {_id.group(1)} of {_id.group(2)}; recomputed "
+                       f"{_same} of {len(_pairs)}"))
+
+# 8i. Numbers the README states twice: once where they are measured, once in a
+# summary sentence. Only the first copy was ever checked.
+_r2 = anchored("E1 narrowest restatement", r"scarcest, ([\d.]+)% at 25 calibration positives")
+if _r2 and _e1v:
+    _p25 = {}
+    for _r in _e1v:
+        _a = _r["alphas"].get("0.1")
+        if _a and _r.get("n_cal_fraud") == 25:
+            _p25.setdefault(_r["strategy"], {})[_r["seed"]] = _a["set_size"]
+    if "split" in _p25 and "cross" in _p25:
+        _sd2 = sorted(set(_p25["split"]) & set(_p25["cross"]))
+        _a2 = float(np.mean([_p25["split"][x] for x in _sd2]))
+        _b2 = float(np.mean([_p25["cross"][x] for x in _sd2]))
+        check("E1 narrowest restatement", float(_r2.group(1)), 100 * (_a2 - _b2) / _a2, 0.05)
+
+_r3 = anchored("E6 Variant III restatement",
+               r"closest thing to a loss\*\*: \u2212([\d.]+) \u00b1 ([\d.]+), t \u2248 ([\d.]+)")
+if _r3:
+    _e6v = load("e6.jsonl")
+    # Keyed on calibration positives, which is what the row says. Keyed on the
+    # budget instead, split and cross never line up and the block appends
+    # nothing at all, which is how this one first went missing.
+    _pv = {}
+    for _r in _e6v:
+        _a = _r["alphas"].get("0.1")
+        if _a and _r.get("variant") == "Variant III" and _r.get("n_cal_fraud") == 100:
+            _pv.setdefault(_r["strategy"], {})[_r["seed"]] = _a["set_size"]
+    if "split" in _pv and "cross" in _pv:
+        _sd3 = sorted(set(_pv["split"]) & set(_pv["cross"]))
+        _d3 = np.array([_pv["split"][x] - _pv["cross"][x] for x in _sd3])
+        _se3b = float(_d3.std(ddof=1) / np.sqrt(len(_d3)))
+        check("E6 Variant III paired diff", -float(_r3.group(1)), float(_d3.mean()), 6e-5)
+        check("E6 Variant III se", float(_r3.group(2)), _se3b, 6e-5)
+        check("E6 Variant III t", float(_r3.group(3)),
+              abs(float(_d3.mean()) / _se3b) if _se3b else 0.0, 0.05)
+
+_r4 = anchored("MAPIE agreement restatement", r"the two produce ([\d.]+)% identical sets")
+if _r4 and _mapf.exists():
+    check("MAPIE agreement restatement", float(_r4.group(1)),
+          100 * min(v["sets_identical"] for v in
+                    json.loads(_mapf.read_text())["cross_vs_cv_plus"].values()), 0.05)
+
+_r5 = anchored("E5 context rate restatement",
+               r"driving the context fraud rate from ([\d.]+)% down to")
+if _r5 and e5:
+    _f10 = [r["fraud_rate_context"] for r in e5
+            if r["n_context"] == 10200 and r["strategy"] == "split" and not r["cache"]]
+    if _f10:
+        check("E5 context rate restatement", float(_r5.group(1)),
+              100 * float(np.mean(_f10)), 0.006)
+
+_r6 = anchored("covtype rate in the E7 section",
+               r"Cottonwood/Willow, which occurs at \*\*([\d.]+)%\*\*")
+if _r6 and _e7src.exists():
+    _br2 = re.search(r"BASE_RATE = ([\d.]+)", _e7src.read_text())
+    if _br2:
+        check("covtype rate in the E7 section", float(_r6.group(1)),
+              100 * float(_br2.group(1)), 5e-4)
+
+# 8j. The share of a monthly budget one calibration pass costs. Stated twice,
+# from the documented free-tier ceiling, so both copies have to agree with it.
+_bud = anchored("monthly budget share",
+                r"on a 10,000-row pool is roughly ([\d,]+) tokens, about ([\d.]+)% of a monthly budget")
+if _bud:
+    _tok = float(_bud.group(1).replace(",", ""))
+    _apidoc = REPO / "experiments" / "api" / "README.md"
+    _cap = None
+    if _apidoc.exists():
+        _cm = re.search(r"(\d+)M/month", _apidoc.read_text())
+        if _cm:
+            _cap = float(_cm.group(1)) * 1e6
+    if _cap:
+        check("monthly budget share", float(_bud.group(2)), 100 * _tok / _cap, 0.005)
+    else:
+        checks.append(("monthly budget share", None,
+                       "the monthly ceiling is not stated in experiments/api/README.md"))
+
+# 8k. The opening claim, taken from the example CI actually runs. The first
+# number a reader meets should not be the one nothing re-derives.
+_qs = REPO / "examples" / "quickstart.py"
+_qm = anchored("opening marginal-coverage claim",
+               r"minority class \*\*([\d.]+)\*\* coverage while its overall number looks healthy")
+if _qm and _qs.exists():
+    _out = subprocess.run([sys.executable, str(_qs)], cwd=REPO,
+                          capture_output=True, text=True)
+    _mm = re.search(r"method='marginal'\s+positive-class coverage ([\d.]+)", _out.stdout)
+    if _mm:
+        check("opening marginal-coverage claim", float(_qm.group(1)), float(_mm.group(1)), 5e-4)
+    else:
+        checks.append(("opening marginal-coverage claim", None,
+                       f"quickstart printed nothing parseable (exit {_out.returncode})"))
+
+# ---- 9. Did every anchored block actually produce checks? ----------------
+# An anchor that matches and then finds no data behind it appends nothing, and
+# the block disappears exactly as quietly as a missed anchor does. That is the
+# same bug in a different place, and it has now bitten three times: a reworded
+# sentence, a wrong dict key into calibration.json, and an E6 lookup keyed on
+# the budget rather than on calibration positives. Each anchor is required to
+# leave at least one check behind it.
+for _i, (_lbl, _at) in enumerate(_ANCHOR_MARKS):
+    _end = _ANCHOR_MARKS[_i + 1][1] if _i + 1 < len(_ANCHOR_MARKS) else len(checks)
+    if _end <= _at:
+        checks.append((f"anchor {_lbl!r} produced no checks", False,
+                       "the pattern matched but the data behind it was not "
+                       "found, so the block silently added nothing"))
 
 # Counted last, and counts itself, so the figure in the README is the number of
 # checks this file actually performs.
