@@ -1,0 +1,35 @@
+{
+ "mapie_version": "1.5.0",
+ "note": "Same fixtures, seeds and splits as tests/test_agreement_with_mapie.py.",
+ "cross_vs_cv_plus": {
+  "0.05": {
+   "sets_identical": 0.9987499999999999,
+   "abs_coverage_gap": 0.0008333333333333156,
+   "abs_set_size_gap": 0.0012500000000000473
+  },
+  "0.1": {
+   "sets_identical": 0.9966666666666667,
+   "abs_coverage_gap": 0.0027083333333333495,
+   "abs_set_size_gap": 0.0029166666666667154
+  },
+  "0.2": {
+   "sets_identical": 0.9983333333333334,
+   "abs_coverage_gap": 0.0012499999999999734,
+   "abs_set_size_gap": 0.0012499999999999734
+  }
+ },
+ "class_conditional": {
+  "alpha": 0.1,
+  "minority_rate": 0.04325,
+  "mapie_cv_plus_lac": {
+   "minority_coverage": 0.043478260869565216,
+   "majority_coverage": 0.9333768778576094,
+   "mean_set_size": 0.91
+  },
+  "ours_mondrian_cross": {
+   "minority_coverage": 0.9565217391304348,
+   "majority_coverage": 0.9000653167864141,
+   "mean_set_size": 1.464375
+  }
+ }
+}

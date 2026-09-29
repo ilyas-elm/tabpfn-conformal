@@ -41,7 +41,7 @@ below. LightGBM wins the stopwatch.
 > Built for the Prior Labs TabPFN-3.5 Hackathon. **All seven experiments are
 > complete** and their results are committed, so every number below can be
 > recomputed without an API key: `python scripts/verify_claims.py` recomputes
-> 194 of them from `results/` and exits non-zero on any drift.
+> 309 of them from `results/` and exits non-zero on any drift.
 > **Four of five pre-registered predictions were falsified**, including two of
 > our own about cost, and they are reported as such; see the
 > [scoreboard](#what-we-predicted-and-what-happened),
@@ -597,7 +597,7 @@ before the experiments ran.
 
 | | prediction | outcome |
 |---|---|---|
-| **P1** | cross-conformal has lower seed-variance of fraud coverage | **falsified**, 0.107 vs 0.083 at F=25 (cross better) but 0.044 vs 0.081 at F=100 (cross worse). No consistent direction. |
+| **P1** | cross-conformal has lower seed-variance of fraud coverage | **falsified**. Seed spread of fraud coverage, max minus min at α = 0.10: 0.107 vs 0.083 at F=25 (cross better) but 0.044 vs 0.081 at F=100 (cross worse). No consistent direction. |
 | **P2** | cross-conformal costs under 2× split in API tokens | **falsified**, measured exactly K×: 2.0× at K=2, 20.0× at K=20. The API prices a call by total rows touched, so each fold is a full pass over the pool. |
 | **P3** | marginal CP under-covers the fraud class; Mondrian does not | holds (and was already published) |
 | **P4** | static thresholds decay under drift; ACI holds coverage | **falsified**; ACI is identical to frozen at usable γ, for the quantization reason above. |
@@ -706,7 +706,7 @@ binary, because the motivating problem is.
 | | comparison | result |
 |---|---|---|
 | split | same estimator, same calibration set, same `lac` score, so the sets *must* match | **identical**, asserted exactly, 3 alphas × 3 seeds |
-| cross | ours is Vovk (2015), pool out-of-fold scores, predict with the full-data model. MAPIE's is CV+ (Barber et al. 2021), which aggregates the fold models instead. **Different constructions**, so exact agreement would be suspicious | **99.7% of prediction sets identical**; coverage within 0.002 and set size within 0.002 at α ∈ {0.05, 0.1, 0.2} |
+| cross | ours is Vovk (2015), pool out-of-fold scores, predict with the full-data model. MAPIE's is CV+ (Barber et al. 2021), which aggregates the fold models instead. **Different constructions**, so exact agreement would be suspicious | **99.7% of prediction sets identical** at the worst of α ∈ {0.05, 0.1, 0.2}; coverage within 0.003 and set size within 0.003 at every one ([`results/mapie_comparison.json`](results/mapie_comparison.json)) |
 
 The second row is the one that matters, because cross-conformal is the headline.
 

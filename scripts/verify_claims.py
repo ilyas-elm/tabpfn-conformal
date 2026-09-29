@@ -1128,6 +1128,373 @@ checks.append(("the README states how many experiments there are",
 
 # ---- 8. The verifier's own advertised size ---------------------------------
 # The README said 135 while this script ran 176, because nothing compared them.
+def anchored(label: str, pattern: str, text: str = None):
+    """Find a block anchor, and say so loudly when it is not there.
+
+    Every regex-gated block in this file used to be written ``if m:``. Reword
+    the sentence the regex points at and the whole block stops running, taking
+    its checks out of the total with nothing printed. That has now happened
+    twice. An anchor that misses is recorded as not-runnable, so it shows up in
+    the report and in the count instead of evaporating.
+    """
+    m = re.search(pattern, README if text is None else text)
+    if m is None:
+        # A failure, not a skip. Skips are for work that genuinely cannot run
+        # here (an experiment not yet executed, a private document absent from
+        # a clone) and they do not change the exit code. A moved anchor is
+        # different: the document still makes the claim, and the check that
+        # used to test it has quietly stopped running. That has to be loud.
+        checks.append((f"anchor: {label}", False,
+                       "no longer matches the document; reword the pattern or "
+                       "the checks behind it silently stop running"))
+    return m
+
+
+# ---- 7. Tables that were published without a check behind them -----------
+# Found by mutating one cell of every table in the README and asking whether
+# this file noticed. Nine tables did not, roughly sixty numbers, among them the
+# approximate-validity table that carries the project's main caveat and the
+# head-to-head against MAPIE. Each was correct when recomputed by hand; none was
+# protected. These recompute them from results/ so they stay that way.
+
+# 7a. The level a given number of calibration positives actually certifies.
+# Pure arithmetic, which is exactly why nothing was checking it.
+_lvl = anchored("certified-level table",
+    r"\| calibration positives \| level actually targeted at \u03b1 = 0\.10 \|\n"
+    r"\|[-: |]+\|\n((?:\|.*\|\n)+)", README)
+if _lvl:
+    for _line in _lvl.group(1).strip().split("\n"):
+        _c = [x.strip() for x in _line.strip().strip("|").split("|")]
+        _n = int(_c[0])
+        _m = re.search(r"([\d.]+)%", _c[1])
+        if _m:
+            _k = math.ceil((_n + 1) * 0.90)
+            check(f"certified level at {_n} positives", float(_m.group(1)),
+                  100 * min(1.0, _k / _n), 0.05)
+
+# 7b. Realized coverage minus the level actually certified: the cost of
+# cross-conformal's approximate validity, and the reason the headline is
+# hedged. experiments/analyze_validity.py prints it; nothing compared it with
+# what the README then published.
+def _gaps(_rows, _strategy, _alpha):
+    _per = {}
+    for _r in _rows:
+        if _r["strategy"] != _strategy:
+            continue
+        _a, _n = _r["alphas"].get(_alpha), _r.get("n_cal_fraud")
+        if not _a or not _n:
+            continue
+        # Capped at 1.0: where ceil((n+1)(1-a)) exceeds n the threshold is
+        # +inf, the set is every label and coverage is exactly 1.0, so the
+        # honest gap is zero rather than negative.
+        _cert = min(1.0, math.ceil((_n + 1) * (1 - float(_alpha))) / _n)
+        _per.setdefault(_r["seed"], []).append(_a["coverage_fraud"] - _cert)
+    return [float(np.mean(_per[_s])) for _s in sorted(_per)]
+
+_vrows = {"Bank Account Fraud": load("e1.jsonl"), "Forest Cover Type": load("e7.jsonl")}
+_vtab = anchored("validity table",
+    r"\| dataset \| \u03b1 \| split \(exact\) \| cross \(approximate\) \|\n"
+    r"\|[-: |]+\|\n((?:\|.*\|\n)+)", README)
+_CRITV = {2: 12.71, 3: 4.30, 4: 3.18, 5: 2.78}
+_below = {"split": 0, "cross": 0}
+_seen = {"split": 0, "cross": 0}
+if _vtab:
+    for _line in _vtab.group(1).strip().split("\n"):
+        _c = [x.strip() for x in _line.strip().strip("|").split("|")]
+        _ds, _al = _c[0], _c[1]
+        _rows = _vrows.get(_ds)
+        if not _rows:
+            continue
+        for _col, _strategy in ((_c[2], "split"), (_c[3], "cross")):
+            _m = re.search(r"([+-][\d.]+) \u00b1 ([\d.]+)", _col)
+            if not _m:
+                continue
+            _g = _gaps(_rows, _strategy, _al)
+            if len(_g) < 2:
+                continue
+            _mean = float(np.mean(_g))
+            _se = float(np.std(_g, ddof=1) / np.sqrt(len(_g)))
+            check(f"validity {_ds[:3]} a={_al} {_strategy} mean", float(_m.group(1)), _mean, 6e-5)
+            check(f"validity {_ds[:3]} a={_al} {_strategy} se", float(_m.group(2)), _se, 6e-5)
+            # Bold marks "significantly below"; the mark has to match the test.
+            _t = _mean / _se if _se else 0.0
+            _is_below = _t < -_CRITV.get(len(_g), 2.0)
+            checks.append((f"validity {_ds[:3]} a={_al} {_strategy} bold matches the test",
+                           _col.startswith("**") == _is_below,
+                           f"bold={_col.startswith('**')} but t={_t:.2f} says below={_is_below}"))
+            _seen[_strategy] += 1
+            _below[_strategy] += _is_below
+    for _strategy in ("split", "cross"):
+        _m = re.search(
+            r"Split is below its certified level in (\d+) of (\d+) dataset-\u03b1 combinations\. Cross is\s*\n?below in (\d+) of (\d+)",
+            README)
+        if _m:
+            _claim = int(_m.group(1)) if _strategy == "split" else int(_m.group(3))
+            checks.append((f"validity: {_strategy} below in N of 6",
+                           _claim == _below[_strategy] and _seen[_strategy] == 6,
+                           f"README says {_claim}, recomputed {_below[_strategy]} "
+                           f"of {_seen[_strategy]}"))
+
+# 7c. The second-domain tables: matched set sizes, and the paired differences.
+_e7 = load("e7.jsonl")
+if _e7:
+    _by = {}
+    for _r in _e7:
+        _a = _r["alphas"].get("0.1")
+        _n = _r.get("n_cal_fraud")
+        if not _a or not _n:
+            continue
+        _by.setdefault(_n, {}).setdefault(_r["strategy"], {})[_r["seed"]] = (
+            _r["n_frauds"], _a["set_size"])
+    _m7 = anchored(
+        "E7 matched table",
+        r"\| calib\. positives \| targeted level \| split needs \| its set size \| "
+        r"cross needs \| its set size \| labels saved \|\n\|[-: |]+\|\n((?:\|.*\|\n)+)",
+        README[README.find("Forest Cover"):] if "Forest Cover" in README else README)
+    if _m7:
+        for _line in _m7.group(1).strip().split("\n"):
+            _c = [x.strip() for x in _line.strip().strip("|").split("|")]
+            _n = int(_c[0])
+            _p = _by.get(_n, {})
+            if "split" not in _p or "cross" not in _p:
+                continue
+            _sd = sorted(set(_p["split"]) & set(_p["cross"]))
+            _ss = float(np.mean([_p["split"][x][1] for x in _sd]))
+            _cs = float(np.mean([_p["cross"][x][1] for x in _sd]))
+            check(f"E7 matched level @{_n}", float(re.search(r"([\d.]+)%", _c[1]).group(1)),
+                  100 * math.ceil((_n + 1) * 0.9) / _n, 0.05)
+            check(f"E7 matched split size @{_n}", float(_c[3]), _ss, 5e-4)
+            check(f"E7 matched cross size @{_n}",
+                  float(re.search(r"\*\*([\d.]+)\*\*", _c[5]).group(1)), _cs, 5e-4)
+            _rel = re.search(r"\((narrower|wider) by ([\d.]+)%\)", _c[5])
+            if _rel:
+                _delta = 100 * (_ss - _cs) / _ss
+                _want = _delta if _rel.group(1) == "narrower" else -_delta
+                check(f"E7 matched {_rel.group(1)}-by @{_n}", float(_rel.group(2)), _want, 0.05)
+            check(f"E7 matched split budget @{_n}", float(_c[2]),
+                  float(_p["split"][_sd[0]][0]), 0.5)
+
+    _p7 = anchored("E7 paired table",
+        r"\| calib\. positives \| paired difference \| verdict \|\n\|[-: |]+\|\n"
+        r"((?:\|.*\|\n)+)", README)
+    if _p7:
+        _n_tie = 0
+        for _line in _p7.group(1).strip().split("\n"):
+            _c = [x.strip() for x in _line.strip().strip("|").split("|")]
+            _n = int(_c[0])
+            _m = re.search(r"([+-][\d.]+) \u00b1 ([\d.]+) \(n=(\d+)\)", _c[1])
+            _p = _by.get(_n, {})
+            if not _m or "split" not in _p or "cross" not in _p:
+                continue
+            _sd = sorted(set(_p["split"]) & set(_p["cross"]))
+            _d = np.array([_p["split"][x][1] - _p["cross"][x][1] for x in _sd])
+            _se = float(_d.std(ddof=1) / np.sqrt(len(_d)))
+            check(f"E7 paired diff @{_n}", float(_m.group(1)), float(_d.mean()), 6e-5)
+            check(f"E7 paired se @{_n}", float(_m.group(2)), _se, 6e-5)
+            check(f"E7 paired n @{_n}", float(_m.group(3)), float(len(_d)), 0.5)
+            _n_tie += abs(_d.mean() / _se) < _CRITV.get(len(_d), 2.0) if _se else 0
+        _m = re.search(r"wider in \*\*(\d+) of (\d+) comparisons here\*\*", README)
+        if _m:
+            checks.append(("E7: cross wider in N of 3",
+                           int(_m.group(1)) == 0 and int(_m.group(2)) == _n_tie,
+                           f"README {_m.group(1)} of {_m.group(2)}; recomputed "
+                           f"0 wider with {_n_tie} ties"))
+
+# 7d. P1 in the pre-registration scoreboard: the seed spread of fraud coverage.
+_e1v = load("e1.jsonl")
+_p1 = anchored("P1 seed-spread row",
+               r"max minus min at \u03b1 = 0\.10: ([\d.]+) vs ([\d.]+) at F=(\d+) "
+               r"\(cross better\) but ([\d.]+) vs ([\d.]+) at F=(\d+)")
+if _e1v and _p1:
+    def _spread(_strategy, _budget):
+        """Max minus min across seeds, which is what the row reports.
+
+        Not the standard deviation: the prediction was worded "seed-variance"
+        and the numbers beside it are the spread, so the README now says so.
+        """
+        _v = [r["alphas"]["0.1"]["coverage_fraud"] for r in _e1v
+              if r["strategy"] == _strategy and r["n_frauds"] == _budget
+              and "0.1" in r["alphas"]]
+        return float(max(_v) - min(_v)) if len(_v) > 1 else float("nan")
+    for _i, (_strategy, _b, _g) in enumerate(
+            (("split", int(_p1.group(3)), 1), ("cross", int(_p1.group(3)), 2),
+             ("split", int(_p1.group(6)), 4), ("cross", int(_p1.group(6)), 5))):
+        check(f"P1 {_strategy} seed SD at F={_b}", float(_p1.group(_g)), _spread(_strategy, _b), 6e-4)
+
+# 7e. The scoreboard's ECE range, and the capability table's cache speedup:
+# both restate a number checked elsewhere, in a different string, so both were
+# free to drift away from the table they summarise.
+_cal = REPO / "results" / "calibration.json"
+if _cal.exists():
+    _h2h = json.loads(_cal.read_text()).get("head_to_head", {})
+    if _h2h:
+        _t = [v["tabpfn_ece"] for v in _h2h.values()]
+        _l = [v["lightgbm_ece"] for v in _h2h.values()]
+        _m = anchored("scoreboard ECE range",
+                      r"ECE ([\d.]+)\u2013([\d.]+) vs ([\d.]+)\u2013([\d.]+)")
+        if _m:
+            check("scoreboard ECE tabpfn low", float(_m.group(1)), min(_t), 5e-5)
+            check("scoreboard ECE tabpfn high", float(_m.group(2)), max(_t), 5e-5)
+            check("scoreboard ECE lightgbm low", float(_m.group(3)), min(_l), 5e-5)
+            check("scoreboard ECE lightgbm high", float(_m.group(4)), max(_l), 5e-5)
+
+        # The AUC-gap column of the calibration table, the one column of it
+        # that nothing was reading.
+        _ct = anchored("calibration table",
+                       r"\| strategy \| budget \| TabPFN ECE \| LightGBM ECE \| "
+                       r"TabPFN better by \| AUC gap \|\n\|[-: |]+\|\n((?:\|.*\|\n)+)")
+        if _ct:
+            for _line in _ct.group(1).strip().split("\n"):
+                _c = [x.strip() for x in _line.strip().strip("|").split("|")]
+                _key = f"{_c[0]}_{_c[1]}"
+                _v = _h2h.get(_key)
+                if not _v:
+                    checks.append((f"calibration row {_key}", None, "no such arm in calibration.json"))
+                    continue
+                check(f"calibration AUC gap {_key}", float(_c[5]),
+                      _v["tabpfn_auc"] - _v["lightgbm_auc"], 5e-4)
+
+# 7f. The "narrower by" percentage columns. The set sizes either side of them
+# were checked; the percentage derived from the pair was not.
+_mn = anchored("E1 matched table",
+               r"\| targeted level \| split needs \| its set size \| cross needs \| "
+               r"its set size \| labels saved \|\n\|[-: |]+\|\n((?:\|.*\|\n)+)")
+if _mn:
+    for _line in _mn.group(1).strip().split("\n"):
+        _c = [x.strip() for x in _line.strip().strip("|").split("|")]
+        _sz = re.search(r"([\d.]+)", _c[2])
+        _cz = re.search(r"\*\*([\d.]+)\*\*", _c[4])
+        _pc = re.search(r"\(([\d.]+)% narrower\)", _c[4])
+        if _sz and _cz and _pc:
+            _a, _b = float(_sz.group(1)), float(_cz.group(1))
+            check(f"E1 matched narrower-by at {_c[1]}", float(_pc.group(1)),
+                  100 * (_a - _b) / _a, 0.05)
+
+_e4t = anchored("E4 baselines table",
+                r"\| strategy \| budget \| targeted level \| TabPFN \| LightGBM \| "
+                r"TabPFN narrower by \|\n\|[-: |]+\|\n((?:\|.*\|\n)+)")
+if _e4t:
+    for _line in _e4t.group(1).strip().split("\n"):
+        _c = [x.strip() for x in _line.strip().strip("|").split("|")]
+        _t4 = re.search(r"([\d.]+)", _c[3])
+        _l4 = re.search(r"([\d.]+)", _c[4])
+        _p4 = re.search(r"([\d.]+)", _c[5])
+        if _t4 and _l4 and _p4:
+            _a, _b = float(_l4.group(1)), float(_t4.group(1))
+            check(f"E4 narrower-by {_c[0]}@{_c[1]}", float(_p4.group(1)),
+                  100 * (_a - _b) / _a, 0.05)
+
+# 7g. The scoreboard restates the E5 slope and SD in a second, shorter form.
+if e5 and len(by_ctx) > 2:
+    _sb = anchored("scoreboard E5 summary",
+                   r"slope \u2212([\d.]+) vs seed SD ([\d.]+)")
+    if _sb:
+        check("scoreboard E5 slope", -float(_sb.group(1)), slope, 0.0006)
+        check("scoreboard E5 seed SD", float(_sb.group(2)), sd, 0.0006)
+
+# 7h. The second domain's base rate, against the constant the experiment ran
+# with. This is a consistency check between prose and code, not a measurement:
+# confirming it against covtype itself would mean downloading the dataset,
+# which this script must never do.
+_e7src = REPO / "experiments/api/e7_second_domain.py"
+if _e7src.exists():
+    _br = re.search(r"BASE_RATE = ([\d.]+)", _e7src.read_text())
+    _rb = anchored("scoreboard covtype base rate",
+                   r"forest cover type, ([\d.]+)% positive")
+    if _br and _rb:
+        check("covtype base rate matches the experiment constant",
+              float(_rb.group(1)), 100 * float(_br.group(1)), 5e-4)
+
+# 7i. The paired t behind "directional, not established" for Thinking.
+_e3v = load("e3.jsonl")
+if _e3v:
+    _tm = anchored("Thinking paired t", r"directional, t \u2248 ([\d.]+) at n=(\d+)\*\*")
+    if _tm:
+        _lvl3 = 45 / 46
+        _d = []
+        for _sd3 in sorted({r["seed"] for r in _e3v}):
+            _cnt = {}
+            for _mo in ("base", "thinking"):
+                _cnt[_mo] = sum(
+                    r["coverage_fraud"] < _lvl3 for r in _e3v
+                    if r["arm"] == "frozen" and r["model"] == _mo and r["seed"] == _sd3)
+            _d.append(_cnt["base"] - _cnt["thinking"])
+        _d = np.array(_d, dtype=float)
+        _se3 = float(_d.std(ddof=1) / np.sqrt(len(_d)))
+        check("Thinking paired t", float(_tm.group(1)),
+              float(_d.mean()) / _se3 if _se3 else 0.0, 0.05)
+        check("Thinking paired n", float(_tm.group(2)), float(len(_d)), 0.5)
+
+if e5:
+    _cap = re.search(r"`fit_mode=\"fit_with_cache\"` \| E5 \| \*\*([\d.]+)\u00d7 faster", README)
+    _c2 = {r["n_context"]: r for r in e5 if r["cache"]}
+    _p2 = {r["n_context"]: r for r in e5 if not r["cache"] and r["seed"] == 0
+           and r["strategy"] == "split"}
+    if _cap and 200200 in _c2 and 200200 in _p2:
+        check("capability table cache speedup", float(_cap.group(1)),
+              _p2[200200]["predict_seconds"] / _c2[200200]["predict_seconds"], 0.05)
+
+# 7j. The MAPIE head-to-head. Its numbers lived only inside tests that assert
+# loose bounds on purpose, so a MAPIE upgrade would not turn into a flaky
+# failure; that left the exact figures in the README unchecked. They now come
+# from results/mapie_comparison.json, written by experiments/analyze_mapie.py.
+_mapf = REPO / "results" / "mapie_comparison.json"
+if _mapf.exists():
+    _mp = json.loads(_mapf.read_text())
+    _cx = _mp["cross_vs_cv_plus"]
+    _worst_same = min(v["sets_identical"] for v in _cx.values())
+    _worst_cov = max(v["abs_coverage_gap"] for v in _cx.values())
+    _worst_sz = max(v["abs_set_size_gap"] for v in _cx.values())
+    _mrow = anchored(
+        "MAPIE cross agreement row",
+        r"\*\*([\d.]+)% of prediction sets identical\*\* at the worst of "
+        r"\u03b1 \u2208 \{0\.05, 0\.1, 0\.2\}; coverage within ([\d.]+) and "
+        r"set size within ([\d.]+)")
+    if _mrow:
+        check("MAPIE worst set agreement", float(_mrow.group(1)), 100 * _worst_same, 0.05)
+        # A stated bound has to actually hold, so this is an inequality, not a
+        # near-equality: it said 0.002 while the measurement was 0.0027.
+        checks.append(("MAPIE coverage bound holds",
+                       _worst_cov <= float(_mrow.group(2)),
+                       f"README claims within {_mrow.group(2)}, worst measured {_worst_cov:.5f}"))
+        checks.append(("MAPIE set size bound holds",
+                       _worst_sz <= float(_mrow.group(3)),
+                       f"README claims within {_mrow.group(3)}, worst measured {_worst_sz:.5f}"))
+        # ...and not so loose as to be meaningless.
+        checks.append(("MAPIE bounds are tight to within 10x",
+                       _worst_cov * 10 >= float(_mrow.group(2))
+                       and _worst_sz * 10 >= float(_mrow.group(3)),
+                       "the quoted bound is more than ten times the measurement"))
+
+    _sbm = anchored("scoreboard MAPIE minority coverage",
+                    r"minority coverage\s*\n?\*\*([\d.]+)\*\* against ours at \*\*([\d.]+)\*\*")
+    if _sbm:
+        check("scoreboard MAPIE minority coverage", float(_sbm.group(1)),
+              _mp["class_conditional"]["mapie_cv_plus_lac"]["minority_coverage"], 5e-4)
+        check("scoreboard ours minority coverage", float(_sbm.group(2)),
+              _mp["class_conditional"]["ours_mondrian_cross"]["minority_coverage"], 5e-4)
+
+    _cc = _mp["class_conditional"]
+    _ctab = anchored("MAPIE class-conditional table",
+                     r"\| \| minority coverage \| majority \| mean set size \|\n"
+                     r"\|[-: |]+\|\n((?:\|.*\|\n)+)")
+    if _ctab:
+        _want = {"MAPIE CV+": _cc["mapie_cv_plus_lac"], "ours,": _cc["ours_mondrian_cross"]}
+        for _line in _ctab.group(1).strip().split("\n"):
+            _c = [x.strip() for x in _line.strip().strip("|").split("|")]
+            _key = next((k for k in _want if _c[0].startswith(k)), None)
+            if _key is None:
+                checks.append((f"MAPIE table row {_c[0][:20]}", None, "unrecognised row"))
+                continue
+            _v = _want[_key]
+            _lab = "mapie" if _key.startswith("MAPIE") else "ours"
+            for _i, _field in ((1, "minority_coverage"), (2, "majority_coverage"),
+                               (3, "mean_set_size")):
+                _num = re.search(r"([\d.]+)", _c[_i])
+                if _num:
+                    check(f"MAPIE table {_lab} {_field}", float(_num.group(1)),
+                          _v[_field], 5e-4)
+
 # Counted last, and counts itself, so the figure in the README is the number of
 # checks this file actually performs.
 # Counted against the published configuration, the one CI and a reader run.
