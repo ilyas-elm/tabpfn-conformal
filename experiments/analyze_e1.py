@@ -171,9 +171,9 @@ def figure(agg, alpha: float, path: pathlib.Path):
     fig.text(
         0.012, 0.012,
         "Dashed curves: the level each strategy actually certifies at that budget, "
-        "ceil((n_cal+1)(1-\u03b1))/n_cal \u2014 what a point has to clear.\n"
+        "ceil((n_cal+1)(1-\u03b1))/n_cal, what a point has to clear.\n"
         "Bands span min\u2013max across seeds. In the shaded region split returns every label,\n"
-        "so its coverage of 1.0 is vacuous \u2014 read it against set size below.\n"
+        "so its coverage of 1.0 is vacuous; read it against set size below.\n"
         "Bank Account Fraud; months 0\u20135 pool, 6\u20137 evaluation; TabPFN-3.5 via the Prior Labs API.",
         fontsize=7.5, color=INK_MUTED, linespacing=1.5, va="bottom",
     )

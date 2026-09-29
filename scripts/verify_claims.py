@@ -267,6 +267,34 @@ if e5:
               slope, 0.0006)
         check("E5 seed SD", in_readme(r"seed standard deviation\nof ([\d.]+)"), sd, 0.0006)
 
+        # ...and every cell of the table above that sentence. The slope was
+        # checked from the start; the rows were not, so a cell could read
+        # anything at all. It also pins the row count: the table once showed
+        # three of the five contexts that were run, and the three it showed
+        # were the monotone ones.
+        _sc = re.search(
+            r"\| context \| context fraud rate \| set size \|\n\|[-: |]+\|\n((?:\|.*\|\n)+)",
+            README)
+        if _sc:
+            _srows = [[c.strip() for c in ln.strip().strip("|").split("|")]
+                      for ln in _sc.group(1).strip().split("\n")]
+            checks.append(("E5 scale table lists every context run",
+                           len(_srows) == len(by_ctx),
+                           f"table has {len(_srows)} rows, results have "
+                           f"{len(by_ctx)} contexts"))
+            for _r in _srows:
+                _ctxn = int(_r[0].replace(",", ""))
+                _vals = by_ctx.get(_ctxn)
+                if not _vals:
+                    checks.append((f"E5 scale row {_r[0]}", None, "no such context in results"))
+                    continue
+                check(f"E5 scale set size @{_r[0]}", float(_r[2]), float(np.mean(_vals)), 0.0005)
+                _fr = [x["fraud_rate_context"] for x in e5
+                       if x["n_context"] == _ctxn and x["strategy"] == "split"
+                       and not x["cache"]]
+                check(f"E5 scale fraud rate @{_r[0]}", float(_r[1].rstrip("%")),
+                      100 * float(np.mean(_fr)), 0.006)
+
     # The README's cache table: predict and fit, cached and not, per context.
     _cached = {r["n_context"]: r for r in e5 if r["cache"]}
     _plain = {r["n_context"]: r for r in e5 if not r["cache"] and r["seed"] == 0

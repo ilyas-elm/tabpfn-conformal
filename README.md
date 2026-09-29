@@ -356,11 +356,15 @@ frauds. So: hold the frauds at **200** and grow the legitimate context from
 | context | context fraud rate | set size |
 |---:|---:|---:|
 | 10,200 | 1.96% | 1.491 |
+| 25,200 | 0.79% | 1.441 |
 | 50,200 | 0.40% | 1.452 |
+| 100,200 | 0.20% | 1.504 |
 | 200,200 | 0.10% | 1.434 |
 
 **No.** Slope −0.017 set size per 10× context, against a seed standard deviation
-of 0.046, flat. Adding 190,000 legitimate rows buys nothing.
+of 0.046, flat. The series is not even monotone: the widest sets of the five
+come from the *second largest* context. Adding 190,000 legitimate rows buys
+nothing.
 
 ![Set size against context size at a fixed 200 confirmed frauds; the curve is flat and sits inside one seed standard deviation](figures/e5_scale_alpha005.png)
 

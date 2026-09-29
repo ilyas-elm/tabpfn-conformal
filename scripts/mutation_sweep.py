@@ -247,6 +247,10 @@ CASES: list[tuple[str, object]] = [
     ("vendored cross-conformal keeps the validity caveat",
      _sub("contrib/tabpfn-extensions/src/tabpfn_extensions/conformal/crossconformal.py",
           "Vovk 2015", "an unnamed source")),
+    ("E5 scale set size @100,200",
+     _sub("README.md", "| 100,200 | 0.20% | 1.504 |", "| 100,200 | 0.20% | 9.999 |")),
+    ("E5 scale table lists every context run",
+     _sub("README.md", "| 100,200 | 0.20% | 1.504 |\n", "")),
     ("demo data regenerates from results",
      _json("figures/demo_data.json", lambda d: d.__setitem__("n_fraud", 99999))),
     # Their pre-commit rejects this and ours never used to look for it.

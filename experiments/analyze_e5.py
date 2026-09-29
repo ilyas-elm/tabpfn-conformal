@@ -88,7 +88,7 @@ def figure(stats, alpha: float, path: pathlib.Path):
                         textcoords="offset points", va="center", fontsize=9, color=INK_2)
         else:
             # Below its own line: to the right it would run across the split curve.
-            ax.annotate(label + "\n(capped at 25k \u2014 K refits, hours beyond)",
+            ax.annotate(label + "\n(capped at 25k; K refits, hours beyond)",
                         xy=(x[0], mean[0]), xytext=(0, -30), textcoords="offset points",
                         ha="left", va="top", fontsize=8.5, color=INK_2, linespacing=1.4)
 

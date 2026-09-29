@@ -150,7 +150,7 @@ def figure(by_arm, rows, path: pathlib.Path, common, dropped):
     ax_a.axhline(alpha, color=INK_MUTED, linewidth=1.3, linestyle=(0, (4, 3)), zorder=1)
     ax_a.annotate(f"start \u03b1 = {alpha:g}", xy=(months_all[0], alpha), xytext=(2, 4),
                   textcoords="offset points", fontsize=8.5, color=INK_2, va="bottom")
-    ax_a.annotate("ACI moves the level by 0.003 across five months \u2014 far short of the\n"
+    ax_a.annotate("ACI moves the level by 0.003 across five months, far short of the\n"
                   "0.0139 needed to shift the threshold by a single order statistic,\n"
                   "so the prediction sets never change.",
                   xy=(0.98, 0.06), xycoords="axes fraction", fontsize=8, color=INK_2,
@@ -180,7 +180,7 @@ def figure(by_arm, rows, path: pathlib.Path, common, dropped):
              "Thresholds calibrated on months 0\u20132, then months revealed one at a time;\n"
              "ACI sees each month's labels only after predicting it.\n"
              f"Target is the level {n_cal} calibration positives actually certify "
-             f"\u2014 ceil((n+1)(1-\u03b1))/n = {effective:.2%}, not the nominal "
+             f"ceil((n+1)(1-\u03b1))/n = {effective:.2%}, not the nominal "
              f"{1 - alpha:.0%}, because the index rounds up.\n" + seed_note,
              fontsize=7.5, color=INK_MUTED, linespacing=1.5, va="bottom")
     fig.subplots_adjust(left=0.09, right=0.72, top=0.92, bottom=0.26)
@@ -290,7 +290,7 @@ def seed_table():
             print(f"\nPaired by seed ({a} minus {b}): {d.mean():.1f} "
                   f"\u00b1 {se:.1f} months (standard error; SD {d.std(ddof=1):.1f}), "
                   f"t \u2248 {t:.1f} at n={len(d)} "
-                  "\u2014 directional, not statistically established.")
+                  "(directional, not statistically established).")
 
 
 def main() -> int:
