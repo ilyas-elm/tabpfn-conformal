@@ -122,7 +122,7 @@ only when a label of that class arrives.
 **What we measured: it cannot help at this label budget.** The threshold is an
 *order statistic* of the calibration scores, so with `n` calibration positives
 only `n` distinct thresholds exist and α must move by roughly `1/n` before the
-prediction sets change at all. At 46 positives that is 0.0139. Across the five
+prediction sets change at all. At 46 positives that is 0.0138. Across the five
 drift months ACI moves the level by **0.003**, a fifth of what is needed, so
 at usable γ it is numerically identical to doing nothing. Turn γ up far enough
 to move the threshold and it stops tracking the drift and starts oscillating:

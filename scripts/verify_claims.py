@@ -1779,6 +1779,94 @@ if _qm and _qs.exists():
         checks.append(("opening marginal-coverage claim", None,
                        f"quickstart printed nothing parseable (exit {_out.returncode})"))
 
+# ---- 10. The other two published documents ------------------------------
+# limitations.md was not read by this script at all, so every number in it was
+# free. method.md was read only for three phrases and a seed count. Both
+# restate results, and both had a digit wrong: the order-statistic step, the
+# same one the README had, and the set size at 13 calibration positives.
+_LIM = (REPO / "docs/limitations.md").read_text()
+_MET = (REPO / "docs/method.md").read_text()
+
+
+def anchored_in(label: str, pattern: str, text: str):
+    """anchored(), against a document other than the README."""
+    return anchored(label, pattern, text)
+
+
+# 10a. The worked illustration of why coverage and set size must be read together.
+_li = anchored_in("limitations: vacuous coverage at 13 positives",
+                  r"split conformal scores coverage ([\d.]+) with mean set size ([\d.]+)",
+                  _LIM)
+if _li and _e1v:
+    _s13 = [r for r in _e1v if r["strategy"] == "split"
+            and r.get("n_cal_fraud") == 13 and "0.05" in r["alphas"]]
+    if _s13:
+        check("limitations: coverage at 13 positives", float(_li.group(1)),
+              float(np.mean([r["alphas"]["0.05"]["coverage_fraud"] for r in _s13])), 5e-4)
+        check("limitations: set size at 13 positives", float(_li.group(2)),
+              float(np.mean([r["alphas"]["0.05"]["set_size"] for r in _s13])), 5e-4)
+
+# 10b. The K-fold cost multipliers, restated from the README.
+if _ck.exists():
+    _lk = anchored_in("limitations: K multipliers",
+                      r"\(([\d.]+)\u00d7 at K=2, ([\d.]+)\u00d7 at K=20\)", _LIM)
+    if _lk:
+        _rws2 = json.loads(_ck.read_text())["rows"]
+        for _gi, _kk3 in ((1, 2), (2, 20)):
+            _hit2 = [r for r in _rws2 if r["k"] == _kk3]
+            if _hit2:
+                check(f"limitations: multiplier at K={_kk3}", float(_lk.group(_gi)),
+                      float(np.mean([r["ratio"] for r in _hit2])), 0.05)
+
+# 10c. The split-to-cross wall-clock multipliers on fair hardware.
+if _kag.exists():
+    _lm = anchored_in("limitations: split-to-cross multipliers",
+                      r"costs TabPFN ([\d.]+)\u00d7 against LightGBM's ([\d.]+)\u00d7", _LIM)
+    if _lm:
+        _kr = json.loads(_kag.read_text())["rows"]
+
+        def _cell10(fam, strat, budget):
+            return {r["seed"]: r for r in _kr if r["family"] == fam
+                    and r["strategy"] == strat and r["n_frauds"] == budget}
+
+        for _gi, _fam10 in ((1, "tabpfn"), (2, "lightgbm")):
+            _mult = float(np.mean([
+                np.mean([_cell10(_fam10, "cross", _b)[s]["seconds"] for s in (0, 1, 2)])
+                / np.mean([_cell10(_fam10, "split", _b)[s]["seconds"] for s in (0, 1, 2)])
+                for _b in sorted({r["n_frauds"] for r in _kr})]))
+            check(f"limitations: {_fam10} split-to-cross", float(_lm.group(_gi)), _mult, 0.01)
+
+# 10d. method.md restates the ACI arithmetic and the drift swing.
+_ms = anchored_in("method: order-statistic step",
+                  r"At 46 positives that is (\d+\.\d+)\.", _MET)
+if _ms:
+    _k10 = math.ceil(47 * 0.95)
+    check("method: order-statistic step", float(_ms.group(1)),
+          (1 - (_k10 - 1) / 47) - 0.05, 5e-5)
+if _acif.exists():
+    _aci10 = json.loads(_acif.read_text())
+    _mm10 = anchored_in("method: ACI movement",
+                        r"ACI moves the level by \*\*([\d.]+)\*\*", _MET)
+    if _mm10:
+        _a10 = [x["alpha_fraud"] for x in _aci10.get("gamma=0.05", []) if "alpha_fraud" in x]
+        if _a10:
+            check("method: ACI movement", float(_mm10.group(1)), max(_a10) - min(_a10), 5e-4)
+    _sw10 = anchored_in("method: coverage swing",
+                        r"coverage swing goes from ([\d.]+) to \*\*([\d.]+)\*\*", _MET)
+    if _sw10:
+        for _gi, _key10 in ((1, "frozen"), (2, "gamma=1")):
+            _c10 = [x["coverage_fraud"] for x in _aci10.get(_key10, [])]
+            if _c10:
+                check(f"method: swing {_key10}", float(_sw10.group(_gi)),
+                      max(_c10) - min(_c10), 5e-4)
+
+# 10e. The index arithmetic method.md uses to explain the feasibility ceiling.
+_mi = anchored_in("method: index at 13 positives",
+                  r"\u03b1 = 0\.10 the index is (\d+), the maximum score", _MET)
+if _mi:
+    check("method: index at 13 positives", float(_mi.group(1)),
+          float(math.ceil(14 * 0.90)), 0.5)
+
 # ---- 9. Did every anchored block actually produce checks? ----------------
 # An anchor that matches and then finds no data behind it appends nothing, and
 # the block disappears exactly as quietly as a missed anchor does. That is the
