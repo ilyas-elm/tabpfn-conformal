@@ -18,9 +18,11 @@ thing the check is supposed to protect and watching what happened.
     python scripts/mutation_sweep.py            # every case
     python scripts/mutation_sweep.py --list     # names only
 
-This mutates tracked files and restores them from an in-memory snapshot taken
+This mutates files and restores them from an in-memory snapshot taken
 immediately before each case. It refuses to start with a dirty tree, so an
-interrupted run can always be recovered with ``git checkout``. It is not part
+interrupted run can be recovered with ``git checkout``; three cases also touch
+untracked files under ``private/``, which git cannot restore, so those are
+copied to a temporary directory first and the path is printed. It is not part
 of CI: it is slow, it writes to the working tree, and it is a thing you run
 deliberately after adding or editing a check.
 """
@@ -28,8 +30,10 @@ from __future__ import annotations
 
 import json
 import pathlib
+import shutil
 import subprocess
 import sys
+import tempfile
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 
@@ -58,6 +62,25 @@ def restore(snap: dict[str, bytes]) -> None:
             p.write_bytes(blob)
     for hidden in REPO.rglob("*.hidden"):
         hidden.rename(hidden.with_suffix(""))
+
+
+def backup_untracked(paths: set[str]) -> tuple[pathlib.Path, list[str]] | None:
+    """Copy the paths git does not track to a temp directory.
+
+    ``restore`` puts every mutated file back from memory, but a run killed
+    part-way leaves whatever the last mutation wrote, and ``git checkout``
+    cannot recover a file git has never seen.
+    """
+    known = set(tracked())
+    at_risk = sorted(p for p in paths if p not in known and (REPO / p).exists())
+    if not at_risk:
+        return None
+    into = pathlib.Path(tempfile.mkdtemp(prefix="mutation_sweep_"))
+    for rel in at_risk:
+        dest = into / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(REPO / rel, dest)
+    return into, at_risk
 
 
 def verify() -> tuple[int, str]:
@@ -253,6 +276,12 @@ def main() -> int:
         print("verify_claims already fails; fix that before sweeping.", file=sys.stderr)
         return 2
 
+    spare = backup_untracked(TOUCHED)
+    if spare is not None:
+        into, at_risk = spare
+        print(f"{len(at_risk)} untracked file(s) get mutated and git cannot put "
+              f"them back; copies are in {into}")
+
     blind, skipped, not_mutable = [], [], []
     for label, mutate in CASES:
         if mutate is None:
@@ -284,6 +313,9 @@ def main() -> int:
         print(f"  unreachable: {label} (mutation target not found; the code moved)")
     if code != 0:
         print("\nthe tree did not restore cleanly; run: git checkout .", file=sys.stderr)
+        if spare is not None:
+            print(f"untracked files are not covered by that; copy them back "
+                  f"from {spare[0]}", file=sys.stderr)
         return 2
     return 1 if blind else 0
 
