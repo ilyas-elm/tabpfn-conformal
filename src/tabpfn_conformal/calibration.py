@@ -53,11 +53,11 @@ def conformal_quantile(
             InsufficientCalibrationWarning,
             stacklevel=2,
         )
-        return np.inf
+        return math.inf
 
     k = math.ceil((n + 1) * (1.0 - alpha))
     if k <= 0:
-        return -np.inf
+        return -math.inf
     if k > n:
         smallest_alpha = 1.0 / (n + 1)
         warnings.warn(
@@ -67,7 +67,7 @@ def conformal_quantile(
             InsufficientCalibrationWarning,
             stacklevel=2,
         )
-        return np.inf
+        return math.inf
 
     return float(np.partition(scores, k - 1)[k - 1])
 

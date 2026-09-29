@@ -640,6 +640,32 @@ if _pay.exists():
     _frag = sorted((_pay / "changelog").glob("*.added.md")) if (_pay / "changelog").exists() else []
     checks.append(("extensions payload has a changelog fragment", bool(_frag),
                    "PriorLabs/tabpfn-extensions fails any PR without changelog/<PR>.<type>.md"))
+
+    # The README claims the payload passes their pre-commit unmodified. Their
+    # mypy hook runs isolated (mypy plus types-requests, no numpy), and their
+    # config sets ignore_missing_imports with warn_return_any, so numpy is Any
+    # and `return np.inf` from a function annotated -> float is an error. Their
+    # own 42 modules have none of these; three of ours did, and nothing here
+    # would have noticed, because this repository's CI runs no type checker.
+    import ast as _ast
+    _anyret = []
+    for _mpf in sorted((_pay / "src").rglob("*.py")):
+        for _fn in _ast.walk(_ast.parse(_mpf.read_text())):
+            if not isinstance(_fn, (_ast.FunctionDef, _ast.AsyncFunctionDef)):
+                continue
+            if not (isinstance(_fn.returns, _ast.Name) and _fn.returns.id == "float"):
+                continue
+            for _r in _ast.walk(_fn):
+                if not isinstance(_r, _ast.Return) or _r.value is None:
+                    continue
+                _val = _r.value.operand if isinstance(_r.value, _ast.UnaryOp) else _r.value
+                if (isinstance(_val, _ast.Attribute)
+                        and isinstance(_val.value, _ast.Name)
+                        and _val.value.id == "np"):
+                    _anyret.append(f"{_mpf.name}:{_r.lineno} in {_fn.name}()")
+    checks.append(("payload declares float but returns a bare numpy scalar",
+                   not _anyret,
+                   "their mypy warn_return_any rejects: " + ", ".join(_anyret)))
     _tf = _pay / "tests/test_conformal.py"
     if _tf.exists():
         _n = len(re.findall(r"^def test_", _tf.read_text(), re.M))

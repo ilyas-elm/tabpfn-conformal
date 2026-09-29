@@ -249,6 +249,10 @@ CASES: list[tuple[str, object]] = [
           "Vovk 2015", "an unnamed source")),
     ("demo data regenerates from results",
      _json("figures/demo_data.json", lambda d: d.__setitem__("n_fraud", 99999))),
+    # Their pre-commit rejects this and ours never used to look for it.
+    ("payload declares float but returns a bare numpy scalar",
+     _sub("contrib/tabpfn-extensions/src/tabpfn_extensions/conformal/calibration.py",
+          "return math.inf", "return np.inf")),
     ("extensions payload matches src",
      _sub("contrib/tabpfn-extensions/src/tabpfn_extensions/conformal/metrics.py",
           "import numpy", "import numpy  # drifted")),
