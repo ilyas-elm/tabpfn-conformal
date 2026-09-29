@@ -169,3 +169,74 @@ def test_the_final_model_is_fitted_on_every_row():
     seen = cc.estimator_.predict_proba(X)
     # The memoriser answers 1.0 on the true class of any row it was fitted on.
     np.testing.assert_allclose(seen[np.arange(len(y)), y], 1.0)
+
+
+class _FoldSpy(BaseEstimator, ClassifierMixin):
+    """Records the label counts of every training fold it is fitted on.
+
+    The log is a class attribute rather than a constructor parameter because
+    ``clone`` deep-copies parameters: a list handed in would be copied once per
+    fold and every record thrown away, leaving the test asserting against an
+    empty log.
+    """
+
+    log: list = []
+
+    def fit(self, X, y):
+        y = np.asarray(y)
+        self.classes_ = np.array([0, 1])
+        _FoldSpy.log.append(np.bincount(y, minlength=2))
+        return self
+
+    def predict_proba(self, X):
+        return np.tile([0.5, 0.5], (len(X), 1))
+
+
+def test_folds_are_stratified_not_merely_random():
+    """The folds are documented as stratified, so assert the guarantee itself.
+
+    Swapping StratifiedKFold for a plain shuffled KFold leaves every other test
+    in this suite green, which is the whole reason this one exists.
+    Stratification puts the same minority count in every fold to within one
+    row; randomly scattering 200 positives across five folds has a standard
+    deviation near six, so the bound below separates the two rather than merely
+    preferring one.
+    """
+    X, y = make_imbalanced(n_samples=2000, minority_rate=0.1, seed=0)
+    n_folds = 5
+    _FoldSpy.log = []
+    out_of_fold_proba(
+        _FoldSpy(), X, y, np.array([0, 1]), n_folds=n_folds, random_state=0
+    )
+
+    assert len(_FoldSpy.log) == n_folds, "one fit per fold"
+    total = np.bincount(np.asarray(y), minlength=2)
+    held_out = [total - train for train in _FoldSpy.log]
+
+    # Each row sits in exactly one held-out fold.
+    np.testing.assert_array_equal(sum(held_out), total)
+
+    ideal = total[1] / n_folds
+    spread = [abs(int(h[1]) - ideal) for h in held_out]
+    assert max(spread) <= 1.0, (
+        f"minority per fold {[int(h[1]) for h in held_out]} deviates from "
+        f"{ideal:.1f} by more than one row; the folds are not stratified"
+    )
+
+
+def test_random_state_actually_reseeds_the_folds():
+    """``random_state`` is documented as controlling the split; hold it to that.
+
+    Turning shuffling off makes the parameter silently inert: the folds become
+    the same contiguous blocks whatever is passed, and reproducibility is then
+    an accident of row order rather than a seed.
+    """
+    X, y = make_imbalanced(n_samples=1200, minority_rate=0.1, seed=0)
+    args = (LogisticRegression(max_iter=1000), X, y, np.array([0, 1]))
+
+    same_a = out_of_fold_proba(*args, n_folds=5, random_state=0)
+    same_b = out_of_fold_proba(*args, n_folds=5, random_state=0)
+    other = out_of_fold_proba(*args, n_folds=5, random_state=7)
+
+    np.testing.assert_allclose(same_a, same_b, err_msg="one seed must reproduce")
+    assert not np.allclose(same_a, other), "a different seed must give different folds"

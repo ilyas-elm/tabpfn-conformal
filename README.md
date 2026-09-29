@@ -644,11 +644,11 @@ and labels are the resource that is actually scarce.
 
 ```bash
 pip install -e ".[dev]"   # tests, plus everything needed to redraw the figures
-pytest                    # 130 tests, CPU, ~3s warm (~10s on a cold clone)
+pytest                    # 132 tests, CPU, ~3s warm (~10s on a cold clone)
 ```
 
 The core depends on **numpy, pandas and scikit-learn only**, no torch, no
-`tabpfn`, no GPU. 130 tests in about three seconds on a laptop. TabPFN appears in
+`tabpfn`, no GPU. 132 tests in about three seconds on a laptop. TabPFN appears in
 `experiments/` and is never imported by `src/`.
 
 For the experiments you additionally need the dataset and a free Prior Labs
