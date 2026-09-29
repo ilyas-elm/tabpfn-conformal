@@ -65,6 +65,49 @@ def tracked_files() -> list[str]:
     return [f for f in out.stdout.split("\n") if f]
 
 
+def _history_problems():
+    """Every blob in every commit, scanned with the HEAD patterns.
+
+    Yields ``(description, where)`` pairs. Blobs are enumerated once and read
+    through a single ``git cat-file --batch``, so the cost is one pass over
+    the object store rather than one grep per pattern per commit.
+    """
+    listing = subprocess.run([GIT, "rev-list", "--objects", "--all"], cwd=REPO,
+                             capture_output=True, text=True).stdout.splitlines()
+    want = {}
+    for line in listing:
+        sha, _, path = line.partition(" ")
+        if not path or path == SELF:
+            continue
+        if pathlib.Path(path).suffix.lower() in SKIP_SUFFIXES:
+            continue
+        want.setdefault(sha, path)
+    if not want:
+        return
+    print(f"scanning {len(want)} distinct blobs...")
+    proc = subprocess.run([GIT, "cat-file", "--batch"], cwd=REPO,
+                          input="\n".join(want).encode(), capture_output=True)
+    data, pos = proc.stdout, 0
+    for sha in want:
+        nl = data.find(b"\n", pos)
+        if nl < 0:
+            break
+        header = data[pos:nl].decode("utf-8", "ignore").split()
+        pos = nl + 1
+        if len(header) < 3:
+            continue                      # "<sha> missing": no payload follows
+        size = int(header[2])
+        body, pos = data[pos:pos + size], pos + size + 1
+        # Advance past the payload *before* deciding to skip it. Skipping a
+        # tree without consuming its bytes desynchronises the stream, and
+        # every later blob is then read against the wrong name.
+        if header[1] != "blob":
+            continue
+        for problem in scan_text(f"{want[sha]}@{sha[:7]}",
+                                 body.decode("utf-8", "ignore")):
+            yield problem, ""
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--history", action="store_true",
@@ -78,16 +121,16 @@ def main() -> int:
             problems.append(f"{f}: a file of this name should never be tracked")
 
     if args.history:
-        commits = subprocess.run([GIT, "rev-list", "--all"], cwd=REPO,
-                                 capture_output=True, text=True).stdout.split()
-        print(f"scanning {len(commits)} commits...")
-        for name, pat in PATTERNS:
-            if name == "local home path":
-                continue            # history is not rewritten; HEAD is what ships
-            out = subprocess.run([GIT, "grep", "-hIoE", pat, *commits],
-                                 cwd=REPO, capture_output=True, text=True)
-            for line in {l for l in out.stdout.split("\n") if l.strip()}:
-                problems.append(f"HISTORY: {name} -> {line[:48]}")
+        # Read every blob and apply the *same* Python patterns the HEAD scan
+        # uses. This used to shell out to `git grep -hIoE <pattern>` once per
+        # pattern, which had two faults. It skipped the local-path pattern
+        # outright, on the grounds that "history is not rewritten"; and git
+        # grep speaks POSIX ERE, so a pattern containing a Python construct
+        # like (?:...) makes it exit with "repetition-operator operand
+        # invalid", leaving stdout empty and the scan reporting clean. A scan
+        # whose failure mode is silence is worse than no scan at all.
+        for name, count in _history_problems():
+            problems.append(f"HISTORY: {name}")
         added = subprocess.run(
             [GIT, "log", "--all", "--diff-filter=A", "--name-only", "--format="],
             cwd=REPO, capture_output=True, text=True).stdout.split("\n")
@@ -105,7 +148,8 @@ def main() -> int:
                 continue
             problems.extend(scan_text(f, text))
 
-    scope = "all history" if args.history else "tracked files at HEAD"
+    scope = ("every blob in every commit" if args.history
+             else "tracked files at HEAD")
     if problems:
         print(f"\n{len(problems)} problem(s) in {scope}:\n")
         for p in sorted(set(problems))[:40]:

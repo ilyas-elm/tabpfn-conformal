@@ -237,7 +237,7 @@ CASES: list[tuple[str, object]] = [
      _sub("contrib/tabpfn-extensions/PR.md", "3 of 6", "several")),
     # Compares the git commit dates of a figure and its generator, which no
     # edit to the working tree can change. Proven separately against real
-    # history: run over the tree at e2bb314 it named exactly the three figures
+    # history: run over the tree at aa98d33 it named exactly the three figures
     # that were genuinely stale and cleared the rest.
     ("no figure predates its generator", None),
     ("the upstream module README reports the paired test",
