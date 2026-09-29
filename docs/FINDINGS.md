@@ -40,7 +40,7 @@ see below.)* Apache 2.0, takes contributions.
 `CrossConformalClassifier` as well as `SplitConformalClassifier`; crepes has
 Mondrian classifiers. Found while writing the agreement test. The claim had to
 narrow from "we bring cross-conformal to tabular data" to a claim about
-*economics*. Said outright in the README before a judge could say it first.
+*economics*. Said outright in the README, beside the claim it narrows.
 
 **⚙ The auth variable is `TABPFN_TOKEN`.** An earlier draft invented
 `PRIORLABS_API_TOKEN`. Read from the client source. A plausible-looking guess is
@@ -97,11 +97,6 @@ no timeout on ordinary calls, so a dropped response stalls forever and every
 later configuration queues behind it, and from outside the run looks alive.
 Added a SIGALRM watchdog per configuration. It has since caught two real stalls
 in E2, costing 10 minutes each instead of the whole grid.
-
-**⚙ Two broken tools on this machine.** Homebrew `git` 2.54.0 crashes on any
-network operation (`_curl_global_trace` missing, linked against a newer libcurl
-than macOS 14 ships); use `/usr/bin/git`. Homebrew installs nothing needing a
-bottle, macOS 14 now being Tier 3.
 
 ---
 
@@ -402,8 +397,8 @@ pass and after that it is free.
 said so.** It was the README's first line. E4 measured LightGBM cross-conformal
 at about **six seconds**; cross-conformal is entirely affordable with a
 gradient-boosted model at this scale, which is exactly what falsifying P5
-established. A judge could have disproved the headline from our own results
-table two screens further down.
+established. The headline was disprovable from our own results table two
+screens further down.
 
 Corrected to what is measured: the same guarantee from half the labels, and on
 TabPFN **0 gradient-trained fits against LightGBM's 6**, hardware-independent,
@@ -683,7 +678,7 @@ is missing from it. Both directions confirmed to fail on the exact errors that
 were there.
 
 **The P5 confound was not in `limitations.md`.** It is tagged on all 36 rows of
-`results/e4.jsonl`, described in `STATUS.md`, and named in the P5 scoreboard row,
+`results/e4.jsonl`, and named in the P5 scoreboard row,
 but absent from the document titled *Limitations*, which is where a reader
 goes looking for it. Added, with the comparable number (0 gradient fits against
 6) separated from the incomparable one (6 s against 50 s, remote versus local).

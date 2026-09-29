@@ -19,7 +19,7 @@ against a remote API (network latency, queueing) while LightGBM runs on this
 laptop's CPU. That is not a like-for-like comparison and must not be presented as
 one. The honest number is the *gradient fits* column, which is hardware-independent.
 A fair wall-clock comparison needs both models on identical hardware -- tier T2 in
-docs/CAHIER-DES-CHARGES.md section 8, a Kaggle GPU running local TabPFN weights.
+the project plan, section 8, a Kaggle GPU running local TabPFN weights.
 
     python experiments/api/e4_baselines.py --dry-run
     python experiments/api/e4_baselines.py --pilot

@@ -1,7 +1,7 @@
 """E2 -- where should a scarce fraud-label budget go?
 
 This is the one genuinely unmeasured question in the project (see
-docs/CAHIER-DES-CHARGES.md section 3.6). Split conformal forces a choice: every
+the project plan, section 3.6). Split conformal forces a choice: every
 labelled fraud you move into the calibration set is one the model no longer
 sees in context, and vice versa. For a model that trains, nobody sweeps this,
 because each point on the curve is a retraining run. TabPFN has no training

@@ -33,3 +33,8 @@ credentials.json
 secrets.json
 secrets.yaml
 secrets.yml
+
+# Working material that is mine, not the reader's: the plan, the running
+# handoff, the video script and the submission text. They carry local paths,
+# API budget, milestone dates and instructions addressed to me.
+private/

@@ -1,7 +1,7 @@
 """E1 -- does cross-conformal beat split conformal at a scarce fraud-label budget?
 
 This is the headline experiment, and after P2 was falsified on 19 Sept it is the
-*only* empirical support left for the headline (see docs/CAHIER-DES-CHARGES.md
+*only* empirical support left for the headline (see the project plan,
 sections 7.1 and 7.2). The cost argument is settled and modest: cross-conformal
 costs exactly K x split in API tokens. What remains to be shown is the
 statistical claim:

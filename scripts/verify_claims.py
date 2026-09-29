@@ -24,6 +24,19 @@ README = (REPO / "README.md").read_text()
 TOL = 0.0005
 
 
+# The plan, the handoff, the video script and the submission text are working
+# material and live in private/, which is gitignored: they carry local paths,
+# API budget, milestone dates and instructions to the author. Their checks run
+# when the files are there and are skipped entirely when they are not, so a
+# clone of the public repository verifies everything it can actually see.
+PRIVATE = REPO / "private"
+
+
+def private_doc(name):
+    p = PRIVATE / name
+    return p.read_text() if p.exists() else None
+
+
 def load(name):
     p = REPO / "results" / name
     if not p.exists():
@@ -505,9 +518,9 @@ if _sweep.exists():
 # ---- 5j. The documented repository layout matches the repository -----------
 # Section 12 of the cahier des charges listed budget.py (never built), omitted
 # metrics.py, and showed an experiments/kaggle/ that was an empty directory.
-_plan = REPO / "docs/CAHIER-DES-CHARGES.md"
-if _plan.exists():
-    _txt = _plan.read_text()
+_plan_txt = private_doc("CAHIER-DES-CHARGES.md")
+if _plan_txt is not None:
+    _txt = _plan_txt
     _m = re.search(r"## 12\. Repository layout.*?```\n(.*?)```", _txt, re.S)
     if _m:
         missing, stack = [], []
@@ -695,57 +708,59 @@ for _e in (1, 2, 3, 4, 5, 6):
 # It is the text that actually gets submitted, and it drifted twice: "five
 # experiments" when there are six, and "identical prediction sets" for the KV
 # cache after the README had been corrected to "same answer to four decimals".
-_sub = (REPO / "docs/SUBMISSION.md").read_text()
-_n_experiments = len([f for f in (REPO / "results").glob("e[0-9].jsonl")])
-_m = re.search(r"plus (\w+) experiments", _sub)
-check("SUBMISSION experiment count",
-      float({"three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
-             "eight": 8, "nine": 9, "ten": 10}.get(_m.group(1), -1)) if _m else None,
-      float(_n_experiments), 0.5)
+_sub = private_doc("SUBMISSION.md")
+if _sub is not None:
+    _n_experiments = len([f for f in (REPO / "results").glob("e[0-9].jsonl")])
+    _m = re.search(r"plus (\w+) experiments", _sub)
+    check("SUBMISSION experiment count",
+          float({"three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+                 "eight": 8, "nine": 9, "ten": 10}.get(_m.group(1), -1)) if _m else None,
+          float(_n_experiments), 0.5)
 
-# Headline figures, compared as literal strings so a different sentence shape in
-# either document cannot make the check pass or fail for the wrong reason.
-for _label, _literal in (
-    ("narrower-by range", "6.9\u201312.4%"),
-    ("ECE reduction", "74\u201386%"),
-    ("drift, base", "9 of 15"),
-    ("drift, Thinking", "3 of 15"),
-    ("paired drift gap", "2.0 \u00b1 1.2 months"),
-):
-    checks.append((f"SUBMISSION and README agree: {_label}",
-                   _literal in README and _literal in _sub,
-                   f"{_literal!r} in README={_literal in README}, "
-                   f"in SUBMISSION={_literal in _sub}"))
+    # Headline figures, compared as literal strings so a different sentence shape in
+    # either document cannot make the check pass or fail for the wrong reason.
+    for _label, _literal in (
+        ("narrower-by range", "6.9\u201312.4%"),
+        ("ECE reduction", "74\u201386%"),
+        ("drift, base", "9 of 15"),
+        ("drift, Thinking", "3 of 15"),
+        ("paired drift gap", "2.0 \u00b1 1.2 months"),
+    ):
+        checks.append((f"SUBMISSION and README agree: {_label}",
+                       _literal in README and _literal in _sub,
+                       f"{_literal!r} in README={_literal in README}, "
+                       f"in SUBMISSION={_literal in _sub}"))
 
-# Specific to the KV cache: the phrase "identical prediction sets" is legitimate
-# elsewhere (the MAPIE split comparison really is exact), so match the sentence
-# that would be wrong rather than the words.
-_cache_claim = re.search(r"KV cache[\s\S]{0,160}?identical (?:prediction )?sets",
-                         _sub)
-checks.append(("SUBMISSION does not claim identical cache sets",
-               _cache_claim is None,
-               "SUBMISSION.md says the KV cache gives identical sets; it does not"))
+    # Specific to the KV cache: the phrase "identical prediction sets" is legitimate
+    # elsewhere (the MAPIE split comparison really is exact), so match the sentence
+    # that would be wrong rather than the words.
+    _cache_claim = re.search(r"KV cache[\s\S]{0,160}?identical (?:prediction )?sets",
+                             _sub)
+    checks.append(("SUBMISSION does not claim identical cache sets",
+                   _cache_claim is None,
+                   "SUBMISSION.md says the KV cache gives identical sets; it does not"))
 
 # ---- 5t. The handoff doc counts what the video script actually lists -------
-_status = (REPO / "docs/STATUS.md").read_text()
-_video = (REPO / "docs/VIDEO.md").read_text()
-_n_donts = len(re.findall(r"^- (?:Do \*\*not\*\*|Only say)", _video, re.M))
-# Spelled out to twenty. A short map here has silently broken this check
-# twice, once missing "seven" and once missing "nine", each time reading as
-# a mismatch in the document rather than a gap in the map.
-_words = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
-          7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven",
-          12: "twelve", 13: "thirteen", 14: "fourteen", 15: "fifteen",
-          16: "sixteen", 17: "seventeen", 18: "eighteen", 19: "nineteen",
-          20: "twenty"}
-assert _n_donts in _words, f"extend _words: the list now has {_n_donts} items"
-checks.append(("STATUS counts the do-not-say list correctly",
-               f"{_words.get(_n_donts, _n_donts)} claims not to make" in _status,
-               f"VIDEO.md lists {_n_donts}; STATUS.md says otherwise"))
-checks.append(("STATUS names the changelog rename step",
-               "PRNUMBER.added.md" in _status,
-               "their CI fails a PR without the towncrier fragment, and STATUS "
-               "does not say to rename it"))
+_status = private_doc("STATUS.md")
+_video = private_doc("VIDEO.md")
+if _status is not None and _video is not None:
+    _n_donts = len(re.findall(r"^- (?:Do \*\*not\*\*|Only say)", _video, re.M))
+    # Spelled out to twenty. A short map here has silently broken this check
+    # twice, once missing "seven" and once missing "nine", each time reading as
+    # a mismatch in the document rather than a gap in the map.
+    _words = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+              7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven",
+              12: "twelve", 13: "thirteen", 14: "fourteen", 15: "fifteen",
+              16: "sixteen", 17: "seventeen", 18: "eighteen", 19: "nineteen",
+              20: "twenty"}
+    assert _n_donts in _words, f"extend _words: the list now has {_n_donts} items"
+    checks.append(("STATUS counts the do-not-say list correctly",
+                   f"{_words.get(_n_donts, _n_donts)} claims not to make" in _status,
+                   f"VIDEO.md lists {_n_donts}; STATUS.md says otherwise"))
+    checks.append(("STATUS names the changelog rename step",
+                   "PRNUMBER.added.md" in _status,
+                   "their CI fails a PR without the towncrier fragment, and STATUS "
+                   "does not say to rename it"))
 
 # ---- 5u. E7 and the measured cost of approximate validity ------------------
 # The headline was qualified on the strength of these, so they are recomputed
@@ -825,6 +840,13 @@ out = subprocess.run([sys.executable, "-m", "pytest", "-q",
 m = re.search(r"(\d+) tests? collected", out.stdout)
 if m:
     check("test count", in_readme(r"(\d+) tests, CPU"), float(m.group(1)), 0.5)
+else:
+    # Say so rather than disappearing. A check that drops itself when its tool
+    # is missing takes the total down with it, and the count self-check below
+    # then reports a puzzling off-by-one instead of the actual cause.
+    checks.append(("test count", None,
+                   f"pytest collected nothing (exit {out.returncode}); "
+                   "the package is probably not installed in this interpreter"))
 
 # ---- 5n. P5, settled on fair hardware -------------------------------------
 # Every number the README and limitations.md quote about the T4 run is
@@ -1018,9 +1040,11 @@ if "rebuilt" in dir() and rebuilt is not None:
         return (100 * sum((1 - r["p"]) <= qF for r in fraud) / len(fraud),
                 100 * sum(r["act"] != "approve" for r in fraud) / len(fraud))
 
-    VIDEO = (REPO / "docs/VIDEO.md").read_text()
+    VIDEO = private_doc("VIDEO.md")
 
     def in_video(pattern):
+        if VIDEO is None:
+            return None
         m = re.search(pattern, VIDEO)
         return float(m.group(1)) if m else None
 
@@ -1029,12 +1053,13 @@ if "rebuilt" in dir() and rebuilt is not None:
     # The page compares against the level actually targeted, not the nominal one.
     n_f = len(committed["cal_fraud"])
     eff = 100 * min(1.0, math.ceil((n_f + 1) * 0.95) / n_f)
-    check("video demo coverage", in_video(r"Coverage sits at \*\*([\d.]+)% against"), cov, 0.05)
-    check("video demo target", in_video(r"against a ([\d.]+)% target"), eff, 0.05)
-    check("video demo caught (K=0)",
-          in_video(r"moves from \*\*(\d+)% to \d+%\*\*"), round(caught_lo), 0.5)
-    check("video demo caught (K=200)",
-          in_video(r"moves from \*\*\d+% to (\d+)%\*\*"), round(caught_hi), 0.5)
+    if VIDEO is not None:
+        check("video demo coverage", in_video(r"Coverage sits at \*\*([\d.]+)% against"), cov, 0.05)
+        check("video demo target", in_video(r"against a ([\d.]+)% target"), eff, 0.05)
+        check("video demo caught (K=0)",
+              in_video(r"moves from \*\*(\d+)% to \d+%\*\*"), round(caught_lo), 0.5)
+        check("video demo caught (K=200)",
+              in_video(r"moves from \*\*\d+% to (\d+)%\*\*"), round(caught_hi), 0.5)
 
 # ---- 7b. The number of experiments the README claims ----------------------
 # It said six for the three days after E7 landed, because the sentence was
@@ -1051,10 +1076,14 @@ checks.append(("the README states how many experiments there are",
 # The README said 135 while this script ran 176, because nothing compared them.
 # Counted last, and counts itself, so the figure in the README is the number of
 # checks this file actually performs.
-_claimed_n = in_readme(r"recomputes\s*>?\s*(\d+) of them")
-checks.append(("the README states how many claims this script checks",
-               _claimed_n is not None and int(_claimed_n) == len(checks) + 1,
-               f"README says {_claimed_n and int(_claimed_n)}, this run has {len(checks) + 1}"))
+# Counted against the published configuration, the one CI and a reader run.
+# With private/ present there are more checks, and the number in the README
+# describes what someone cloning the repository will see.
+if not PRIVATE.exists():
+    _claimed_n = in_readme(r"recomputes\s*>?\s*(\d+) of them")
+    checks.append(("the README states how many claims this script checks",
+                   _claimed_n is not None and int(_claimed_n) == len(checks) + 1,
+                   f"README says {_claimed_n and int(_claimed_n)}, this run has {len(checks) + 1}"))
 
 # ---- report ---------------------------------------------------------------
 # Identity tests against False are what let a numpy bool slip through; ask for

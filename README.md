@@ -41,7 +41,7 @@ below. LightGBM wins the stopwatch.
 > Built for the Prior Labs TabPFN-3.5 Hackathon. **All seven experiments are
 > complete** and their results are committed, so every number below can be
 > recomputed without an API key: `python scripts/verify_claims.py` recomputes
-> 208 of them from `results/` and exits non-zero on any drift.
+> 193 of them from `results/` and exits non-zero on any drift.
 > **Four of five pre-registered predictions were falsified**, including two of
 > our own about cost, and they are reported as such; see the
 > [scoreboard](#what-we-predicted-and-what-happened),
@@ -588,7 +588,7 @@ That is the answer to where the budget should go: nowhere.
 
 ### What we predicted, and what happened
 
-Predictions were registered in [`docs/CAHIER-DES-CHARGES.md`](docs/CAHIER-DES-CHARGES.md)
+Predictions were registered in the project plan
 before the experiments ran.
 
 | | prediction | outcome |

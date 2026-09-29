@@ -21,7 +21,7 @@ prediction, which is what an unaided desk would do anyway.
 
 Prior art note: cost-sensitive conformal abstention with human review is
 benchmarked in arXiv:2607.27143 (2026). This module is the applied layer of the
-project, not a contribution -- see docs/CAHIER-DES-CHARGES.md section 3.6.
+project, not a contribution -- see the project plan, section 3.6.
 """
 
 from __future__ import annotations

@@ -39,8 +39,15 @@ def tracked() -> list[str]:
     return out.stdout.split()
 
 
-def snapshot() -> dict[str, bytes]:
-    return {f: (REPO / f).read_bytes() for f in tracked() if (REPO / f).exists()}
+def snapshot(extra: set[str] = frozenset()) -> dict[str, bytes]:
+    """Tracked files, plus any path a case is going to touch.
+
+    Three cases mutate files under ``private/``, which is gitignored, so
+    ``git ls-files`` does not list them. Snapshotting only tracked files would
+    mutate those and never put them back.
+    """
+    files = set(tracked()) | set(extra)
+    return {f: (REPO / f).read_bytes() for f in sorted(files) if (REPO / f).exists()}
 
 
 def restore(snap: dict[str, bytes]) -> None:
@@ -64,11 +71,14 @@ def verify() -> tuple[int, str]:
 def _sub(path: str, old: str, new: str):
     def go() -> bool:
         p = REPO / path
+        if not p.exists():
+            return False
         s = p.read_text()
         if old not in s:
             return False
         p.write_text(s.replace(old, new, 1))
         return True
+    go.path = path  # type: ignore[attr-defined]
     return go
 
 
@@ -79,12 +89,15 @@ def _hide(path: str):
             return False
         p.rename(p.with_suffix(p.suffix + ".hidden"))
         return True
+    go.path = path  # type: ignore[attr-defined]
     return go
 
 
 def _jsonl(path: str, pick, mutate):
     def go() -> bool:
         p = REPO / path
+        if not p.exists():
+            return False
         lines = p.read_text().splitlines()
         for i, line in enumerate(lines):
             d = json.loads(line)
@@ -94,16 +107,20 @@ def _jsonl(path: str, pick, mutate):
                 p.write_text("\n".join(lines) + "\n")
                 return True
         return False
+    go.path = path  # type: ignore[attr-defined]
     return go
 
 
 def _json(path: str, mutate):
     def go() -> bool:
         p = REPO / path
+        if not p.exists():
+            return False
         d = json.loads(p.read_text())
         mutate(d)
         p.write_text(json.dumps(d, indent=1))
         return True
+    go.path = path  # type: ignore[attr-defined]
     return go
 
 
@@ -123,11 +140,14 @@ def _e6_wider() -> bool:
 def _drop_row(path: str):
     def go() -> bool:
         p = REPO / path
+        if not p.exists():
+            return False
         lines = p.read_text().splitlines()
         if len(lines) < 2:
             return False
         p.write_text("\n".join(lines[:-1]) + "\n")
         return True
+    go.path = path  # type: ignore[attr-defined]
     return go
 
 
@@ -146,7 +166,7 @@ CASES: list[tuple[str, object]] = [
      _json("results/cost_kfold.json",
            lambda d: d["rows"][0].__setitem__("ratio", d["rows"][0]["k"] + 3.0))),
     ("documented layout exists",
-     _sub("docs/CAHIER-DES-CHARGES.md", "├── results/", "├── nonexistent_dir/")),
+     _sub("private/CAHIER-DES-CHARGES.md", "├── results/", "├── nonexistent_dir/")),
     ("E4 wall-clock confound flagged",
      _jsonl("results/e4.jsonl", lambda d: True,
             lambda d: d.__setitem__("wallclock_comparable", True))),
@@ -177,11 +197,11 @@ CASES: list[tuple[str, object]] = [
      _sub("pyproject.toml", 'artifacts = ["src/tabpfn_conformal/py.typed"]',
           "artifacts = []")),
     ("SUBMISSION does not claim identical cache sets",
-     _sub("docs/SUBMISSION.md", "- **The KV cache makes the evaluation pass",
+     _sub("private/SUBMISSION.md", "- **The KV cache makes the evaluation pass",
           "- The KV cache gives identical prediction sets. "
           "**The KV cache makes the evaluation pass")),
     ("STATUS names the changelog rename step",
-     _sub("docs/STATUS.md", "PRNUMBER.added.md", "SOMEFILE.md")),
+     _sub("private/STATUS.md", "PRNUMBER.added.md", "SOMEFILE.md")),
     ("E7 ran the full grid", _drop_row("results/e7.jsonl")),
     ("E7 is a different dataset from BAF",
      _jsonl("results/e7.jsonl", lambda d: True, lambda d: d.__setitem__("dataset", "baf"))),
@@ -212,6 +232,9 @@ CASES: list[tuple[str, object]] = [
 ]
 
 
+TOUCHED = {q for _, m in CASES if (q := getattr(m, "path", None)) is not None}
+
+
 def main() -> int:
     if "--list" in sys.argv:
         for label, _ in CASES:
@@ -235,7 +258,7 @@ def main() -> int:
         if mutate is None:
             not_mutable.append(label)
             continue
-        snap = snapshot()
+        snap = snapshot(TOUCHED)
         applied = mutate()
         if not applied:
             skipped.append(label)

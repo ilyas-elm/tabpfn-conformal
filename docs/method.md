@@ -190,7 +190,7 @@ comparing means over different seed sets flattered a result four separate times
 in this project, and the paired test took it back every time.
 
 **Pre-registration.** Predictions and their falsification conditions were written
-into [`CAHIER-DES-CHARGES.md`](CAHIER-DES-CHARGES.md) §7.1 before the experiments
+into the project plan, §7.1 before the experiments
 ran. **Four of the five were falsified**, including two of our own about cost,
 and all four are reported as such; see the scoreboard in the README and
 [`FINDINGS.md`](FINDINGS.md).
