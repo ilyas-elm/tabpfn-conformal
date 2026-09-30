@@ -1115,6 +1115,50 @@ if "rebuilt" in dir() and rebuilt is not None:
         check("video demo caught (K=200)",
               in_video(r"moves from \*\*\d+% to (\d+)%\*\*"), round(caught_hi), 0.5)
 
+        # The script is read aloud, so its counts are spelled out, and the
+        # digit-hunting checks above slid straight past them: it still said a
+        # hundred and thirty tests when there were 132, and a hundred and
+        # seventy-eight claims when there were 360. Those would have been
+        # spoken on camera.
+        _UNITS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+                  "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11,
+                  "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
+                  "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19,
+                  "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
+                  "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90}
+
+        def spoken(phrase):
+            """Read "three hundred and sixty" or "a hundred and thirty-two"."""
+            total = current = 0
+            for word in re.split(r"[\s-]+", phrase.lower().strip()):
+                if word in ("and", ""):
+                    continue
+                if word == "a":
+                    current = max(current, 1)
+                elif word == "hundred":
+                    current = max(current, 1) * 100
+                    total += current
+                    current = 0
+                elif word in _UNITS:
+                    current += _UNITS[word]
+                else:
+                    return None
+            return total + current
+
+        _vt = re.search(r"\"([A-Za-z \-]+?) tests, CPU only", VIDEO)
+        if _vt and m:          # `m` is the pytest collection match from section 6
+            checks.append(("video states the test count",
+                           spoken(_vt.group(1)) == int(m.group(1)),
+                           f"script says {_vt.group(1)!r} = {spoken(_vt.group(1))}, "
+                           f"pytest collects {m.group(1)}"))
+        _vc = re.search(r"a script checks all\s*\n?([A-Za-z \-]+?) of them", VIDEO)
+        _rc = re.search(r">\s*(\d+) of them from `results/`", README)
+        if _vc and _rc:
+            checks.append(("video and README quote the same claim count",
+                           spoken(_vc.group(1)) == int(_rc.group(1)),
+                           f"script says {_vc.group(1)!r} = {spoken(_vc.group(1))}, "
+                           f"README says {_rc.group(1)}"))
+
 # ---- 7b. The number of experiments the README claims ----------------------
 # It said six for the three days after E7 landed, because the sentence was
 # written when there were six and nothing counted the directory.
