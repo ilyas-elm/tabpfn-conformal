@@ -1151,13 +1151,22 @@ if "rebuilt" in dir() and rebuilt is not None:
                            spoken(_vt.group(1)) == int(m.group(1)),
                            f"script says {_vt.group(1)!r} = {spoken(_vt.group(1))}, "
                            f"pytest collects {m.group(1)}"))
-        _vc = re.search(r"a script checks all\s*\n?([A-Za-z \-]+?) of them", VIDEO)
+        # Matched loosely on purpose: the sentence around this number gets
+        # rewritten, and a tight phrase match means the check disappears with
+        # it. That happened once already, the first time this closing section
+        # was reworded, so a miss is now recorded as a failure rather than
+        # being silently skipped.
+        _vc = re.search(r"([A-Za-z][A-Za-z \-]*?hundred[A-Za-z \-]*?) of them", VIDEO)
         _rc = re.search(r">\s*(\d+) of them from `results/`", README)
         if _vc and _rc:
             checks.append(("video and README quote the same claim count",
                            spoken(_vc.group(1)) == int(_rc.group(1)),
                            f"script says {_vc.group(1)!r} = {spoken(_vc.group(1))}, "
                            f"README says {_rc.group(1)}"))
+        else:
+            checks.append(("video and README quote the same claim count", False,
+                           "the spoken claim count is no longer findable in the "
+                           "script; reword the pattern or the check stops running"))
 
 # ---- 7b. The number of experiments the README claims ----------------------
 # It said six for the three days after E7 landed, because the sentence was
