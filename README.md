@@ -127,7 +127,7 @@ sets = cc.predict_set(X_test, alpha=0.05)        # (n, n_classes) boolean
 coverage_by_class(sets, y_test, cc.classes_)     # per-class realised coverage
 ```
 
-Until that PR is merged the payload lives in
+Until it is contributed upstream the payload lives in
 [`contrib/tabpfn-extensions/`](contrib/tabpfn-extensions/), generated from
 `src/` by `scripts/build_extension_pr.py` so the two cannot drift, with its own
 [module README](contrib/tabpfn-extensions/src/tabpfn_extensions/conformal/README.md).
@@ -187,9 +187,12 @@ calibrates on all of them:
 | 200 | 99.0% | **99.5%** |
 | 400 | 99.5% | **99.75%** |
 
-**Cross-conformal exactly halves the tightest guarantee obtainable.** This is
-arithmetic, not a result; you can check it on paper, and it does not depend on
-the dataset, the model, or a random seed.
+**Cross-conformal doubles the calibration set, and so very nearly halves the
+tightest α obtainable**: a factor of **1.96×** at 50 confirmed frauds rising to
+**1.99×** at 200, the `+1` in the finite-sample index keeping it just short of
+exactly two. What *is* exactly halved is the label bill, which is the next
+section. This is arithmetic, not a result; you can check it on paper, and it
+does not depend on the dataset, the model, or a random seed.
 
 ### 2. Measured: the same guarantee from half the labels
 
@@ -675,9 +678,11 @@ prices the run through `estimate_cost` without spending anything.
 Everything downstream of the results is rebuildable without an API key:
 
 ```bash
-python experiments/analyze_e1.py      # …e2 … e6, analyze_calibration, replay_aci
+python experiments/analyze_e1.py      # and e2 to e7, analyze_calibration,
+                                      # analyze_validity, analyze_mapie,
+                                      # analyze_kaggle, replay_aci
 python scripts/build_demo.py          # figures/demo_data.json + demo/index.html
-python scripts/verify_claims.py       # recomputes every claim below; non-zero on drift
+python scripts/verify_claims.py       # recomputes the published numbers; non-zero on drift
 ```
 
 ## Library

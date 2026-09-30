@@ -1177,6 +1177,21 @@ if _lvl:
             check(f"certified level at {_n} positives", float(_m.group(1)),
                   100 * min(1.0, _k / _n), 0.05)
 
+# 7a-bis. The ratio between the tightest alpha each strategy can certify. The
+# README used to call this an exact halving and invite the reader to check it
+# on paper, which is where it fails: the +1 in the finite-sample index leaves
+# it at 1.96 for 50 confirmed frauds, approaching two but never reaching it.
+_rat = anchored("alpha ratio between strategies",
+                r"a factor of \*\*([\d.]+)\u00d7\*\* at (\d+) confirmed frauds rising to\s*\n?"
+                r"\*\*([\d.]+)\u00d7\*\* at (\d+)")
+if _rat:
+    for _g_ratio, _g_budget in ((1, 2), (3, 4)):
+        _F = int(_rat.group(_g_budget))
+        # split calibrates on F/2, cross on F, so the smallest certifiable
+        # alphas are 2/(F+2) and 1/(F+1).
+        check(f"alpha ratio at {_F} frauds", float(_rat.group(_g_ratio)),
+              (2.0 / (_F + 2)) / (1.0 / (_F + 1)), 0.005)
+
 # 7b. Realized coverage minus the level actually certified: the cost of
 # cross-conformal's approximate validity, and the reason the headline is
 # hedged. experiments/analyze_validity.py prints it; nothing compared it with
