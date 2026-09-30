@@ -1145,6 +1145,20 @@ if "rebuilt" in dir() and rebuilt is not None:
                     return None
             return total + current
 
+        # The submission text quotes the same count in digits. It said 130
+        # while the suite had 132, and nothing was reading it.
+        _SUB = private_doc("SUBMISSION.md")
+        if _SUB is not None and m:
+            _st = re.search(r"its (\d+) tests", _SUB)
+            if _st:
+                check("submission states the test count", float(_st.group(1)),
+                      float(m.group(1)), 0.5)
+            else:
+                checks.append(("submission states the test count", False,
+                               "the test count is no longer findable in "
+                               "SUBMISSION.md; reword the pattern or the check "
+                               "stops running"))
+
         _vt = re.search(r"\"([A-Za-z \-]+?) tests, CPU only", VIDEO)
         if _vt and m:          # `m` is the pytest collection match from section 6
             checks.append(("video states the test count",
