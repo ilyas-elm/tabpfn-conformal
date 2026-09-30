@@ -1095,11 +1095,17 @@ if "rebuilt" in dir() and rebuilt is not None:
                 100 * sum(r["act"] != "approve" for r in fraud) / len(fraud))
 
     VIDEO = private_doc("VIDEO.md")
+    # Matched against a whitespace-flattened copy. The script is prose and gets
+    # rewrapped every time it is edited, and a phrase that straddles a line
+    # break stops matching a pattern written with a literal space in it. That
+    # broke four of these checks at once the first time the script was
+    # reflowed, which is a property of the document, not of the claim.
+    VIDEO_FLAT = re.sub(r"\s+", " ", VIDEO) if VIDEO is not None else None
 
     def in_video(pattern):
-        if VIDEO is None:
+        if VIDEO_FLAT is None:
             return None
-        m = re.search(pattern, VIDEO)
+        m = re.search(pattern, VIDEO_FLAT)
         return float(m.group(1)) if m else None
 
     cov, caught_lo = desk(committed, 0.05, 0)
@@ -1159,7 +1165,7 @@ if "rebuilt" in dir() and rebuilt is not None:
                                "SUBMISSION.md; reword the pattern or the check "
                                "stops running"))
 
-        _vt = re.search(r"\"([A-Za-z \-]+?) tests, CPU only", VIDEO)
+        _vt = re.search(r"\"([A-Za-z \-]+?) tests, CPU only", VIDEO_FLAT)
         if _vt and m:          # `m` is the pytest collection match from section 6
             checks.append(("video states the test count",
                            spoken(_vt.group(1)) == int(m.group(1)),
@@ -1170,7 +1176,7 @@ if "rebuilt" in dir() and rebuilt is not None:
         # it. That happened once already, the first time this closing section
         # was reworded, so a miss is now recorded as a failure rather than
         # being silently skipped.
-        _vc = re.search(r"([A-Za-z][A-Za-z \-]*?hundred[A-Za-z \-]*?) of them", VIDEO)
+        _vc = re.search(r"([A-Za-z][A-Za-z \-]*?hundred[A-Za-z \-]*?) of them", VIDEO_FLAT)
         _rc = re.search(r">\s*(\d+) of them from `results/`", README)
         if _vc and _rc:
             checks.append(("video and README quote the same claim count",
