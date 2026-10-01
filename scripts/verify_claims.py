@@ -1192,7 +1192,15 @@ if "rebuilt" in dir() and rebuilt is not None:
 # It said six for the three days after E7 landed, because the sentence was
 # written when there were six and nothing counted the directory.
 _words = {5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine"}
-_n_exp = len(sorted((REPO / "experiments" / "api").glob("e[0-9]*.py")))
+# The sentence says "All N experiments are complete", so count the ones that
+# are complete: a runner with committed results beside it. Counting runners
+# alone made an experiment that exists but has not produced anything read as
+# finished, which is the opposite of what the sentence promises.
+_runners = sorted((REPO / "experiments" / "api").glob("e[0-9]*.py"))
+_n_exp = sum(1 for _r in _runners
+             if (REPO / "results" / f"{_r.stem.split('_')[0]}.jsonl").exists())
+_incomplete = [_r.stem for _r in _runners
+               if not (REPO / "results" / f"{_r.stem.split('_')[0]}.jsonl").exists()]
 _m_exp = re.search(r"All (\w+) experiments are\s*>?\s*complete", README)
 checks.append(("the README states how many experiments there are",
                _m_exp is not None and _m_exp.group(1).lower() == _words.get(_n_exp),
