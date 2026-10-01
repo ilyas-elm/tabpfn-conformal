@@ -257,15 +257,29 @@ def main() -> int:
     for a in ALPHAS:
         print(f"    alpha {a}: {'certifiable' if a >= floor else 'NOT CERTIFIABLE'}")
 
+    X_ctx44 = ctx_pool.sample(n=JEV_CONTEXT_ROWS, random_state=RANDOM_STATE)
+    y_ctx44 = y_pool.loc[X_ctx44.index]
+
     jev_calls = (len(X_cal) + len(X_ev)) if "jev" in args.arms else 0
     print(f"\ncost: {jev_calls} Jev calls (one per row scored), "
           f"{sum(1 for a in args.arms if a.startswith('tabpfn'))} TabPFN fits")
+    if jev_calls:
+        # Price it from the payload actually being sent, not from a guess. The
+        # whole context is resent on every call, so the bill is calls x context.
+        probe = {**jev_state(X_ctx44, y_ctx44),
+                 "posting_to_classify": json.loads(X_ev.head(1).to_json(orient="records"))[0]}
+        chars = len(json.dumps({"model": JEV_MODEL, "state": probe,
+                                "questions": {"is_fraudulent": JEV_QUESTION}}))
+        tokens = chars / 4                     # the usual rough ratio for JSON text
+        total = tokens * jev_calls
+        print(f"      ~{tokens/1000:.1f}k input tokens per call "
+              f"({chars:,} chars), ~{total/1e6:.1f}M total")
+        print(f"      at $0.042/MTok input, output free: ~${total / 1e6 * 0.042:.2f}")
+        print("      (Jev's context is 32k, so a call cannot exceed that;"
+              " output is not metered)")
     if args.dry_run:
         print("dry run, nothing spent.")
         return 0
-
-    X_ctx44 = ctx_pool.sample(n=JEV_CONTEXT_ROWS, random_state=RANDOM_STATE)
-    y_ctx44 = y_pool.loc[X_ctx44.index]
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     records = []
