@@ -35,7 +35,9 @@ Two things worth knowing before running it:
     python experiments/api/e8_jev_vs_tabpfn.py --dry-run     # price it
     python experiments/api/e8_jev_vs_tabpfn.py               # run it
 
-Needs ``JEV_API_KEY`` (console.typesafe.ai, NOT a reseller) and a TabPFN token.
+Needs a TabPFN token, plus ``AI_GATEWAY_API_KEY`` for the default Vercel route
+or ``JEV_API_KEY`` for ``--jev-route typesafe``. A reseller key works for
+neither, and would put an uninspectable proxy in the measurement path.
 Jev responses are cached per row, so an interrupted run resumes without paying
 twice. Omit ``--arms jev`` to run the TabPFN arms alone.
 """
@@ -69,8 +71,23 @@ KAGGLE_SLUG = "shivamb/real-or-fake-fake-jobposting-prediction"
 KAGGLE_FILE = "fake_job_postings.csv"
 RANDOM_STATE = 42
 N_TEST = 300
-JEV_MODEL = "jev-1.13.0"
-JEV_URL = "https://api.typesafe.ai/v1/systemone"
+# Two routes to the same model, chosen with --jev-route.
+#
+#   typesafe   api.typesafe.ai, the endpoint Prior Labs' cookbook uses. Needs
+#              early access and credits on a TypeSafe organisation.
+#   vercel     AI Gateway, model id typesafe-ai/jev, documented at the same
+#              $0.042/MTok and the same 32k state-plus-question limit, with a
+#              TypeSafe-compatible base URL that takes the identical body.
+#
+# The Vercel route is the better one to publish against, because reproducing a
+# waitlisted API is not reproducing anything: anyone can open a free Vercel
+# account, and the model id pins what was called. Whichever is used is recorded
+# in every result row.
+JEV_ROUTES = {
+    "typesafe": ("https://api.typesafe.ai/v1/systemone", "jev-1.13.0", "JEV_API_KEY"),
+    "vercel": ("https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+               "typesafe-ai/jev", "AI_GATEWAY_API_KEY"),
+}
 JEV_CONTEXT_ROWS = 44          # the most that fits Jev's 32k context, per the cookbook
 
 ALPHAS = (0.05, 0.1, 0.2)
@@ -134,13 +151,16 @@ JEV_QUESTION = {
 }
 
 
-def jev_probabilities(state, X, cache_name, cap):
+def jev_probabilities(state, X, cache_name, cap, route):
     """One call per row, cached by row id so a rerun never pays twice."""
     import httpx
 
-    key = os.getenv("JEV_API_KEY")
+    url, model, env_var = JEV_ROUTES[route]
+    key = os.getenv(env_var)
     if not key:
-        sys.exit("JEV_API_KEY is not set. Get one at console.typesafe.ai (not a reseller).")
+        sys.exit(f"{env_var} is not set for --jev-route {route}. "
+                 f"{'console.typesafe.ai' if route == 'typesafe' else 'vercel.com AI Gateway'}"
+                 " issues it, and a reseller key will not work here.")
 
     CACHE.mkdir(parents=True, exist_ok=True)
     path = CACHE / f"{cache_name}.json"
@@ -155,8 +175,8 @@ def jev_probabilities(state, X, cache_name, cap):
         by_id = dict(zip(X.index.astype(str), records))
         with httpx.Client(headers={"Authorization": f"Bearer {key}"}, timeout=120) as client:
             for n, row_id in enumerate(todo, 1):
-                r = client.post(JEV_URL, json={
-                    "model": JEV_MODEL,
+                r = client.post(url, json={
+                    "model": model,
                     "state": {**state, "posting_to_classify": by_id[row_id]},
                     "questions": {"is_fraudulent": JEV_QUESTION},
                 })
@@ -237,6 +257,8 @@ def main() -> int:
     ap.add_argument("--budget", type=int, default=60, help="analyst review budget")
     ap.add_argument("--arms", nargs="+",
                     default=["jev", "tabpfn_44", "tabpfn_400", "tabpfn_full"])
+    ap.add_argument("--jev-route", choices=sorted(JEV_ROUTES), default="vercel",
+                    help="which endpoint serves Jev; recorded in the results")
     args = ap.parse_args()
 
     print("loading EMSCAD ...", flush=True)
@@ -266,9 +288,10 @@ def main() -> int:
     if jev_calls:
         # Price it from the payload actually being sent, not from a guess. The
         # whole context is resent on every call, so the bill is calls x context.
+        _, _jm, _ = JEV_ROUTES[args.jev_route]
         probe = {**jev_state(X_ctx44, y_ctx44),
                  "posting_to_classify": json.loads(X_ev.head(1).to_json(orient="records"))[0]}
-        chars = len(json.dumps({"model": JEV_MODEL, "state": probe,
+        chars = len(json.dumps({"model": _jm, "state": probe,
                                 "questions": {"is_fraudulent": JEV_QUESTION}}))
         tokens = chars / 4                     # the usual rough ratio for JSON text
         total = tokens * jev_calls
@@ -287,9 +310,16 @@ def main() -> int:
     if "jev" in args.arms:
         print("\njev ...", flush=True)
         state = jev_state(X_ctx44, y_ctx44)
-        cal_p = jev_probabilities(state, X_cal, "jev_cal", args.max_jev_calls)
-        ev_p = jev_probabilities(state, X_ev, "jev_eval", args.max_jev_calls)
-        records += measure("jev", JEV_CONTEXT_ROWS, cal_p, y_cal, ev_p, y_ev, args.budget)
+        url, model, _ = JEV_ROUTES[args.jev_route]
+        print(f"  route {args.jev_route}: {model} at {url}")
+        cal_p = jev_probabilities(state, X_cal, f"jev_cal_{args.jev_route}",
+                                  args.max_jev_calls, args.jev_route)
+        ev_p = jev_probabilities(state, X_ev, f"jev_eval_{args.jev_route}",
+                                 args.max_jev_calls, args.jev_route)
+        jev_rows = measure("jev", JEV_CONTEXT_ROWS, cal_p, y_cal, ev_p, y_ev, args.budget)
+        for _r in jev_rows:
+            _r["jev_route"], _r["jev_model"] = args.jev_route, model
+        records += jev_rows
 
     sizes = {"tabpfn_44": JEV_CONTEXT_ROWS, "tabpfn_400": 400, "tabpfn_full": len(ctx_pool)}
     for arm in [a for a in args.arms if a.startswith("tabpfn")]:
