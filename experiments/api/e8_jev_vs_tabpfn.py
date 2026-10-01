@@ -73,16 +73,17 @@ RANDOM_STATE = 42
 N_TEST = 300
 # Two routes to the same model, chosen with --jev-route.
 #
-#   typesafe   api.typesafe.ai, the endpoint Prior Labs' cookbook uses. Needs
-#              early access and credits on a TypeSafe organisation.
+#   typesafe   api.typesafe.ai, the endpoint Prior Labs' cookbook uses. Signup
+#              is open; a key cannot be created until the organisation holds
+#              credits, so the floor is whatever the minimum top-up is.
 #   vercel     AI Gateway, model id typesafe-ai/jev, documented at the same
 #              $0.042/MTok and the same 32k state-plus-question limit, with a
 #              TypeSafe-compatible base URL that takes the identical body.
 #
-# The Vercel route is the better one to publish against, because reproducing a
-# waitlisted API is not reproducing anything: anyone can open a free Vercel
-# account, and the model id pins what was called. Whichever is used is recorded
-# in every result row.
+# Either is reproducible. Vercel is the default only because its free tier may
+# cover a run this small, so a reader can repeat it without buying credits
+# first. Whichever served a measurement is recorded in every result row,
+# because that is part of the measurement.
 JEV_ROUTES = {
     "typesafe": ("https://api.typesafe.ai/v1/systemone", "jev-1.13.0", "JEV_API_KEY"),
     "vercel": ("https://ai-gateway.vercel.sh/typesafe/v1/systemone",
