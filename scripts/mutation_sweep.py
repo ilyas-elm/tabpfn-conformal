@@ -20,7 +20,7 @@ thing the check is supposed to protect and watching what happened.
 
 This mutates files and restores them from an in-memory snapshot taken
 immediately before each case. It refuses to start with a dirty tree, so an
-interrupted run can be recovered with ``git checkout``; ten cases also touch
+interrupted run can be recovered with ``git checkout``; sixteen cases also touch
 untracked files under ``private/``, which git cannot restore, so those are
 copied to a temporary directory first and the path is printed. It is not part
 of CI: it is slow, it writes to the working tree, and it is a thing you run
@@ -47,7 +47,7 @@ def tracked() -> list[str]:
 def snapshot(extra: set[str] = frozenset()) -> dict[str, bytes]:
     """Tracked files, plus any path a case is going to touch.
 
-    Ten cases mutate files under ``private/``, which is gitignored, so
+    Sixteen cases mutate files under ``private/``, which is gitignored, so
     ``git ls-files`` does not list them. Snapshotting only tracked files would
     mutate those and never put them back.
     """
@@ -274,6 +274,27 @@ CASES: list[tuple[str, object]] = [
            "six and twelve percent")),
     ("the script states its own spoken word count",
      _sub("private/VIDEO.md", "424 spoken words", "419 spoken words")),
+    # A sweep of the spoken script found that only its digit-form numbers were
+    # checked; every number spelled out for reading aloud had nothing on it.
+    # Each anchor below is the one in section 3, not a planning-table copy: the
+    # first attempt at the slowdown case mutated a notes table on line 31 and
+    # read as an unguarded claim.
+    ("the script speaks the certifiable ceiling at 100 frauds",
+     _sub("private/VIDEO.md", "**ninety-eight percent**", "**ninety-six percent**")),
+    ("the script restates what cross certifies at 100 frauds",
+     _sub("private/VIDEO.md", "Same hundred frauds, **ninety-nine**",
+          "Same hundred frauds, **ninety-seven**")),
+    ("the script speaks the gradient-fit counts",
+     _sub("private/VIDEO.md", "Zero against six.", "Zero against eight.")),
+    ("the script speaks the routed transaction count",
+     _sub("private/VIDEO.md", "Four hundred real held-out transactions",
+          "Five hundred real held-out transactions")),
+    ("the script speaks the prediction scoreboard",
+     _sub("private/VIDEO.md", "**Four turned out wrong**",
+          "**Three turned out wrong**")),
+    ("the script speaks a slowdown inside the measured range",
+     _sub("private/VIDEO.md", "TabPFN is about **sixty times slower**",
+          "TabPFN is about **forty times slower**")),
     ("BRIEFING has a table row for every experiment",
      _sub("private/BRIEFING.md", "| **E8** | Does the guarantee work",
           "| **E9** | Does the guarantee work")),

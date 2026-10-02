@@ -1127,7 +1127,8 @@ if "rebuilt" in dir() and rebuilt is not None:
         # hundred and thirty tests when there were 132, and a hundred and
         # seventy-eight claims when there were 360. Those would have been
         # spoken on camera.
-        _UNITS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+        _UNITS = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+                  "six": 6,
                   "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11,
                   "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
                   "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19,
@@ -1260,6 +1261,87 @@ if "rebuilt" in dir() and rebuilt is not None:
                        and int(_m_wc.group(1)) == _spoken_n,
                        f"script says {_m_wc and _m_wc.group(1)}, "
                        f"its quoted lines hold {_spoken_n}"))
+
+        # A sweep of the spoken script found that only its digit-form numbers
+        # were checked. Every number spelled out for reading -- which is every
+        # number actually said on camera -- had no check at all. These tie the
+        # spelled-out ones to the same sources the digits use.
+        _ceil = re.search(r"\| 100 \| ([\d.]+)% \| \*\*([\d.]+)%\*\* \|", README)
+        _vcl = re.search(r"At a hundred confirmed frauds it tops out at "
+                         r"\*\*([a-z\- ]+) percent\*\*; the ([a-z\- ]+) your "
+                         r"regulator wanted", VIDEO_FLAT)
+        checks.append(("the script speaks the certifiable ceiling at 100 frauds",
+                       _ceil is not None and _vcl is not None
+                       and spoken(_vcl.group(1)) == round(float(_ceil.group(1)))
+                       and spoken(_vcl.group(2)) == round(float(_ceil.group(2))),
+                       f"script says {_vcl and _vcl.group(1, 2)}, README table says "
+                       f"{_ceil and _ceil.group(1, 2)}"))
+        _vcr = re.search(r"Same hundred frauds, \*\*([a-z\- ]+)\*\*", VIDEO_FLAT)
+        checks.append(("the script restates what cross certifies at 100 frauds",
+                       _vcr is not None and _ceil is not None
+                       and spoken(_vcr.group(1)) == round(float(_ceil.group(2))),
+                       f"script says {_vcr and _vcr.group(1)!r}, README table says "
+                       f"{_ceil and _ceil.group(2)}"))
+
+        # Zero against six: gradient fits, from the arms' own recorded counts.
+        _e4rows = load("e4.jsonl")
+        if _e4rows:
+            _gf = {r["arm"]: r.get("n_grad_fits") for r in _e4rows}
+            _vgf = re.search(r"TabPFN trains \*\*none\*\*\. (\w+) against (\w+)\.",
+                             VIDEO_FLAT)
+            checks.append(("the script speaks the gradient-fit counts",
+                           _vgf is not None
+                           and spoken(_vgf.group(1).lower()) == _gf.get("tabpfn_cross")
+                           and spoken(_vgf.group(2).lower()) == _gf.get("lightgbm_cross"),
+                           f"script says {_vgf and _vgf.group(1, 2)}, e4 records "
+                           f"tabpfn_cross={_gf.get('tabpfn_cross')} "
+                           f"lightgbm_cross={_gf.get('lightgbm_cross')}"))
+
+        # The routed-transaction count, spelled out against the README's digits.
+        _vrt = re.search(r"\"([A-Z][a-z]+ hundred) real held-out transactions",
+                         VIDEO_FLAT)
+        _rrt = re.search(r"route (\d+) real", README)
+        checks.append(("the script speaks the routed transaction count",
+                       _vrt is not None and _rrt is not None
+                       and spoken(_vrt.group(1).lower()) == int(_rrt.group(1)),
+                       f"script says {_vrt and _vrt.group(1)!r}, README says "
+                       f"{_rrt and _rrt.group(1)}"))
+
+        # "About sixty times slower" is the one spoken figure with no single
+        # source: the measured factors run 35x to 73x across configurations.
+        # Unlike the tighter-sets claim this is the middle of them, not the best
+        # one -- median 59 -- so it stands, tied to the measurement: it has to
+        # sit inside the measured range and near its middle.
+        _wc_path = REPO / "results" / "kaggle_wallclock.json"
+        _vsl = re.search(r"TabPFN is about \*\*([a-z\- ]+) times slower\*\*", VIDEO_FLAT)
+        if _wc_path.exists():
+            _wc = json.loads(_wc_path.read_text())["rows"]
+            _secs = {(r["family"], r["strategy"], r["n_frauds"], r["seed"]): r["seconds"]
+                     for r in _wc}
+            _fac = [v / _secs[("lightgbm",) + k[1:]]
+                    for k, v in _secs.items()
+                    if k[0] == "tabpfn" and ("lightgbm",) + k[1:] in _secs]
+            _med = float(np.median(_fac)) if _fac else None
+            _said = spoken(_vsl.group(1)) if _vsl else None
+            checks.append(("the script speaks a slowdown inside the measured range",
+                           _said is not None and _med is not None
+                           and min(_fac) <= _said <= max(_fac)
+                           and abs(_said - _med) / _med <= 0.10,
+                           f"script says {_said}x; measured {min(_fac):.1f}-"
+                           f"{max(_fac):.1f}x, median {_med:.1f}x"
+                           if _fac else "no wall-clock rows to compare against"))
+
+        # The scoreboard: how many predictions, and how many were falsified.
+        _vpr = re.search(r"I wrote (\w+) predictions down beforehand\. "
+                         r"\*\*(\w+) turned out wrong\*\*", VIDEO_FLAT)
+        _rpr = re.search(r"\*\*(\w+) of (\w+) pre-registered predictions were\s*>?\s*"
+                         r"falsified\*\*", README)
+        checks.append(("the script speaks the prediction scoreboard",
+                       _vpr is not None and _rpr is not None
+                       and _vpr.group(1).lower() == _rpr.group(2).lower()
+                       and _vpr.group(2).lower() == _rpr.group(1).lower(),
+                       f"script says {_vpr and _vpr.group(2, 1)} wrong of written, "
+                       f"README says {_rpr and _rpr.group(1, 2)}"))
 
 # ---- 7b. The number of experiments the README claims ----------------------
 # It said six for the three days after E7 landed, because the sentence was
