@@ -326,6 +326,14 @@ CASES: list[tuple[str, object]] = [
      _sub("README.md", "| 100,200 | 0.20% | 1.504 |\n", "")),
     ("E8 laya_zero_shot review",
      _sub("README.md", "| 0.900 | 1.833 | **83.3%** |", "| 0.900 | 1.833 | **55.5%** |")),
+    # The summary table restates E8's figures; the table at the top of a README
+    # is exactly where restated numbers stop being checked.
+    ("E8 headline laya coverage",
+     _sub("README.md", "**0.900** against 90.06% certified",
+          "**0.930** against 90.06% certified")),
+    ("E8 headline workload ratio",
+     _sub("README.md", "for **3.8\u00d7** the analyst workload",
+          "for **4.8\u00d7** the analyst workload")),
     ("E8 empty sets among fraud rows",
      _sub("README.md", "**1.48% of fraud rows receive an", "**9.99% of fraud rows receive an")),
     # A sweep of every number in the E8 section found these two were the only
