@@ -2064,9 +2064,9 @@ if _e8:
                            float(np.mean(_g)) + 2 * _se > 0,
                            f"mean {np.mean(_g):+.4f} se {_se:.4f} is not above zero"))
 
-    # The empty-set mechanism, recomputed from the committed probabilities
-    # rather than asserted. Both figures were unguarded on the first pass and a
-    # sweep of the section found them.
+    # The empty-set mechanism, taken from the committed results rather than
+    # asserted. Both figures were unguarded on the first pass and a sweep of
+    # the section found them.
     _em = anchored("E8 empty-set mechanism",
                    r"\*\*(\d+\.\d+)% of fraud rows receive an\s+empty prediction set"
                    r".{0,160}?exceeds the (\d+\.\d+)-point shortfall", README_FLAT)
@@ -2076,28 +2076,11 @@ if _e8:
                               _e8pick("tabpfn_cross_200", "mondrian", 0.2, "coverage_fraud")]))
         check("E8 shortfall in points", float(_em.group(2)), abs(_gap) * 100, 0.005)
 
-        import importlib.util as _ilu
-        _spec = _ilu.spec_from_file_location(
-            "_e8mod", REPO / "experiments/api/e8_zero_shot_guarantee.py")
-        _mod = _ilu.module_from_spec(_spec)
-        sys.path.insert(0, str(REPO / "experiments" / "api"))
-        _spec.loader.exec_module(_mod)
-        from _common import load_frames as _lf, make_eval as _me  # noqa: E402
-        from tabpfn_conformal import mondrian_thresholds as _mt, one_minus_prob as _omp
-        _, _ev = _lf()
-        _rates = []
-        for _sd in sorted({r["seed"] for r in _e8}):
-            _X, _yy = _me(_ev, _sd)
-            _yy = np.asarray(_yy)
-            _cal, _te = _mod.halves(len(_yy), _yy, _sd)
-            _pr = np.load(REPO / f"results/proba/e4/tabpfn_cross_200_{_sd}.npz")["proba"]
-            _sc = _omp(_pr)
-            _t = _mt(_sc[_cal][np.arange(_cal.sum()), _yy[_cal]], _yy[_cal], 2, 0.2)
-            _sets = _sc[_te] <= np.array([_t[0], _t[1]])[None, :]
-            _fr = _yy[_te] == 1
-            _rates.append(float((_sets[_fr].sum(axis=1) == 0).mean()))
+        # Read from results/, not recomputed from BAF: verify_claims has to run
+        # on a clone that has no dataset, which is the whole promise.
         check("E8 empty sets among fraud rows", float(_em.group(1)),
-              100 * float(np.mean(_rates)), 0.005)
+              100 * float(np.mean(_e8pick("tabpfn_cross_200", "mondrian", 0.2,
+                                          "empty_rate_fraud"))), 0.005)
 
     # the marginal generalisation
     _mg = anchored(

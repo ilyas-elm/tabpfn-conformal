@@ -94,11 +94,6 @@ def halves(n: int, y: np.ndarray, seed: int):
 
 def laya_probabilities(X, y, seed: int, limit: int | None):
     """Zero-shot, local, one forward pass per row. Cached so a rerun is free."""
-    try:
-        from laya import Router
-    except ImportError:
-        sys.exit('laya is not installed.  pip install laya')
-
     CACHE.mkdir(parents=True, exist_ok=True)
     path = CACHE / f"laya_eval_{seed}.json"
     done = json.loads(path.read_text()) if path.exists() else {}
@@ -109,6 +104,13 @@ def laya_probabilities(X, y, seed: int, limit: int | None):
     if limit is not None:
         todo = todo[:limit]
     if todo:
+        # Imported only when there is scoring left to do, so a rerun from the
+        # committed cache reproduces the results without the model installed.
+        try:
+            from laya import Router
+        except ImportError:
+            sys.exit(f"laya is not installed and {len(todo)} rows are unscored."
+                     "  pip install laya")
         router = Router()
         t0 = time.time()
         for n, i in enumerate(todo, 1):
@@ -150,6 +152,10 @@ def measure(arm, seed, proba, y, cal_mask, te_mask):
                 "coverage_fraud": float(cov[1]), "coverage_legit": float(cov[0]),
                 "set_size": float(average_set_size(sets)),
                 "empty_rate": float(empty_set_rate(sets)),
+                # Recorded rather than left to be recomputed: verify_claims
+                # must run on a clone that has no dataset, so every figure the
+                # README quotes has to be reachable from results/ alone.
+                "empty_rate_fraud": float((sets[y_te == 1].sum(axis=1) == 0).mean()),
                 # the quantity a desk budgets for: both labels still in play
                 "review_rate": float(np.mean(sets.sum(axis=1) == 2)),
                 "mean_predicted_fraud": float(np.nanmean(proba[:, 1])),
