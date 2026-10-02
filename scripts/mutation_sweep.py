@@ -20,7 +20,7 @@ thing the check is supposed to protect and watching what happened.
 
 This mutates files and restores them from an in-memory snapshot taken
 immediately before each case. It refuses to start with a dirty tree, so an
-interrupted run can be recovered with ``git checkout``; five cases also touch
+interrupted run can be recovered with ``git checkout``; seven cases also touch
 untracked files under ``private/``, which git cannot restore, so those are
 copied to a temporary directory first and the path is printed. It is not part
 of CI: it is slow, it writes to the working tree, and it is a thing you run
@@ -34,6 +34,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 
@@ -46,7 +47,7 @@ def tracked() -> list[str]:
 def snapshot(extra: set[str] = frozenset()) -> dict[str, bytes]:
     """Tracked files, plus any path a case is going to touch.
 
-    Five cases mutate files under ``private/``, which is gitignored, so
+    Seven cases mutate files under ``private/``, which is gitignored, so
     ``git ls-files`` does not list them. Snapshotting only tracked files would
     mutate those and never put them back.
     """
@@ -100,6 +101,33 @@ def _sub(path: str, old: str, new: str):
         if old not in s:
             return False
         p.write_text(s.replace(old, new, 1))
+        return True
+    go.path = path  # type: ignore[attr-defined]
+    return go
+
+
+def _docx(path: str, old: str, new: str):
+    """Edit the text inside a .docx, which is a zip of XML parts.
+
+    The recording script is read on camera, so a stale number in it is spoken
+    aloud. It is the one copy no check opened, and it sat at "Three hundred and
+    sixty" while the script said four hundred and five.
+    """
+    def go() -> bool:
+        p = REPO / path
+        if not p.exists():
+            return False
+        with zipfile.ZipFile(p) as zin:
+            if old not in zin.read("word/document.xml").decode("utf8"):
+                return False
+            items = [(i, zin.read(i.filename)) for i in zin.infolist()]
+        tmp = p.with_suffix(".docx.mutating")
+        with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
+            for item, data in items:
+                if item.filename == "word/document.xml":
+                    data = data.decode("utf8").replace(old, new, 1).encode("utf8")
+                zout.writestr(item, data)
+        shutil.move(tmp, p)
         return True
     go.path = path  # type: ignore[attr-defined]
     return go
@@ -230,6 +258,13 @@ CASES: list[tuple[str, object]] = [
     ("BRIEFING claim count (prose) agrees with the README",
      _sub("private/BRIEFING.md", "recomputes 405 published numbers",
           "recomputes 360 published numbers")),
+    # The exact artefact that was wrong: the docx read on camera.
+    ("the recording docx speaks the README's claim count",
+     _docx("private/Demo video script.docx", "Four hundred and five of them",
+           "Three hundred and sixty of them")),
+    ("the recording docx speaks the collected test count",
+     _docx("private/Demo video script.docx", "A hundred and thirty-two tests",
+           "A hundred and thirty tests")),
     ("BRIEFING has a table row for every experiment",
      _sub("private/BRIEFING.md", "| **E8** | Does the guarantee work",
           "| **E9** | Does the guarantee work")),
