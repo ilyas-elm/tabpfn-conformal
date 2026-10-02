@@ -20,7 +20,7 @@ thing the check is supposed to protect and watching what happened.
 
 This mutates files and restores them from an in-memory snapshot taken
 immediately before each case. It refuses to start with a dirty tree, so an
-interrupted run can be recovered with ``git checkout``; seven cases also touch
+interrupted run can be recovered with ``git checkout``; ten cases also touch
 untracked files under ``private/``, which git cannot restore, so those are
 copied to a temporary directory first and the path is printed. It is not part
 of CI: it is slow, it writes to the working tree, and it is a thing you run
@@ -47,7 +47,7 @@ def tracked() -> list[str]:
 def snapshot(extra: set[str] = frozenset()) -> dict[str, bytes]:
     """Tracked files, plus any path a case is going to touch.
 
-    Seven cases mutate files under ``private/``, which is gitignored, so
+    Ten cases mutate files under ``private/``, which is gitignored, so
     ``git ls-files`` does not list them. Snapshotting only tracked files would
     mutate those and never put them back.
     """
@@ -265,6 +265,15 @@ CASES: list[tuple[str, object]] = [
     ("the recording docx speaks the collected test count",
      _docx("private/Demo video script.docx", "A hundred and thirty-two tests",
            "A hundred and thirty tests")),
+    # The script had quoted the best of E4's four comparisons as if typical.
+    ("the script speaks the README's narrower range",
+     _sub("private/VIDEO.md", "**seven and twelve percent**",
+          "**seven and fifteen percent**")),
+    ("the recording docx speaks the script's narrower range",
+     _docx("private/Demo video script.docx", "seven and twelve percent",
+           "six and twelve percent")),
+    ("the script states its own spoken word count",
+     _sub("private/VIDEO.md", "424 spoken words", "419 spoken words")),
     ("BRIEFING has a table row for every experiment",
      _sub("private/BRIEFING.md", "| **E8** | Does the guarantee work",
           "| **E9** | Does the guarantee work")),

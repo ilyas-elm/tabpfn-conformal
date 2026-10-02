@@ -1220,6 +1220,47 @@ if "rebuilt" in dir() and rebuilt is not None:
                            f"{_dtest and spoken(_dtest.group(1).strip())}, pytest "
                            f"collects {m.group(1) if m else 'nothing'}"))
 
+            # The script quoted "about twelve percent tighter", which is the best
+            # of E4's four comparisons (the others are 6.9, 8.0 and 8.3). Its own
+            # "do not say" list forbids exactly that kind of selective quote, so
+            # it now speaks the range and the count, tied to the README row.
+            _vr = re.search(r"Between \*\*(\w+) and (\w+) percent\*\* tighter, "
+                            r"in four comparisons out of four", VIDEO_FLAT)
+            _rr = re.search(r"narrower prediction sets than LightGBM\*\* at an "
+                            r"identical targeted level \| ([\d.]+)\u2013([\d.]+)% "
+                            r"narrower, (\d+) of (\d+) comparisons", README)
+            checks.append(("the script speaks the README's narrower range",
+                           _vr is not None and _rr is not None
+                           and spoken(_vr.group(1)) == round(float(_rr.group(1)))
+                           and spoken(_vr.group(2)) == round(float(_rr.group(2)))
+                           and _rr.group(3) == _rr.group(4),
+                           f"script says {_vr and _vr.group(1, 2)}, README says "
+                           f"{_rr and _rr.group(1, 2)} over "
+                           f"{_rr and (_rr.group(3) + ' of ' + _rr.group(4))}"))
+            _dr = re.search(r"Between (\w+) and (\w+) percent tighter, in four "
+                            r"comparisons out of four", _dt)
+            checks.append(("the recording docx speaks the script's narrower range",
+                           _dr is not None and _vr is not None
+                           and _dr.group(1, 2) == _vr.group(1, 2),
+                           f"docx says {_dr and _dr.group(1, 2)}, script says "
+                           f"{_vr and _vr.group(1, 2)}"))
+
+        # The stated word count is what the 3:25 runtime is derived from, so it
+        # drifts every time a line is reworded. Count the quoted blocks instead.
+        _m_wc = re.search(r"\*\*3:25 at 140 words a minute\.\*\* (\d+) spoken "
+                          r"words", VIDEO_FLAT)
+        try:
+            _vb = VIDEO[VIDEO.index("## 3. The script"):VIDEO.index("## 4. Audio")]
+            _spoken_n = sum(len(re.sub(r"[*`]", "", _q).split())
+                            for _q in re.findall(r'^"(.+?)"$', _vb, re.M | re.S))
+        except ValueError:
+            _spoken_n = None
+        checks.append(("the script states its own spoken word count",
+                       _m_wc is not None and _spoken_n is not None
+                       and int(_m_wc.group(1)) == _spoken_n,
+                       f"script says {_m_wc and _m_wc.group(1)}, "
+                       f"its quoted lines hold {_spoken_n}"))
+
 # ---- 7b. The number of experiments the README claims ----------------------
 # It said six for the three days after E7 landed, because the sentence was
 # written when there were six and nothing counted the directory.
