@@ -1207,6 +1207,43 @@ checks.append(("the README states how many experiments there are",
                f"README says {_m_exp and _m_exp.group(1)!r}, "
                f"experiments/api has {_n_exp}"))
 
+# ---- 7c. The private briefing, which nothing was reading --------------------
+# BRIEFING.md is not published, so CI never sees it and no check touched it. It
+# drifted to "360 numbers" while the README said 405, and it still described
+# "the seven experiments" after E8 landed. Its figures are tied to the README
+# and to the directory, not restated, because restating is how it drifted.
+_brief = private_doc("BRIEFING.md")
+if _brief is not None:
+    _rc3 = re.search(r">\s*(\d+) of them from `results/`", README)
+    for _lbl, _pat in (("prose", r"recomputes (\d+) published numbers"),
+                       ("summary", r"recomputes \*\*(\d+) numbers\*\*")):
+        _bm = re.search(_pat, _brief)
+        checks.append((f"BRIEFING claim count ({_lbl}) agrees with the README",
+                       _bm is not None and _rc3 is not None
+                       and _bm.group(1) == _rc3.group(1),
+                       f"BRIEFING says {_bm and _bm.group(1)}, "
+                       f"README says {_rc3 and _rc3.group(1)}"))
+    _bh = re.search(r"## 6\. The (\w+) experiments", _brief)
+    checks.append(("BRIEFING heading counts the experiments",
+                   _bh is not None and _bh.group(1).lower() == _words.get(_n_exp),
+                   f"BRIEFING says {_bh and _bh.group(1)!r}, "
+                   f"experiments/api has {_n_exp}"))
+    # A heading that says eight above a table of seven rows is the same drift
+    # one level down, so count the rows too.
+    _want = sorted(_r.stem.split("_")[0].upper() for _r in _runners)
+    _have = sorted(set(re.findall(r"^\| \*\*(E\d+)\*\* \|", _brief, re.M)))
+    checks.append(("BRIEFING has a table row for every experiment",
+                   _have == _want, f"rows {_have}, runners {_want}"))
+    # Anchored on the comma so this reads the suite's own count in both places
+    # it appears and not the payload's "18 tests need no TabPFN backend". Every
+    # occurrence has to match, or one can drift behind the other.
+    _bt = re.findall(r"(\d+) tests,", _brief)
+    checks.append(("BRIEFING states the test count pytest collects",
+                   len(_bt) == 2 and m is not None
+                   and all(_t == m.group(1) for _t in _bt),
+                   f"BRIEFING says {_bt}, pytest collects "
+                   f"{m.group(1) if m else 'nothing'}"))
+
 # ---- 8. The verifier's own advertised size ---------------------------------
 # The README said 135 while this script ran 176, because nothing compared them.
 _ANCHOR_MARKS: list = []
