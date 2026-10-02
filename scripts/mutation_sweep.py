@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -126,6 +127,50 @@ def _docx(path: str, old: str, new: str):
             for item, data in items:
                 if item.filename == "word/document.xml":
                     data = data.decode("utf8").replace(old, new, 1).encode("utf8")
+                zout.writestr(item, data)
+        shutil.move(tmp, p)
+        return True
+    go.path = path  # type: ignore[attr-defined]
+    return go
+
+
+def _resub(path: str, pattern: str, repl: str):
+    """Regex form of ``_sub``, for a target that moves when a number changes.
+
+    The two claim-count cases were written as literals and went unreachable the
+    first time the count moved, 405 to 408. The sweep says so rather than
+    passing, but a case that needs editing on every count change is a case that
+    will one day be edited wrongly.
+    """
+    def go() -> bool:
+        p = REPO / path
+        if not p.exists():
+            return False
+        s, n = re.subn(pattern, repl, p.read_text(), count=1)
+        if n == 0:
+            return False
+        p.write_text(s)
+        return True
+    go.path = path  # type: ignore[attr-defined]
+    return go
+
+
+def _redocx(path: str, pattern: str, repl: str):
+    """Regex form of ``_docx``, for the same reason."""
+    def go() -> bool:
+        p = REPO / path
+        if not p.exists():
+            return False
+        with zipfile.ZipFile(p) as zin:
+            if not re.search(pattern, zin.read("word/document.xml").decode("utf8")):
+                return False
+            items = [(i, zin.read(i.filename)) for i in zin.infolist()]
+        tmp = p.with_suffix(".docx.mutating")
+        with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
+            for item, data in items:
+                if item.filename == "word/document.xml":
+                    data = re.sub(pattern, repl, data.decode("utf8"),
+                                  count=1).encode("utf8")
                 zout.writestr(item, data)
         shutil.move(tmp, p)
         return True
@@ -256,12 +301,12 @@ CASES: list[tuple[str, object]] = [
     # The drift that actually happened: BRIEFING is gitignored, CI never reads
     # it, and it sat at 360 while the README said 405.
     ("BRIEFING claim count (prose) agrees with the README",
-     _sub("private/BRIEFING.md", "recomputes 405 published numbers",
-          "recomputes 360 published numbers")),
+     _resub("private/BRIEFING.md", r"recomputes \d+ published numbers",
+            "recomputes 360 published numbers")),
     # The exact artefact that was wrong: the docx read on camera.
     ("the recording docx speaks the README's claim count",
-     _docx("private/Demo video script.docx", "Four hundred and five of them",
-           "Three hundred and sixty of them")),
+     _redocx("private/Demo video script.docx",
+             r"Four hundred and \w+ of them", "Three hundred and sixty of them")),
     ("the recording docx speaks the collected test count",
      _docx("private/Demo video script.docx", "A hundred and thirty-two tests",
            "A hundred and thirty tests")),
