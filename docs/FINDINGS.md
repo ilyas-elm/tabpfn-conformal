@@ -53,7 +53,7 @@ cost model can be measured for **zero tokens**.
 **Spike S1, the KV cache and Thinking are mutually exclusive.** Server-enforced:
 `HTTP 422 — FIT_WITH_CACHE fit mode is not compatible with thinking mode`. The
 documentation contradicted itself; the measurement settled it. Cache economics
-attach to E1/E2, Thinking to E3, and they cannot share a figure.
+are measured in E5, Thinking in E3, and they cannot share a figure.
 
 **Cost is not a constraint, and the cache saving is invisible at our scale.**
 
@@ -159,7 +159,7 @@ changes at all:
 
 | calibration positives | α must move by |
 |---:|---:|
-| 46 (split, this experiment) | **0.0139** |
+| 46 (split, this experiment) | **0.0138** |
 | 92 (cross would give this) | 0.0038 |
 | 400 | 0.0024 |
 
@@ -247,9 +247,9 @@ size compares the models cleanly:
 | strategy | budget | targeted level | TabPFN | LightGBM | TabPFN narrower by |
 |---|---:|---:|---:|---:|---:|
 | split | 100 | 98.0% | **1.618** | 1.764 | 8.3% |
-| split | 200 | 96.0% | **1.574** | 1.649 | 4.6% |
+| split | 200 | 96.0% | **1.517** | 1.649 | 8.0% |
 | cross | 100 | 96.0% | **1.471** | 1.680 | **12.4%** |
-| cross | 200 | 95.5% | **1.459** | 1.566 | 6.8% |
+| cross | 200 | 95.5% | **1.458** | 1.566 | 6.9% |
 
 This is the cleanest showcase result in the project: conformal prediction
 converts model quality into a unit a fraud desk acts on, how many cases land in
@@ -434,9 +434,10 @@ that dissolves almost all of it.
 | Variant I | 100 | −0.0005 ± 0.0379 (n=3) | tie |
 | Variant II | 50 | +0.0157 ± 0.0161 (n=3) | tie |
 | Variant II | 100 | +0.0109 ± 0.0363 (n=3) | tie |
-| Variant III | 50 | +0.0152 ± 0.0106 (n=2) | tie |
+| Variant III | 50 | +0.0126 ± 0.0067 (n=3) | tie |
+| Variant III | 100 | −0.0423 ± 0.0162 (n=3) | tie |
 
-**Significantly wider in 0 of 8; significantly narrower in 1.** The narrowing is
+**Significantly wider in 0 of 9; significantly narrower in 1.** The narrowing is
 real only where positives are scarcest, which is the regime the project is
 about, but it is not a general property.
 

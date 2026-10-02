@@ -373,6 +373,21 @@ CASES: list[tuple[str, object]] = [
      _sub("README.md", "| 100,200 | 0.20% | 1.504 |\n", "")),
     ("E8 laya_zero_shot review",
      _sub("README.md", "| 0.900 | 1.833 | **83.3%** |", "| 0.900 | 1.833 | **55.5%** |")),
+    # FINDINGS.md was read by nothing and held a partial E4 run and a two-seed
+    # E6 table, both contradicting the README.
+    ("documents quoting the same table quote the same numbers",
+     _sub("docs/FINDINGS.md", "| split | 200 | 96.0% | **1.517** | 1.649 | 8.0% |",
+          "| split | 200 | 96.0% | **1.574** | 1.649 | 4.6% |")),
+    ("FINDINGS and the README agree on the E6 comparison count",
+     _sub("docs/FINDINGS.md", "wider in 0 of 9; significantly",
+          "wider in 0 of 8; significantly")),
+    ("FINDINGS order-statistic step at 46 positives",
+     _sub("docs/FINDINGS.md", "| 46 (split, this experiment) | **0.0138** |",
+          "| 46 (split, this experiment) | **0.0139** |")),
+    # Three documents named three different homes for the KV cache result.
+    ("every document names the same home for the KV cache result",
+     _sub("experiments/api/e3_drift_aci.py", "the cache story is measured in E5",
+          "the cache story is measured in E4")),
     # A review found the README reported no discrimination for the zero-shot arm
     # at all, so a reader had no way to see it ranks below chance.
     ("E8 laya_zero_shot auc",

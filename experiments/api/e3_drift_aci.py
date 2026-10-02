@@ -28,7 +28,7 @@ This is also where TabPFN-3.5 earns its keep beyond being a good classifier:
     weights, so this path only exists through the API.
 
 Note settled by spike S1: Thinking is incompatible with fit_mode="fit_with_cache"
-on the managed API (HTTP 422), so the cache story belongs to E1/E4 and the
+on the managed API (HTTP 422), so the cache story is measured in E5 and the
 Thinking story belongs here. They cannot share a figure.
 
     python experiments/api/e3_drift_aci.py --dry-run
