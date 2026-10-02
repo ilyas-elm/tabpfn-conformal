@@ -25,7 +25,9 @@ So this measures, on identical rows and through the same conformal object:
 **It costs nothing to run and needs no credentials.** The TabPFN and LightGBM
 probabilities are already committed under `results/proba/e4/`, and
 `make_eval(ev, seed)` reconstructs exactly the rows they were computed on, which
-this asserts rather than assumes. Laya runs locally on CPU at about 96 ms a row.
+this asserts rather than assumes. Laya runs locally on CPU at about six rows a
+second on this laptop, which is what the README quotes; it is an observed rate
+on one machine, not a benchmark.
 
 Design. The evaluation set is split in half, stratified: one half calibrates,
 the other is scored. Both halves are random halves of one draw, so they are
@@ -47,11 +49,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import hashlib
 import pathlib
 import sys
 import time
 
 import numpy as np
+from sklearn.metrics import roc_auc_score
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _common import REPO, load_frames, make_eval  # noqa: E402
@@ -73,6 +77,8 @@ BASELINES = ("tabpfn_cross_200", "tabpfn_split_200", "lightgbm_cross_200")
 OUT = REPO / "results" / "e8.jsonl"
 CACHE = REPO / "results" / "proba" / "e8"
 PROBA = REPO / "results" / "proba" / "e4"
+# Reserved key: the row fingerprint, never a row id.
+FINGERPRINT = "_eval_sha256"
 
 QUESTION = {
     "type": "noul",
@@ -96,9 +102,20 @@ def laya_probabilities(X, y, seed: int, limit: int | None):
     """Zero-shot, local, one forward pass per row. Cached so a rerun is free."""
     CACHE.mkdir(parents=True, exist_ok=True)
     path = CACHE / f"laya_eval_{seed}.json"
-    done = json.loads(path.read_text()) if path.exists() else {}
-
     rows = json.loads(X.to_json(orient="records"))
+    # make_eval ends in reset_index(drop=True), so X.index is 0..n-1 whatever
+    # the seed: the cache key is a *position*, not a row. That is sound only
+    # while make_eval returns the same rows, which the baselines assert for
+    # themselves and this did not. Fingerprint the rows and check it.
+    stamp = hashlib.sha256(
+        (json.dumps(rows, sort_keys=True) + "|" + "".join(map(str, np.asarray(y))))
+        .encode()).hexdigest()[:32]
+    done = json.loads(path.read_text()) if path.exists() else {}
+    seen = done.pop(FINGERPRINT, None)
+    if done and seen != stamp:
+        sys.exit(f"{path.name} was built against different rows "
+                 f"({seen} != {stamp}); delete it and rescore, or the "
+                 "probabilities belong to other applications")
     ids = [str(i) for i in X.index]
     todo = [i for i, k in enumerate(ids) if k not in done]
     if limit is not None:
@@ -117,12 +134,12 @@ def laya_probabilities(X, y, seed: int, limit: int | None):
             r = router.predict(json.dumps(rows[i]), {"fraud": QUESTION})
             done[ids[i]] = float(r["answers"]["fraud"]["noul"])
             if n % 200 == 0 or n == len(todo):
-                path.write_text(json.dumps(done))
+                path.write_text(json.dumps({**done, FINGERPRINT: stamp}))
                 rate = n / max(time.time() - t0, 1e-9)
                 print(f"    laya seed {seed}: {n}/{len(todo)}  "
                       f"{rate:.1f} rows/s, {(len(todo)-n)/max(rate,1e-9)/60:.1f} min left",
                       flush=True)
-        path.write_text(json.dumps(done))
+        path.write_text(json.dumps({**done, FINGERPRINT: stamp}))
     have = np.array([k in done for k in ids])
     p1 = np.array([done.get(k, np.nan) for k in ids], dtype=float)
     return np.column_stack([1.0 - p1, p1]), have
@@ -160,6 +177,11 @@ def measure(arm, seed, proba, y, cal_mask, te_mask):
                 "review_rate": float(np.mean(sets.sum(axis=1) == 2)),
                 "mean_predicted_fraud": float(np.nanmean(proba[:, 1])),
                 "observed_fraud_rate": float((y == 1).mean()),
+                # Ranking quality, recorded because coverage alone cannot show
+                # it: a predictor with no signal still gets valid coverage, it
+                # just pays for it in set width. Leaving this out invited the
+                # reader to assume Laya ranks fraud merely less well.
+                "auc": float(roc_auc_score(y, proba[:, 1])),
             })
     return out
 

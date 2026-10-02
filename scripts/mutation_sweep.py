@@ -371,6 +371,27 @@ CASES: list[tuple[str, object]] = [
      _sub("README.md", "| 100,200 | 0.20% | 1.504 |\n", "")),
     ("E8 laya_zero_shot review",
      _sub("README.md", "| 0.900 | 1.833 | **83.3%** |", "| 0.900 | 1.833 | **55.5%** |")),
+    # A review found the README reported no discrimination for the zero-shot arm
+    # at all, so a reader had no way to see it ranks below chance.
+    ("E8 laya_zero_shot auc",
+     _sub("README.md", "| **0.447** |", "| **0.467** |")),
+    ("E8 caveat laya auc",
+     _sub("README.md", "Its AUC here is\n**0.447**", "Its AUC here is\n**0.497**")),
+    # One seed above 0.5 must fail it; a mean below chance does not establish
+    # that every seed is below chance, which is what the sentence claims.
+    ("E8 laya is below chance on every seed",
+     _jsonl("results/e8.jsonl",
+            lambda d: d["arm"] == "laya_zero_shot" and d["method"] == "mondrian"
+            and d["alpha"] == 0.1,
+            lambda d: d.update(auc=0.62))),
+    ("limitations E8 auc laya_zero_shot",
+     _sub("docs/limitations.md", "this task is **0.447**", "this task is **0.487**")),
+    ("limitations E8 positives plus negatives is the eval set",
+     _sub("docs/limitations.md", "all 2,878 positives", "all 2,900 positives")),
+    # The Laya cache is keyed by position, because make_eval resets the index.
+    ("laya cache fingerprint rejects rows it was not built on",
+     _sub("results/proba/e8/laya_eval_0.json", "\"_eval_sha256\": \"",
+          "\"_eval_sha256\": \"x")),
     # The summary table restates E8's figures; the table at the top of a README
     # is exactly where restated numbers stop being checked.
     ("E8 headline laya coverage",

@@ -2199,7 +2199,8 @@ if _e8:
     _hl = anchored("E8 headline row",
                    r"emerging decision models\*\*, Laya, which needs no labels to "
                    r"predict at all \| valid coverage from zero labelled fraud, "
-                   r"\*\*([\d.]+)\*\* against ([\d.]+)% certified \u2014 for "
+                   r"\*\*([\d.]+)\*\* against ([\d.]+)% certified \u2014 on a "
+                   r"predictor that ranks \*below chance\* on this task, for "
                    r"\*\*([\d.]+)\u00d7\*\* the analyst workload", README_FLAT)
     if _hl:
         check("E8 headline laya coverage", float(_hl.group(1)),
@@ -2220,7 +2221,7 @@ if _e8:
              "LightGBM, cross-conformal": "lightgbm_cross_200",
              "**Laya, zero-shot**": "laya_zero_shot"}
     _t8 = anchored("E8 table",
-                   r"\| arm \| fraud coverage \| set size \| sent to review \|\n"
+                   r"\| arm \| fraud coverage \| set size \| sent to review \| AUC \|\n"
                    r"\|[-: |]+\|\n((?:\|.*\|\n)+)")
     if _t8:
         for _line in _t8.group(1).strip().split("\n"):
@@ -2234,6 +2235,8 @@ if _e8:
                   float(np.mean(_e8pick(_arm, "mondrian", 0.1, "coverage_fraud"))), 5e-4)
             check(f"E8 {_lbl} set size", float(re.search(r"([\d.]+)", _c[2]).group(1)),
                   float(np.mean(_e8pick(_arm, "mondrian", 0.1, "set_size"))), 5e-4)
+            check(f"E8 {_lbl} auc", float(re.search(r"([\d.]+)", _c[4]).group(1)),
+                  float(np.mean(_e8pick(_arm, "mondrian", 0.1, "auc"))), 5e-4)
             check(f"E8 {_lbl} review", float(re.search(r"([\d.]+)", _c[3]).group(1)),
                   100 * float(np.mean(_e8pick(_arm, "mondrian", 0.1, "review_rate"))), 0.05)
 
@@ -2322,6 +2325,32 @@ if _e8:
                    f"README says {_rp and _rp.group(1)}M, "
                    f"e8_zero_shot_guarantee.py says {_sp and _sp.group(1)}M"))
 
+    # The caveat that says what the AUC column means. It restates three AUCs and
+    # two cells from the table; a restated number is a new number. The claim
+    # "below chance on all three seeds" is checked per seed, not on the mean,
+    # because a mean below 0.5 does not establish that every seed is.
+    _cv = anchored("E8 AUC caveat",
+                   r"Its AUC here is \*\*([\d.]+)\*\*, below chance on all three "
+                   r"seeds, against TabPFN's ([\d.]+) and LightGBM's ([\d.]+)\. "
+                   r".{0,620}?set width, ([\d.]+) out of a possible 2, and in the "
+                   r"([\d.]+)% of", README_FLAT)
+    if _cv:
+        check("E8 caveat laya auc", float(_cv.group(1)),
+              float(np.mean(_e8pick("laya_zero_shot", "mondrian", 0.1, "auc"))), 5e-4)
+        check("E8 caveat tabpfn auc", float(_cv.group(2)),
+              float(np.mean(_e8pick("tabpfn_cross_200", "mondrian", 0.1, "auc"))), 5e-4)
+        check("E8 caveat lightgbm auc", float(_cv.group(3)),
+              float(np.mean(_e8pick("lightgbm_cross_200", "mondrian", 0.1, "auc"))), 5e-4)
+        _per_seed = _e8pick("laya_zero_shot", "mondrian", 0.1, "auc")
+        checks.append(("E8 laya is below chance on every seed",
+                       len(_per_seed) == 3 and all(a < 0.5 for a in _per_seed),
+                       f"per-seed AUC {[round(a, 4) for a in _per_seed]}"))
+        check("E8 caveat laya set size", float(_cv.group(4)),
+              float(np.mean(_e8pick("laya_zero_shot", "mondrian", 0.1, "set_size"))), 5e-4)
+        check("E8 caveat laya review rate", float(_cv.group(5)),
+              100 * float(np.mean(_e8pick("laya_zero_shot", "mondrian", 0.1,
+                                          "review_rate"))), 0.05)
+
     # the marginal generalisation
     _mg = anchored(
         "E8 marginal sentence",
@@ -2352,6 +2381,41 @@ if _e8:
               float(np.mean(_e8pick("laya_zero_shot", "marginal", 0.1, "coverage_fraud"))), 5e-4)
         check("E8 marginal legit laya", float(_mg.group(10)),
               float(np.mean(_e8pick("laya_zero_shot", "marginal", 0.1, "coverage_legit"))), 5e-4)
+
+# ---- 10b. The E8 entries in limitations.md ---------------------------------
+# These were added after a review found the README reported no discrimination
+# for the zero-shot arm at all. They restate three AUCs and three counts, and
+# the counts come from the dataset, so they are recomputed only when it is
+# present and reported as not-runnable when it is not.
+_LE8 = anchored_in("limitations E8 AUC entry",
+                   # \d+\.\d+ not [\d.]+, so the sentence's full stop is not
+                   # captured as part of the number. It was, the first time.
+                   r"Its AUC on\s+this task is \*\*(\d+\.\d+)\*\*, below chance on "
+                   r"all\s+three seeds, against TabPFN's (\d+\.\d+)\s+and "
+                   r"LightGBM's (\d+\.\d+)",
+                   _LIM)
+if _LE8 and _e8:
+    for _gi, _arm in ((1, "laya_zero_shot"), (2, "tabpfn_cross_200"),
+                      (3, "lightgbm_cross_200")):
+        check(f"limitations E8 auc {_arm}", float(_LE8.group(_gi)),
+              float(np.mean(_e8pick(_arm, "mondrian", 0.1, "auc"))), 5e-4)
+
+_LSD = anchored_in("limitations E8 seed entry",
+                   r"all ([\d,]+) positives are identical in all three seeds, while "
+                   r"the ([\d,]+) negatives\s+are redrawn \(overlap (\d+) of ([\d,]+)\)",
+                   _LIM)
+if _LSD:
+    _n_pos = int(_LSD.group(1).replace(",", ""))
+    _n_neg = int(_LSD.group(2).replace(",", ""))
+    checks.append(("limitations E8 negative count restated consistently",
+                   _LSD.group(2) == _LSD.group(4),
+                   f"{_LSD.group(2)} then {_LSD.group(4)}"))
+    # the positive count is also the fraud count E8 reports for its eval set
+    if _e8:
+        _ev_n = _e8[0]["n_cal"] + _e8[0]["n_test"]
+        checks.append(("limitations E8 positives plus negatives is the eval set",
+                       _n_pos + _n_neg == _ev_n,
+                       f"{_n_pos} + {_n_neg} != {_ev_n}"))
 
 # ---- 9. Did every anchored block actually produce checks? ----------------
 # An anchor that matches and then finds no data behind it appends nothing, and

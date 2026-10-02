@@ -41,7 +41,7 @@ below. LightGBM wins the stopwatch.
 > Built for the Prior Labs TabPFN-3.5 Hackathon. **All eight experiments are
 > complete** and their results are committed, so every number below can be
 > recomputed without an API key: `python scripts/verify_claims.py` recomputes
-> 408 of them from `results/` and exits non-zero on any drift.
+> 423 of them from `results/` and exits non-zero on any drift.
 > **Four of five pre-registered predictions were falsified**, including two of
 > our own about cost, and they are reported as such; see the
 > [scoreboard](#what-we-predicted-and-what-happened),
@@ -55,7 +55,7 @@ below. LightGBM wins the stopwatch.
 |---|---|---|
 | Cross-conformal reaches the same targeted level from **half the confirmed frauds** | never significantly wider (0 of 9 paired tests); narrower where labels are scarcest | [E1](#2-measured-the-same-guarantee-from-half-the-labels) · [E6](#does-it-replicate-four-datasets) |
 | …and it **replicates on a second domain**, forest cover type, 0.473% positive, no shared column | cross significantly wider in 0 of 3 matched comparisons | [E7](#does-it-hold-on-a-different-dataset-entirely) |
-| …and it holds on one of the **emerging decision models**, Laya, which needs no labels to predict at all | valid coverage from zero labelled fraud, **0.900** against 90.06% certified — for **3.8×** the analyst workload | [E8](#does-the-guarantee-work-on-a-model-that-needs-no-labels-at-all) |
+| …and it holds on one of the **emerging decision models**, Laya, which needs no labels to predict at all | valid coverage from zero labelled fraud, **0.900** against 90.06% certified — on a predictor that ranks *below chance* on this task, for **3.8×** the analyst workload | [E8](#does-the-guarantee-work-on-a-model-that-needs-no-labels-at-all) |
 | **What that costs**: cross is only approximately valid, and it shows | below its own certified level in 3 of 6 dataset-α combinations; split in 0 of 6 | [validity](#what-cross-conformal-actually-costs) |
 | TabPFN gives **narrower prediction sets than LightGBM** at an identical targeted level | 6.9–12.4% narrower, 4 of 4 comparisons | [E4](#against-the-baselines-tabpfn-wins-where-it-counts) |
 | TabPFN's **calibration error is 74–86% lower**, the mechanism behind the above | ECE 0.0019–0.0037 vs 0.0129–0.0141 | [calibration](#why-tabpfn-wins-calibration-measured-rather-than-cited) |
@@ -464,14 +464,25 @@ ones already committed under `results/proba/e4/`; Laya runs locally on CPU at
 about six rows a second. **This experiment costs nothing to reproduce and needs
 no API key.**
 
-| arm | fraud coverage | set size | sent to review |
-|---|---:|---:|---:|
-| TabPFN, cross-conformal | 0.891 | **1.217** | **21.7%** |
-| TabPFN, split conformal | 0.892 | 1.239 | 23.9% |
-| LightGBM, cross-conformal | 0.901 | 1.340 | 34.0% |
-| **Laya, zero-shot** | 0.900 | 1.833 | **83.3%** |
+| arm | fraud coverage | set size | sent to review | AUC |
+|---|---:|---:|---:|---:|
+| TabPFN, cross-conformal | 0.891 | **1.217** | **21.7%** | 0.886 |
+| TabPFN, split conformal | 0.892 | 1.239 | 23.9% | 0.877 |
+| LightGBM, cross-conformal | 0.901 | 1.340 | 34.0% | 0.843 |
+| **Laya, zero-shot** | 0.900 | 1.833 | **83.3%** | **0.447** |
 
 Mondrian at α = 0.10, mean of three seeds, against a certified level of 90.06%.
+
+**Read the last column before concluding anything about Laya.** Its AUC here is
+**0.447**, below chance on all three seeds, against TabPFN's 0.886 and
+LightGBM's 0.843. Laya is a *text* decision model and this hands it a JSON row
+of tabular features, which is outside what it is built for, so the number says
+nothing about Laya on the inputs it was designed for. What it does establish is
+the stronger half of the conformal claim: **the guarantee held on a predictor
+with no usable signal at all.** Distribution-free means exactly this. Validity
+does not depend on the model being any good, and the whole price of a useless
+model is paid in set width, 1.833 out of a possible 2, and in the 83.3% of
+applications a human then has to read.
 
 **Conformal gives the zero-shot model a valid guarantee**, from no labelled
 fraud at all. What it cannot do is make that guarantee cheap. At the same

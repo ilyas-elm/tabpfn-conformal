@@ -57,6 +57,28 @@ guarantee coverage in any individual month.
 why ACI is here, but the split-conformal arms still assume it, and their
 guarantees are correspondingly approximate on the later months.
 
+**The zero-shot arm in E8 is a model used outside its domain, and its number
+is not a verdict on that model.** Laya is a text decision model; E8 hands it a
+JSON serialisation of tabular features and asks a `noul` question. Its AUC on
+this task is **0.447**, below chance on all three seeds, against TabPFN's 0.886
+and LightGBM's 0.843. Nothing here measures Laya on the inputs it was built for,
+and the comparison is not evidence about zero-shot decision models in general.
+What E8 does establish is narrower and stronger: a distribution-free guarantee
+held at its certified level on a predictor with no usable signal, and the entire
+cost of that uselessness appeared in set width and in the review rate rather
+than in coverage. Read it as a property of conformal prediction, not as a
+benchmark of Laya.
+
+**Seed-to-seed spread understates the uncertainty in *fraud* coverage.**
+`make_eval` keeps **every** evaluation fraud and samples the legitimate rows, by
+design: it buys a tight fraud-coverage estimate cheaply. The consequence is that
+all 2,878 positives are identical in all three seeds, while the 3,000 negatives
+are redrawn (overlap 41 of 3,000). So a seed in E4 and E8 varies the negative
+sample, the context draw and the calibration split, but never the positive
+sample. Every fraud-coverage standard error in this repository is therefore
+conditional on one fixed set of frauds, and a genuine resampling of the
+positives would be wider.
+
 ## Cost and performance caveats
 
 **Cross-conformal is not cheap in relative terms.** Measured: exactly K× split
