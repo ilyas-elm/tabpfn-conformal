@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Everything this library does, on synthetic data, in about five seconds.
+"""Everything this library does, on synthetic data, in about ten seconds.
 
 No API key, no GPU, no dataset, no TabPFN. The conformal machinery is
 model-agnostic, so this uses a scikit-learn classifier; swap in

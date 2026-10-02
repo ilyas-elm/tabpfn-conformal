@@ -72,7 +72,7 @@ TabPFN predictions through the decision layer under an analyst budget you set.
 
 ## Quickstart
 
-Thirty seconds, no API key, no GPU, no dataset:
+About a minute on a warm pip cache, no API key, no GPU, no dataset:
 
 ```bash
 git clone https://github.com/ilyas-elm/tabpfn-conformal.git
