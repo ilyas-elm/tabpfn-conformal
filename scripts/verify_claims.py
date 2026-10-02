@@ -2193,6 +2193,27 @@ if _e8:
         check("E8 certified level", float(_mc.group(1)),
               100 * min(1.0, math.ceil((_ncf + 1) * 0.9) / _ncf), 0.005)
 
+    # The summary table at the top of the README restates three of E8's figures.
+    # A restated number is a new number: these had no check when the row was
+    # added, which is how 60 of them went unguarded earlier in this project.
+    _hl = anchored("E8 headline row",
+                   r"emerging decision models\*\*, Laya, which needs no labels to "
+                   r"predict at all \| valid coverage from zero labelled fraud, "
+                   r"\*\*([\d.]+)\*\* against ([\d.]+)% certified \u2014 for "
+                   r"\*\*([\d.]+)\u00d7\*\* the analyst workload", README_FLAT)
+    if _hl:
+        check("E8 headline laya coverage", float(_hl.group(1)),
+              float(np.mean(_e8pick("laya_zero_shot", "mondrian", 0.1,
+                                    "coverage_fraud"))), 5e-4)
+        check("E8 headline certified level", float(_hl.group(2)),
+              100 * min(1.0, math.ceil((_ncf + 1) * 0.9) / _ncf), 0.005)
+        _hl_lay = float(np.mean(_e8pick("laya_zero_shot", "mondrian", 0.1,
+                                        "review_rate")))
+        _hl_tab = float(np.mean(_e8pick("tabpfn_cross_200", "mondrian", 0.1,
+                                        "review_rate")))
+        check("E8 headline workload ratio", float(_hl.group(3)),
+              _hl_lay / _hl_tab, 0.05)
+
     # the table itself, cell by cell
     _ARMS = {"TabPFN, cross-conformal": "tabpfn_cross_200",
              "TabPFN, split conformal": "tabpfn_split_200",

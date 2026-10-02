@@ -41,7 +41,7 @@ below. LightGBM wins the stopwatch.
 > Built for the Prior Labs TabPFN-3.5 Hackathon. **All eight experiments are
 > complete** and their results are committed, so every number below can be
 > recomputed without an API key: `python scripts/verify_claims.py` recomputes
-> 405 of them from `results/` and exits non-zero on any drift.
+> 408 of them from `results/` and exits non-zero on any drift.
 > **Four of five pre-registered predictions were falsified**, including two of
 > our own about cost, and they are reported as such; see the
 > [scoreboard](#what-we-predicted-and-what-happened),
@@ -55,6 +55,7 @@ below. LightGBM wins the stopwatch.
 |---|---|---|
 | Cross-conformal reaches the same targeted level from **half the confirmed frauds** | never significantly wider (0 of 9 paired tests); narrower where labels are scarcest | [E1](#2-measured-the-same-guarantee-from-half-the-labels) · [E6](#does-it-replicate-four-datasets) |
 | …and it **replicates on a second domain**, forest cover type, 0.473% positive, no shared column | cross significantly wider in 0 of 3 matched comparisons | [E7](#does-it-hold-on-a-different-dataset-entirely) |
+| …and it holds on one of the **emerging decision models**, Laya, which needs no labels to predict at all | valid coverage from zero labelled fraud, **0.900** against 90.06% certified — for **3.8×** the analyst workload | [E8](#does-the-guarantee-work-on-a-model-that-needs-no-labels-at-all) |
 | **What that costs**: cross is only approximately valid, and it shows | below its own certified level in 3 of 6 dataset-α combinations; split in 0 of 6 | [validity](#what-cross-conformal-actually-costs) |
 | TabPFN gives **narrower prediction sets than LightGBM** at an identical targeted level | 6.9–12.4% narrower, 4 of 4 comparisons | [E4](#against-the-baselines-tabpfn-wins-where-it-counts) |
 | TabPFN's **calibration error is 74–86% lower**, the mechanism behind the above | ECE 0.0019–0.0037 vs 0.0129–0.0141 | [calibration](#why-tabpfn-wins-calibration-measured-rather-than-cited) |
@@ -443,10 +444,11 @@ have left as one unreplicated number.
 ### Does the guarantee work on a model that needs no labels at all?
 
 Every arm so far learns from confirmed frauds: TabPFN takes them in context,
-LightGBM trains on them. **Laya** does neither. It is a 421M-parameter System
-One decision model (Apache-2.0, `pip install laya`) that takes a state and a
-typed question and returns a probability in a single forward pass,
-**zero-shot**, from no labelled example of any kind.
+LightGBM trains on them. **Laya** does neither. It is one of the emerging
+*decision models*: a 421M-parameter System One model (Apache-2.0,
+`pip install laya`) that takes a state and a typed question and returns a
+probability in a single forward pass, **zero-shot**, from no labelled example
+of any kind.
 
 That makes it the sharpest test available of the claim this project rests on.
 If confirmed positives were needed only to *fit* a model, a zero-shot model
@@ -613,13 +615,15 @@ three**, for about 5% wider sets. Paired by seed the difference is
 2.0 ± 1.2 months (t ≈ 1.7, n = 3), **directional, not statistically
 established.** Settling it properly needs more seeds than this project has spent.
 
-This matches what Prior Labs documents, Thinking is stronger on temporal and grouped data, and
-Thinking has **no local weights**, so this result is only reachable through the
-managed API. It also passes `time_col`, which the base model rejects outright,
-so it compares recommended usage rather than isolating the checkpoint. One seed.
+This matches what Prior Labs documents, Thinking is stronger on temporal and
+grouped data, and Thinking has **no local weights**, so this result is only
+reachable through the managed API. It also passes `time_col`, which the base
+model rejects outright, so it compares recommended usage rather than isolating
+the checkpoint. One seed.
 
-The reason ACI cannot help is the same scarcity as everywhere else in this project. With `n`
-calibration positives only `n` distinct thresholds exist, so α must move far
+The reason ACI cannot help is the same scarcity as everywhere else in this
+project. With `n` calibration positives only `n` distinct thresholds exist, so
+α must move far
 enough to change which order statistic is selected before anything changes at
 all. At the 46 positives available here that step is **0.0138**; ACI moves α by
 0.003 across the whole walk. Raise γ enough to move and it jumps a whole order
@@ -792,8 +796,9 @@ pairing cross-conformal with class-conditional thresholds is something MAPIE
 cannot currently do in one object, and the minority class is the one anybody
 cares about in fraud.
 
-**The second reason is cost, and it is one a TabPFN user pays per prediction.** CV+ builds each prediction set from the K fold models,
-so it must query every one of them for every test row. Pooled cross-conformal
+**The second reason is cost, and it is one a TabPFN user pays per prediction.**
+CV+ builds each prediction set from the K fold models, so it must query every
+one of them for every test row. Pooled cross-conformal
 derives its thresholds from the out-of-fold scores and then predicts with the
 single full-data model, so a test row is scored once whatever K is. Measured by
 counting calls to the base estimator, in
