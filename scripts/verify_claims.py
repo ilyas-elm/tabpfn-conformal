@@ -10,6 +10,7 @@ says, so staleness is caught mechanically instead of by rereading.
 
 from __future__ import annotations
 
+import ast
 import json
 import math
 import pathlib
@@ -2486,6 +2487,66 @@ if _fstp:
 else:
     checks.append(("FINDINGS states the order-statistic step", False,
                    "the step is no longer findable in FINDINGS.md"))
+
+# ---- 9x. The capability table lists the experiments that really use each one -
+# This table is the TabPFN showcase, so its "where" column is a claim. It said
+# TabPFNClassifier() was exercised in E1, E2, E4, E5 and E6 when E3 and E7 use
+# it too, and that estimate_cost ran in "every runner's --dry-run" when E8 is a
+# runner that needs no API and never calls it. Docstrings are stripped before
+# searching, because e3 *mentions* fit_with_cache only to say it cannot use it.
+def _code_only(path):
+    try:
+        txt = path.read_text()
+        tree = ast.parse(txt)
+    except (OSError, SyntaxError):
+        return ""
+    doc = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef,
+                             ast.ClassDef)) and node.body:
+            if ast.get_docstring(node, clean=False) is not None:
+                n0 = node.body[0]
+                doc.update(range(n0.lineno, (n0.end_lineno or n0.lineno) + 1))
+    return "\n".join(re.sub(r"#.*$", "", l)
+                     for i, l in enumerate(txt.splitlines(), 1) if i not in doc)
+
+
+_CAPS = {"`TabPFNClassifier()`, no training step": "TabPFNClassifier(",
+         "`thinking_mode=True`": "thinking_mode",
+         '`time_col="month"`': "time_col",
+         '`fit_mode="fit_with_cache"`': 'fit_mode="fit_with_cache"',
+         "`balance_probabilities=True`": "balance_probabilities",
+         "`estimate_cost(...)`": "estimate_cost"}
+_runners = {f.stem.split("_")[0].upper(): _code_only(f)
+            for f in (REPO / "experiments" / "api").glob("e[0-9]*.py")}
+
+
+def _listed(cell):
+    """The E-numbers a 'where' cell names, expanding E1-E7 ranges."""
+    out = set()
+    for a, b in re.findall(r"E(\d+)\s*[\u2013\u2014-]\s*E?(\d+)", cell):
+        out |= {f"E{n}" for n in range(int(a), int(b) + 1)}
+    out |= {m if not re.search(r"E\d+\s*[\u2013\u2014-]", cell) else m
+            for m in re.findall(r"\bE\d+\b", cell)}
+    return out
+
+
+_captab = anchored("capability table",
+                   r"\| capability \| where \| what it bought, or cost \|\n"
+                   r"\|[-: |]+\|\n((?:\|.*\|\n)+)")
+if _captab and _runners:
+    _wrong = []
+    for _line in _captab.group(1).strip().split("\n"):
+        _c = [x.strip() for x in _line.strip().strip("|").split("|")]
+        _tok = next((v for k, v in _CAPS.items() if _c[0].startswith(k)), None)
+        if _tok is None:
+            continue
+        _said = _listed(_c[1])
+        _real = {e for e, src in _runners.items() if _tok in src}
+        if _said and _said != _real:
+            _wrong.append(f"{_c[0][:28]} says {sorted(_said)}, code has {sorted(_real)}")
+    checks.append(("the capability table lists the experiments that use each one",
+                   not _wrong, "; ".join(_wrong[:3])))
 
 # ---- 9y. The wall-clock comparison describes the hardware it actually used ---
 # Six documents said "both models on one Tesla T4". The script passes `device`

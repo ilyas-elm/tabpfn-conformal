@@ -41,7 +41,7 @@ below. LightGBM wins the stopwatch.
 > Built for the Prior Labs TabPFN-3.5 Hackathon. **All eight experiments are
 > complete** and their results are committed, so every number below can be
 > recomputed without an API key: `python scripts/verify_claims.py` recomputes
-> 432 of them from `results/` and exits non-zero on any drift.
+> 433 of them from `results/` and exits non-zero on any drift.
 > **Four of five pre-registered predictions were falsified**, including two of
 > our own about cost, and they are reported as such; see the
 > [scoreboard](#what-we-predicted-and-what-happened),
@@ -151,12 +151,12 @@ and had to design around.
 
 | capability | where | what it bought, or cost |
 |---|---|---|
-| `TabPFNClassifier()`, no training step | E1, E2, E4, E5, E6 | The premise. K-fold cross-conformal is K forward passes, **0 gradient-trained fits against LightGBM's 6**, the reason the headline result is affordable at all. |
+| `TabPFNClassifier()`, no training step | E1–E7 | The premise. K-fold cross-conformal is K forward passes, **0 gradient-trained fits against LightGBM's 6**, the reason the headline result is affordable at all. |
 | `thinking_mode=True`, `thinking_effort="medium"` | E3 | Under drift, below target in **3 of 15 seed-months against base's 9**. Directional at n=3, not established, and reachable *only* through the API, since Thinking has no local weights. |
 | `time_col="month"` | E3 | Hands the temporal structure to the model natively instead of dropping it. |
 | `fit_mode="fit_with_cache"` | E5 | **6.8× faster evaluation pass** at 200k context, same answer to four decimals. Conformal is the workload it assumes: one fixed context, scored twice. |
 | `balance_probabilities=True` | E4 | TabPFN's own imbalance tooling, as the honest baseline to beat; it produces no coverage guarantee, and that is the comparison. |
-| `estimate_cost(...)` | every runner's `--dry-run`, and [`cost_kfold.py`](experiments/api/cost_kfold.py) | Prices a run from array *dimensions* before spending. It is how the K× cost overclaim got caught, for free. |
+| `estimate_cost(...)` | E1–E7's `--dry-run`, and [`cost_kfold.py`](experiments/api/cost_kfold.py) | Prices a run from array *dimensions* before spending. It is how the K× cost overclaim got caught, for free. |
 | local weights (`tabpfn`) | [`experiments/kaggle/`](experiments/kaggle/README.md) | Takes the network out of the wall-clock comparison, which is the confound in P5. |
 | BAF Variants I–III | E6 | Replication across four datasets, which narrowed the headline from "narrower sets" to "same guarantee, half the labels". |
 

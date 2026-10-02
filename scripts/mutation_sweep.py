@@ -373,6 +373,11 @@ CASES: list[tuple[str, object]] = [
      _sub("README.md", "| 100,200 | 0.20% | 1.504 |\n", "")),
     ("E8 laya_zero_shot review",
      _sub("README.md", "| 0.900 | 1.833 | **83.3%** |", "| 0.900 | 1.833 | **55.5%** |")),
+    # The capability table is the TabPFN showcase, so its "where" column is a
+    # claim about the code and drifted when E7 and E8 landed.
+    ("the capability table lists the experiments that use each one",
+     _sub("README.md", "| `TabPFNClassifier()`, no training step | E1\u2013E7 |",
+          "| `TabPFNClassifier()`, no training step | E1, E2, E4, E5, E6 |")),
     # Six documents said both models ran on one Tesla T4. The script gives
     # TabPFN a device and builds LGBMClassifier without one, so LightGBM was on
     # the CPU, and that sentence existed to establish fair hardware for P5.

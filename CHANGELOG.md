@@ -10,6 +10,14 @@ records what was measured, what was wrong, and how it was caught.
 
 ## [Unreleased]
 
+### Fixed
+
+- `conformal_quantile` and the Mondrian thresholds return `math.inf` rather than
+  `np.inf` when a class has no calibration score. The value is identical; the
+  type is not, and the annotation says `float`. Returning a bare numpy scalar is
+  what upstream's mypy configuration rejects, so this is what lets the
+  `tabpfn-extensions` payload pass their checks unchanged.
+
 ## [0.1.0], 2026-09-21
 
 First release, built for the Prior Labs TabPFN-3.5 Hackathon.
