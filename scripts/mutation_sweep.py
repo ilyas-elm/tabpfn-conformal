@@ -306,7 +306,9 @@ CASES: list[tuple[str, object]] = [
     # The exact artefact that was wrong: the docx read on camera.
     ("the recording docx speaks the README's claim count",
      _redocx("private/Demo video script.docx",
-             r"Four hundred and \w+ of them", "Three hundred and sixty of them")),
+             # [\w-]+ not \w+: the count became "twenty-three" and the hyphen
+             # ended the match, so the case went unreachable.
+             r"Four hundred and [\w-]+ of them", "Three hundred and sixty of them")),
     ("the recording docx speaks the collected test count",
      _docx("private/Demo video script.docx", "A hundred and thirty-two tests",
            "A hundred and thirty tests")),
@@ -388,10 +390,13 @@ CASES: list[tuple[str, object]] = [
      _sub("docs/limitations.md", "this task is **0.447**", "this task is **0.487**")),
     ("limitations E8 positives plus negatives is the eval set",
      _sub("docs/limitations.md", "all 2,878 positives", "all 2,900 positives")),
-    # The Laya cache is keyed by position, because make_eval resets the index.
-    ("laya cache fingerprint rejects rows it was not built on",
+    # The runner refuses a cache whose fingerprint does not match the rows; that
+    # is enforced in the experiment, which this sweep does not run. What
+    # verify_claims can check without the dataset is that every cache carries
+    # one at all, so a cache committed without a fingerprint is caught.
+    ("every laya cache carries a row fingerprint",
      _sub("results/proba/e8/laya_eval_0.json", "\"_eval_sha256\": \"",
-          "\"_eval_sha256\": \"x")),
+          "\"_eval_sha256_absent\": \"")),
     # The summary table restates E8's figures; the table at the top of a README
     # is exactly where restated numbers stop being checked.
     ("E8 headline laya coverage",

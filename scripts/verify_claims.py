@@ -2382,6 +2382,24 @@ if _e8:
         check("E8 marginal legit laya", float(_mg.group(10)),
               float(np.mean(_e8pick("laya_zero_shot", "marginal", 0.1, "coverage_legit"))), 5e-4)
 
+# ---- 10a. The Laya cache carries a fingerprint of the rows it was scored on -
+# make_eval ends in reset_index(drop=True), so the cache key is a position, not
+# a row: a changed make_eval would silently attach old probabilities to new
+# applications. The runner refuses a cache whose fingerprint does not match, and
+# that needs the dataset. What can be checked here, on a clone with no data, is
+# that every committed cache carries one.
+_E8CACHE = sorted((REPO / "results" / "proba" / "e8").glob("laya_eval_*.json"))
+if _E8CACHE:
+    _missing = []
+    for _f in _E8CACHE:
+        _st = json.loads(_f.read_text()).get("_eval_sha256")
+        if not (isinstance(_st, str) and re.fullmatch(r"[0-9a-f]{32}", _st)):
+            _missing.append(f"{_f.name}={_st!r}")
+    checks.append(("every laya cache carries a row fingerprint",
+                   not _missing,
+                   f"{len(_missing)} of {len(_E8CACHE)} without one: "
+                   f"{', '.join(_missing[:3])}"))
+
 # ---- 10b. The E8 entries in limitations.md ---------------------------------
 # These were added after a review found the README reported no discrimination
 # for the zero-shot arm at all. They restate three AUCs and three counts, and
