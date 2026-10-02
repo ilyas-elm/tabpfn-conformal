@@ -20,7 +20,7 @@ thing the check is supposed to protect and watching what happened.
 
 This mutates files and restores them from an in-memory snapshot taken
 immediately before each case. It refuses to start with a dirty tree, so an
-interrupted run can be recovered with ``git checkout``; three cases also touch
+interrupted run can be recovered with ``git checkout``; five cases also touch
 untracked files under ``private/``, which git cannot restore, so those are
 copied to a temporary directory first and the path is printed. It is not part
 of CI: it is slow, it writes to the working tree, and it is a thing you run
@@ -46,7 +46,7 @@ def tracked() -> list[str]:
 def snapshot(extra: set[str] = frozenset()) -> dict[str, bytes]:
     """Tracked files, plus any path a case is going to touch.
 
-    Three cases mutate files under ``private/``, which is gitignored, so
+    Five cases mutate files under ``private/``, which is gitignored, so
     ``git ls-files`` does not list them. Snapshotting only tracked files would
     mutate those and never put them back.
     """
@@ -225,6 +225,14 @@ CASES: list[tuple[str, object]] = [
           "**The KV cache makes the evaluation pass")),
     ("STATUS names the changelog rename step",
      _sub("private/STATUS.md", "PRNUMBER.added.md", "SOMEFILE.md")),
+    # The drift that actually happened: BRIEFING is gitignored, CI never reads
+    # it, and it sat at 360 while the README said 405.
+    ("BRIEFING claim count (prose) agrees with the README",
+     _sub("private/BRIEFING.md", "recomputes 405 published numbers",
+          "recomputes 360 published numbers")),
+    ("BRIEFING has a table row for every experiment",
+     _sub("private/BRIEFING.md", "| **E8** | Does the guarantee work",
+          "| **E9** | Does the guarantee work")),
     ("E7 ran the full grid", _drop_row("results/e7.jsonl")),
     ("E7 is a different dataset from BAF",
      _jsonl("results/e7.jsonl", lambda d: True, lambda d: d.__setitem__("dataset", "baf"))),
