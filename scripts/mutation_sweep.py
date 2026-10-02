@@ -258,10 +258,10 @@ CASES: list[tuple[str, object]] = [
     # A sweep of every number in the E8 section found these two were the only
     # ones a change could not fail: each sentence's figures are computed against
     # a hard-coded level, so a relabelled alpha read as correct.
-    ("E8 shortfall sentence states its level",
+    ("E8 shortfall sentence alpha",
      _sub("README.md", "\u03b1 = 0.20 both TabPFN arms",
           "\u03b1 = 0.23 both TabPFN arms")),
-    ("E8 marginal sentence states its level",
+    ("E8 marginal sentence alpha",
      _sub("README.md", "abandons a class at \u03b1 = 0.10",
           "abandons a class at \u03b1 = 0.13")),
     # An external fact: nothing offline recomputes it, so what is checked is
