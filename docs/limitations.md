@@ -107,8 +107,12 @@ was dominated by round-trip rather than inference. All 36 rows in
 `results/e4.jsonl` still carry `wallclock_comparable: false`, and they always
 will, because that run genuinely was not comparable.
 
-The rerun put both models on one Tesla T4 with local TabPFN weights and no
-network inside the measurement. **TabPFN is slower in all four configurations,
+The rerun put both on one machine with no network inside the measurement:
+TabPFN on a Tesla T4 with local weights, LightGBM on that machine's CPU, which
+is where `LGBMClassifier` runs unless it is built and told otherwise. That
+removes the network and the remote-API confound, which is what made the first
+run incomparable; it does not equalise the accelerator, and this report does not
+claim it does. **TabPFN is slower in all four configurations,
 by 22 s to 221 s, a factor of 35 to 73.** Removing the confound moved the result
 further against TabPFN rather than rescuing it: the network was not what made
 TabPFN look slow. Twenty-four rows are in `results/kaggle_wallclock.json`, every

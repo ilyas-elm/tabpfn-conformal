@@ -373,6 +373,13 @@ CASES: list[tuple[str, object]] = [
      _sub("README.md", "| 100,200 | 0.20% | 1.504 |\n", "")),
     ("E8 laya_zero_shot review",
      _sub("README.md", "| 0.900 | 1.833 | **83.3%** |", "| 0.900 | 1.833 | **55.5%** |")),
+    # Six documents said both models ran on one Tesla T4. The script gives
+    # TabPFN a device and builds LGBMClassifier without one, so LightGBM was on
+    # the CPU, and that sentence existed to establish fair hardware for P5.
+    ("no document claims both models ran on the GPU",
+     _sub("docs/limitations.md",
+          "The rerun put both on one machine with no network inside the measurement:",
+          "The rerun put both models on one Tesla T4 with no network inside:")),
     # FINDINGS.md was read by nothing and held a partial E4 run and a two-seed
     # E6 table, both contradicting the README.
     ("documents quoting the same table quote the same numbers",

@@ -202,8 +202,9 @@ def main() -> int:
     dev = device_report()
     print(f"device: {dev['device']}" + (f" ({dev['gpu']})" if dev["gpu"] else ""))
     if dev["device"] != "cuda":
-        print("WARNING: no GPU. The whole point of this script is to put both "
-              "models on the same accelerator; on CPU it settles nothing.",
+        print("WARNING: no GPU. The point of this script is to time TabPFN on a "
+              "GPU against LightGBM on the same machine's CPU, with no network "
+              "in either; without a GPU it settles nothing.",
               file=sys.stderr)
 
     warm_up(dev["device"], args.families)

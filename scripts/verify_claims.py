@@ -2487,6 +2487,39 @@ else:
     checks.append(("FINDINGS states the order-statistic step", False,
                    "the step is no longer findable in FINDINGS.md"))
 
+# ---- 9y. The wall-clock comparison describes the hardware it actually used ---
+# Six documents said "both models on one Tesla T4". The script passes `device`
+# to TabPFNClassifier and builds LGBMClassifier without it, so LightGBM ran on
+# the CPU. The sentence existed to establish fair hardware for P5, which makes
+# it exactly the sentence that has to match the code.
+_wc_src = REPO / "experiments" / "kaggle" / "wallclock.py"
+if _wc_src.exists():
+    _wsrc = _wc_src.read_text()
+    _lgb = re.search(r"LGBMClassifier\(([^)]*)\)", _wsrc)
+    _lgb_gpu = bool(_lgb and re.search(r"device(_type)?\s*=", _lgb.group(1)))
+    _hw_docs = {"README.md": README, "docs/limitations.md": _LIM}
+    if PRIVATE.exists():
+        for _n in ("STATUS.md", "SUBMISSION.md"):
+            _d = private_doc(_n)
+            if _d is not None:
+                _hw_docs[_n] = _d
+    # the claim the code does not support
+    # re.I: the first version of this pattern was lower-case only and missed
+    # "Both models on one Tesla T4" at the start of a sentence, which is how
+    # five of the six documents wrote it.
+    _bad = [n for n, t in _hw_docs.items()
+            if re.search(r"both (models )?on one Tesla T4", t, re.I)]
+    checks.append(("no document claims both models ran on the GPU",
+                   _lgb_gpu or not _bad,
+                   f"LGBMClassifier is built without a device argument, so "
+                   f"LightGBM ran on CPU, but {_bad} say both were on one T4"))
+    # and the claim it does support, stated where the result is reported
+    checks.append(("the wall-clock section says where LightGBM ran",
+                   _lgb_gpu or bool(re.search(
+                       r"LightGBM on that machine's CPU", README)),
+                   "the README no longer says LightGBM ran on the machine's "
+                   "CPU, which is what the script does"))
+
 # ---- 10a. The Laya cache carries a fingerprint of the rows it was scored on -
 # make_eval ends in reset_index(drop=True), so the cache key is a position, not
 # a row: a changed make_eval would silently attach old probabilities to new
