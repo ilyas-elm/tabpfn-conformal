@@ -145,7 +145,7 @@ def laya_probabilities(X, y, seed: int, limit: int | None):
     return np.column_stack([1.0 - p1, p1]), have
 
 
-def measure(arm, seed, proba, y, cal_mask, te_mask):
+def measure(arm, seed, proba, y, cal_mask, te_mask, X_eval, _row_chars):
     """Split conformal from probabilities alone: marginal and class-conditional."""
     scores = one_minus_prob(proba)
     y_cal, y_te = y[cal_mask], y[te_mask]
@@ -182,6 +182,10 @@ def measure(arm, seed, proba, y, cal_mask, te_mask):
                 # just pays for it in set width. Leaving this out invited the
                 # reader to assume Laya ranks fraud merely less well.
                 "auc": float(roc_auc_score(y, proba[:, 1])),
+                # What Laya is actually handed, so "the input was truncated"
+                # can be ruled out from results/ rather than argued.
+                "eval_row_fields": int(X_eval.shape[1]),
+                "eval_row_chars_median": int(_row_chars),
             })
     return out
 
@@ -215,6 +219,8 @@ def main() -> int:
         X, y = make_eval(ev, seed)
         y = np.asarray(y)
         cal, te = halves(len(y), y, seed)
+        row_chars = int(np.median([len(json.dumps(r))
+                                   for r in json.loads(X.to_json(orient="records"))]))
         print(f"\nseed {seed}")
 
         for stem in BASELINES:
@@ -227,12 +233,12 @@ def main() -> int:
             # is between different test sets wearing the same name.
             assert len(d["y_true"]) == len(y) and (d["y_true"] == y).all(), \
                 f"{f.name} does not line up with make_eval(seed={seed})"
-            records += measure(stem, seed, d["proba"], y, cal, te)
+            records += measure(stem, seed, d["proba"], y, cal, te, X, row_chars)
             print(f"  {stem}: reused")
 
         proba, have = laya_probabilities(X, y, seed, args.limit)
         if have.all():
-            records += measure("laya_zero_shot", seed, proba, y, cal, te)
+            records += measure("laya_zero_shot", seed, proba, y, cal, te, X, row_chars)
             print("  laya_zero_shot: scored")
         else:
             print(f"  laya_zero_shot: {have.sum()}/{len(have)} rows scored, "

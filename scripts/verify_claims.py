@@ -2345,6 +2345,15 @@ if _e8:
         checks.append(("E8 laya is below chance on every seed",
                        len(_per_seed) == 3 and all(a < 0.5 for a in _per_seed),
                        f"per-seed AUC {[round(a, 4) for a in _per_seed]}"))
+        _rc8 = re.search(r"(\d+) fields serialise to a median of (\d+) JSON "
+                         r"characters", README_FLAT)
+        checks.append(("E8 states what the zero-shot model is handed",
+                       _rc8 is not None
+                       and int(_rc8.group(1)) == _e8[0]["eval_row_fields"]
+                       and int(_rc8.group(2)) == _e8[0]["eval_row_chars_median"],
+                       f"README {_rc8 and _rc8.group(1, 2)}, results "
+                       f"{_e8[0]['eval_row_fields']}, "
+                       f"{_e8[0]['eval_row_chars_median']}"))
         check("E8 caveat laya set size", float(_cv.group(4)),
               float(np.mean(_e8pick("laya_zero_shot", "mondrian", 0.1, "set_size"))), 5e-4)
         check("E8 caveat laya review rate", float(_cv.group(5)),

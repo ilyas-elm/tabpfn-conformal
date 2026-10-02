@@ -41,7 +41,7 @@ below. LightGBM wins the stopwatch.
 > Built for the Prior Labs TabPFN-3.5 Hackathon. **All eight experiments are
 > complete** and their results are committed, so every number below can be
 > recomputed without an API key: `python scripts/verify_claims.py` recomputes
-> 424 of them from `results/` and exits non-zero on any drift.
+> 425 of them from `results/` and exits non-zero on any drift.
 > **Four of five pre-registered predictions were falsified**, including two of
 > our own about cost, and they are reported as such; see the
 > [scoreboard](#what-we-predicted-and-what-happened),
@@ -477,7 +477,9 @@ Mondrian at α = 0.10, mean of three seeds, against a certified level of 90.06%.
 **0.447**, below chance on all three seeds, against TabPFN's 0.886 and
 LightGBM's 0.843. Laya is a *text* decision model and this hands it a JSON row
 of tabular features, which is outside what it is built for, so the number says
-nothing about Laya on the inputs it was designed for. What it does establish is
+nothing about Laya on the inputs it was designed for. The input is not
+truncated either: 30 fields serialise to a median of 843 JSON characters,
+against a 512-token window. What it does establish is
 the stronger half of the conformal claim: **the guarantee held on a predictor
 with no usable signal at all.** Distribution-free means exactly this. Validity
 does not depend on the model being any good, and the whole price of a useless
