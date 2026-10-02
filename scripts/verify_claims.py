@@ -2082,6 +2082,33 @@ if _e8:
               100 * float(np.mean(_e8pick("tabpfn_cross_200", "mondrian", 0.2,
                                           "empty_rate_fraud"))), 0.005)
 
+    # A sweep of this section found the two alpha labels were the only numbers
+    # in it that could be changed without failing anything: the figures after
+    # each label are computed against a hard-coded level, so relabelling the
+    # sentence would read as correct against the right data. Pin the labels.
+    _a1 = anchored("E8 shortfall sentence states its level",
+                   r"At \u03b1 = (\d+\.\d+) both TabPFN arms land \*below\* "
+                   r"the level they certify", README_FLAT)
+    if _a1:
+        check("E8 shortfall sentence alpha", float(_a1.group(1)), 0.2, 1e-9)
+    _a2 = anchored("E8 marginal sentence states its level",
+                   r"marginal calibration still abandons a class at "
+                   r"\u03b1 = (\d+\.\d+)", README_FLAT)
+    if _a2:
+        check("E8 marginal sentence alpha", float(_a2.group(1)), 0.1, 1e-9)
+
+    # Laya's parameter count is an external fact, not a measurement, so there
+    # is nothing offline to recompute it from. What can be checked is that the
+    # README and the script that ran the model have not drifted apart.
+    _e8src = (REPO / "experiments/api/e8_zero_shot_guarantee.py").read_text()
+    _rp = re.search(r"(\d+)M-parameter", README)
+    _sp = re.search(r"(\d+)M-parameter", _e8src)
+    checks.append(("E8 model size agrees with the experiment that ran it",
+                   _rp is not None and _sp is not None
+                   and _rp.group(1) == _sp.group(1),
+                   f"README says {_rp and _rp.group(1)}M, "
+                   f"e8_zero_shot_guarantee.py says {_sp and _sp.group(1)}M"))
+
     # the marginal generalisation
     _mg = anchored(
         "E8 marginal sentence",
