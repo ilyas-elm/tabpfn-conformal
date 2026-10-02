@@ -255,6 +255,20 @@ CASES: list[tuple[str, object]] = [
      _sub("README.md", "| 0.900 | 1.833 | **83.3%** |", "| 0.900 | 1.833 | **55.5%** |")),
     ("E8 empty sets among fraud rows",
      _sub("README.md", "**1.48% of fraud rows receive an", "**9.99% of fraud rows receive an")),
+    # A sweep of every number in the E8 section found these two were the only
+    # ones a change could not fail: each sentence's figures are computed against
+    # a hard-coded level, so a relabelled alpha read as correct.
+    ("E8 shortfall sentence states its level",
+     _sub("README.md", "\u03b1 = 0.20 both TabPFN arms",
+          "\u03b1 = 0.23 both TabPFN arms")),
+    ("E8 marginal sentence states its level",
+     _sub("README.md", "abandons a class at \u03b1 = 0.10",
+          "abandons a class at \u03b1 = 0.13")),
+    # An external fact: nothing offline recomputes it, so what is checked is
+    # that the README and the script that ran the model still agree.
+    ("E8 model size agrees with the experiment that ran it",
+     _sub("experiments/api/e8_zero_shot_guarantee.py", "a 421M-parameter",
+          "a 415M-parameter")),
     ("E8 tabpfn_cross_200 shortfall @0.2",
      _sub("README.md", "\u22120.0102 \u00b1 0.0035", "\u22120.9999 \u00b1 0.0035")),
     ("demo data regenerates from results",
