@@ -251,6 +251,12 @@ CASES: list[tuple[str, object]] = [
      _sub("README.md", "| 100,200 | 0.20% | 1.504 |", "| 100,200 | 0.20% | 9.999 |")),
     ("E5 scale table lists every context run",
      _sub("README.md", "| 100,200 | 0.20% | 1.504 |\n", "")),
+    ("E8 laya_zero_shot review",
+     _sub("README.md", "| 0.900 | 1.833 | **83.3%** |", "| 0.900 | 1.833 | **55.5%** |")),
+    ("E8 empty sets among fraud rows",
+     _sub("README.md", "**1.48% of fraud rows receive an", "**9.99% of fraud rows receive an")),
+    ("E8 tabpfn_cross_200 shortfall @0.2",
+     _sub("README.md", "\u22120.0102 \u00b1 0.0035", "\u22120.9999 \u00b1 0.0035")),
     ("demo data regenerates from results",
      _json("figures/demo_data.json", lambda d: d.__setitem__("n_fraud", 99999))),
     # Their pre-commit rejects this and ours never used to look for it.

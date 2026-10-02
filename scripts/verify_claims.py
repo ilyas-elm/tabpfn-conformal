@@ -1963,6 +1963,173 @@ if _mi:
     check("method: index at 13 positives", float(_mi.group(1)),
           float(math.ceil(14 * 0.90)), 0.5)
 
+# ---- 8l. E8, the zero-shot arm -------------------------------------------
+# Every figure in the E8 section is recomputed here from results/e8.jsonl, and
+# the empty-set figure from the committed probabilities, so the section cannot
+# drift from the run that produced it.
+_e8 = load("e8.jsonl")
+# Prose anchors match a whitespace-flattened copy. Rewrapping a paragraph is
+# not a change to its claims, but it silently broke four checks earlier in this
+# file's history, so the patterns must not depend on where the lines break.
+README_FLAT = re.sub(r"\s+", " ", README)
+if _e8:
+    def _e8pick(arm, method, alpha, field):
+        return [r[field] for r in _e8
+                if r["arm"] == arm and r["method"] == method and r["alpha"] == alpha]
+
+    _ncal = _e8[0]["n_cal"]
+    _ncf = _e8[0]["n_cal_fraud"]
+    _m = anchored("E8 split sizes",
+                  r"halved stratified: ([\d,]+) rows calibrate \(([\d,]+) of "
+                  r"them fraud\), ([\d,]+) are scored, (\w+) seeds", README_FLAT)
+    if _m:
+        check("E8 calibration rows", float(_m.group(1).replace(",", "")), float(_ncal), 0.5)
+        check("E8 calibration frauds", float(_m.group(2).replace(",", "")), float(_ncf), 0.5)
+        check("E8 test rows", float(_m.group(3).replace(",", "")),
+              float(_e8[0]["n_test"]), 0.5)
+        checks.append(("E8 seed count",
+                       {"one": 1, "two": 2, "three": 3}.get(_m.group(4))
+                       == len({r["seed"] for r in _e8}),
+                       f"README says {_m.group(4)}, results have "
+                       f"{len({r['seed'] for r in _e8})}"))
+
+    # the certified level the whole table is read against
+    _mc = anchored("E8 certified level",
+                   r"Mondrian at \u03b1 = 0\.10, mean of three seeds, against a "
+                   r"certified level of ([\d.]+)%", README_FLAT)
+    if _mc:
+        check("E8 certified level", float(_mc.group(1)),
+              100 * min(1.0, math.ceil((_ncf + 1) * 0.9) / _ncf), 0.005)
+
+    # the table itself, cell by cell
+    _ARMS = {"TabPFN, cross-conformal": "tabpfn_cross_200",
+             "TabPFN, split conformal": "tabpfn_split_200",
+             "LightGBM, cross-conformal": "lightgbm_cross_200",
+             "**Laya, zero-shot**": "laya_zero_shot"}
+    _t8 = anchored("E8 table",
+                   r"\| arm \| fraud coverage \| set size \| sent to review \|\n"
+                   r"\|[-: |]+\|\n((?:\|.*\|\n)+)")
+    if _t8:
+        for _line in _t8.group(1).strip().split("\n"):
+            _c = [x.strip() for x in _line.strip().strip("|").split("|")]
+            _arm = _ARMS.get(_c[0])
+            if _arm is None:
+                checks.append((f"E8 table row {_c[0][:24]}", False, "unrecognised arm"))
+                continue
+            _lbl = _arm.replace("_200", "")
+            check(f"E8 {_lbl} coverage", float(re.search(r"([\d.]+)", _c[1]).group(1)),
+                  float(np.mean(_e8pick(_arm, "mondrian", 0.1, "coverage_fraud"))), 5e-4)
+            check(f"E8 {_lbl} set size", float(re.search(r"([\d.]+)", _c[2]).group(1)),
+                  float(np.mean(_e8pick(_arm, "mondrian", 0.1, "set_size"))), 5e-4)
+            check(f"E8 {_lbl} review", float(re.search(r"([\d.]+)", _c[3]).group(1)),
+                  100 * float(np.mean(_e8pick(_arm, "mondrian", 0.1, "review_rate"))), 0.05)
+
+    # the prose figures around it
+    _r8 = anchored("E8 review-rate sentence",
+                   r"Laya sends \*\*([\d.]+)%\*\* of applications to a human where "
+                   r"cross-conformal TabPFN sends \*\*([\d.]+)%\*\*, which is "
+                   r"\*\*([\d.]+)\u00d7\*\* the analyst workload\. At \u03b1 = 0\.05 it "
+                   r"is ([\d.]+)% against ([\d.]+)%; at \u03b1 = 0\.20 it is ([\d.]+)% against "
+                   r"\*\*([\d.]+)%\*\*", README_FLAT)
+    if _r8:
+        _lay = {a: 100 * float(np.mean(_e8pick("laya_zero_shot", "mondrian", a, "review_rate")))
+                for a in (0.05, 0.1, 0.2)}
+        _tab = {a: 100 * float(np.mean(_e8pick("tabpfn_cross_200", "mondrian", a, "review_rate")))
+                for a in (0.05, 0.1, 0.2)}
+        check("E8 laya review @0.1", float(_r8.group(1)), _lay[0.1], 0.05)
+        check("E8 tabpfn review @0.1", float(_r8.group(2)), _tab[0.1], 0.05)
+        check("E8 workload ratio", float(_r8.group(3)), _lay[0.1] / _tab[0.1], 0.05)
+        check("E8 laya review @0.05", float(_r8.group(4)), _lay[0.05], 0.05)
+        check("E8 tabpfn review @0.05", float(_r8.group(5)), _tab[0.05], 0.05)
+        check("E8 laya review @0.2", float(_r8.group(6)), _lay[0.2], 0.05)
+        check("E8 tabpfn review @0.2", float(_r8.group(7)), _tab[0.2], 0.05)
+
+    # the one result that runs against TabPFN
+    _b8 = anchored("E8 below-certified sentence",
+                   r"\u2212([\d.]+) \u00b1 ([\d.]+) and \u2212([\d.]+) \u00b1 ([\d.]+), while "
+                   r"LightGBM and Laya hold", README_FLAT)
+    if _b8:
+        _cert2 = min(1.0, math.ceil((_ncf + 1) * 0.8) / _ncf)
+        for _gi, _arm in ((0, "tabpfn_cross_200"), (2, "tabpfn_split_200")):
+            _g = [c - _cert2 for c in _e8pick(_arm, "mondrian", 0.2, "coverage_fraud")]
+            check(f"E8 {_arm} shortfall @0.2", -float(_b8.group(_gi + 1)),
+                  float(np.mean(_g)), 6e-5)
+            check(f"E8 {_arm} shortfall se", float(_b8.group(_gi + 2)),
+                  float(np.std(_g, ddof=1) / np.sqrt(len(_g))), 6e-5)
+        # and the direction claim for the other two
+        for _arm in ("lightgbm_cross_200", "laya_zero_shot"):
+            _g = [c - _cert2 for c in _e8pick(_arm, "mondrian", 0.2, "coverage_fraud")]
+            _se = float(np.std(_g, ddof=1) / np.sqrt(len(_g)))
+            checks.append((f"E8 {_arm} holds at 0.2",
+                           float(np.mean(_g)) + 2 * _se > 0,
+                           f"mean {np.mean(_g):+.4f} se {_se:.4f} is not above zero"))
+
+    # The empty-set mechanism, recomputed from the committed probabilities
+    # rather than asserted. Both figures were unguarded on the first pass and a
+    # sweep of the section found them.
+    _em = anchored("E8 empty-set mechanism",
+                   r"\*\*(\d+\.\d+)% of fraud rows receive an\s+empty prediction set"
+                   r".{0,160}?exceeds the (\d+\.\d+)-point shortfall", README_FLAT)
+    if _em:
+        _cert2 = min(1.0, math.ceil((_ncf + 1) * 0.8) / _ncf)
+        _gap = float(np.mean([c - _cert2 for c in
+                              _e8pick("tabpfn_cross_200", "mondrian", 0.2, "coverage_fraud")]))
+        check("E8 shortfall in points", float(_em.group(2)), abs(_gap) * 100, 0.005)
+
+        import importlib.util as _ilu
+        _spec = _ilu.spec_from_file_location(
+            "_e8mod", REPO / "experiments/api/e8_zero_shot_guarantee.py")
+        _mod = _ilu.module_from_spec(_spec)
+        sys.path.insert(0, str(REPO / "experiments" / "api"))
+        _spec.loader.exec_module(_mod)
+        from _common import load_frames as _lf, make_eval as _me  # noqa: E402
+        from tabpfn_conformal import mondrian_thresholds as _mt, one_minus_prob as _omp
+        _, _ev = _lf()
+        _rates = []
+        for _sd in sorted({r["seed"] for r in _e8}):
+            _X, _yy = _me(_ev, _sd)
+            _yy = np.asarray(_yy)
+            _cal, _te = _mod.halves(len(_yy), _yy, _sd)
+            _pr = np.load(REPO / f"results/proba/e4/tabpfn_cross_200_{_sd}.npz")["proba"]
+            _sc = _omp(_pr)
+            _t = _mt(_sc[_cal][np.arange(_cal.sum()), _yy[_cal]], _yy[_cal], 2, 0.2)
+            _sets = _sc[_te] <= np.array([_t[0], _t[1]])[None, :]
+            _fr = _yy[_te] == 1
+            _rates.append(float((_sets[_fr].sum(axis=1) == 0).mean()))
+        check("E8 empty sets among fraud rows", float(_em.group(1)),
+              100 * float(np.mean(_rates)), 0.005)
+
+    # the marginal generalisation
+    _mg = anchored(
+        "E8 marginal sentence",
+        # The gap between the two halves is prose and will be reworded; allow
+        # room for it. Trailing groups use \d+\.\d+ so a sentence's full stop
+        # is not captured as part of the number, which it was on the first try.
+        r"This evaluation set is (\d+\.\d+)% fraud.{0,240}?fraud probability is "
+        r"(\d+\.\d+) and (\d+\.\d+), cover the legitimate class at (\d+\.\d+) and the "
+        r"fraud class at (\d+\.\d+) and (\d+\.\d+)\. Laya, whose mean predicted "
+        r"probability is \*\*(\d+\.\d+)\*\* against an observed rate of (\d+\.\d+), "
+        r"does the reverse: fraud (\d+\.\d+), legitimate (\d+\.\d+)", README_FLAT)
+    if _mg:
+        _obs = float(np.mean([r["observed_fraud_rate"] for r in _e8]))
+        check("E8 eval fraud rate", float(_mg.group(1)), 100 * _obs, 0.05)
+        for _gi, _arm in ((2, "tabpfn_cross_200"), (3, "lightgbm_cross_200")):
+            check(f"E8 marginal mean-pred {_arm}", float(_mg.group(_gi)),
+                  float(np.mean(_e8pick(_arm, "marginal", 0.1, "mean_predicted_fraud"))), 5e-4)
+        check("E8 marginal legit tabpfn", float(_mg.group(4)),
+              float(np.mean(_e8pick("tabpfn_cross_200", "marginal", 0.1, "coverage_legit"))), 5e-4)
+        check("E8 marginal fraud tabpfn", float(_mg.group(5)),
+              float(np.mean(_e8pick("tabpfn_cross_200", "marginal", 0.1, "coverage_fraud"))), 5e-4)
+        check("E8 marginal fraud lightgbm", float(_mg.group(6)),
+              float(np.mean(_e8pick("lightgbm_cross_200", "marginal", 0.1, "coverage_fraud"))), 5e-4)
+        check("E8 laya mean predicted", float(_mg.group(7)),
+              float(np.mean(_e8pick("laya_zero_shot", "marginal", 0.1, "mean_predicted_fraud"))), 5e-4)
+        check("E8 observed rate restated", float(_mg.group(8)), _obs, 5e-4)
+        check("E8 marginal fraud laya", float(_mg.group(9)),
+              float(np.mean(_e8pick("laya_zero_shot", "marginal", 0.1, "coverage_fraud"))), 5e-4)
+        check("E8 marginal legit laya", float(_mg.group(10)),
+              float(np.mean(_e8pick("laya_zero_shot", "marginal", 0.1, "coverage_legit"))), 5e-4)
+
 # ---- 9. Did every anchored block actually produce checks? ----------------
 # An anchor that matches and then finds no data behind it appends nothing, and
 # the block disappears exactly as quietly as a missed anchor does. That is the

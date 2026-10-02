@@ -38,10 +38,10 @@ earlier draft of it was not:
 tokens and in seconds on hardware where the comparison is fair, is measured
 below. LightGBM wins the stopwatch.
 
-> Built for the Prior Labs TabPFN-3.5 Hackathon. **All seven experiments are
+> Built for the Prior Labs TabPFN-3.5 Hackathon. **All eight experiments are
 > complete** and their results are committed, so every number below can be
 > recomputed without an API key: `python scripts/verify_claims.py` recomputes
-> 360 of them from `results/` and exits non-zero on any drift.
+> 400 of them from `results/` and exits non-zero on any drift.
 > **Four of five pre-registered predictions were falsified**, including two of
 > our own about cost, and they are reported as such; see the
 > [scoreboard](#what-we-predicted-and-what-happened),
@@ -439,6 +439,66 @@ method was not tuned on, and it does not.
 
 Running it also surfaced the validity cost below, which a single dataset would
 have left as one unreplicated number.
+
+### Does the guarantee work on a model that needs no labels at all?
+
+Every arm so far learns from confirmed frauds: TabPFN takes them in context,
+LightGBM trains on them. **Laya** does neither. It is a 421M-parameter System
+One decision model (Apache-2.0, `pip install laya`) that takes a state and a
+typed question and returns a probability in a single forward pass,
+**zero-shot**, from no labelled example of any kind.
+
+That makes it the sharpest test available of the claim this project rests on.
+If confirmed positives were needed only to *fit* a model, a zero-shot model
+would need none. It still needs them, because the threshold is calibrated from
+labels whatever produced the probability. **The labels are not for the model.
+They are for the guarantee.**
+
+The evaluation set is E4's, halved stratified: 2,939 rows calibrate (1,439 of
+them fraud), 2,939 are scored, three seeds. Every arm sees the identical halves
+through the identical conformal object, so the only thing that varies is which
+model produced the probabilities. The TabPFN and LightGBM probabilities are the
+ones already committed under `results/proba/e4/`; Laya runs locally on CPU at
+about six rows a second. **This experiment costs nothing to reproduce and needs
+no API key.**
+
+| arm | fraud coverage | set size | sent to review |
+|---|---:|---:|---:|
+| TabPFN, cross-conformal | 0.891 | **1.217** | **21.7%** |
+| TabPFN, split conformal | 0.892 | 1.239 | 23.9% |
+| LightGBM, cross-conformal | 0.901 | 1.340 | 34.0% |
+| **Laya, zero-shot** | 0.900 | 1.833 | **83.3%** |
+
+Mondrian at α = 0.10, mean of three seeds, against a certified level of 90.06%.
+
+**Conformal gives the zero-shot model a valid guarantee**, from no labelled
+fraud at all. What it cannot do is make that guarantee cheap. At the same
+promise Laya sends **83.3%** of applications to a human where cross-conformal
+TabPFN sends **21.7%**, which is **3.8×** the analyst workload. At α = 0.05 it
+is 91.4% against 42.0%; at α = 0.20 it is 65.2% against **0%**, where TabPFN
+decides every case itself and Laya still needs a human for two thirds of them.
+
+**One result runs the other way, and it is the more interesting one.** At
+α = 0.20 both TabPFN arms land *below* the level they certify, by
+−0.0102 ± 0.0035 and −0.0151 ± 0.0033, while LightGBM and Laya hold. The
+mechanism is measured rather than inferred: **1.48% of fraud rows receive an
+empty prediction set** from cross-conformal TabPFN, and an empty set covers
+nothing, which on its own exceeds the 1.02-point shortfall. Laya emits no empty
+set at any level tested. The confident model loses coverage by ruling out both
+labels; the vague one keeps its promise by never committing. Coverage and set
+size have to be read together, and this is what that looks like from the other
+side.
+
+**It also generalises the Mondrian argument above.** This evaluation set is
+49.0% fraud, so class imbalance is not in play, and yet marginal calibration
+still abandons a class at α = 0.10. TabPFN and LightGBM, whose mean predicted
+fraud probability is 0.051 and 0.016, cover the legitimate class at 1.000 and
+the fraud class at 0.787 and 0.791. Laya, whose mean predicted probability is
+**0.718** against an observed rate of 0.490, does the reverse: fraud 1.000,
+legitimate 0.805. Marginal conformal abandons whichever class the model's
+probabilities lean away from. That is a broader statement than the published
+finding about minority classes, and it is visible here only because an arm with
+the opposite bias was included.
 
 ### What cross-conformal actually costs
 
