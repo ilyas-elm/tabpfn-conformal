@@ -1116,12 +1116,16 @@ if "rebuilt" in dir() and rebuilt is not None:
     n_f = len(committed["cal_fraud"])
     eff = 100 * min(1.0, math.ceil((n_f + 1) * 0.95) / n_f)
     if VIDEO is not None:
-        check("demo panel coverage", in_video(r"Coverage sits at \*\*([\d.]+)% against"), cov, 0.05)
-        check("demo panel target", in_video(r"against a ([\d.]+)% target"), eff, 0.05)
+        check("demo panel coverage",
+              in_video(r"Coverage sits at \*\*([\d.]+)%\*\* against"), cov, 0.05)
+        check("demo panel target",
+              in_video(r"against a \*\*([\d.]+)%\*\* target"), eff, 0.05)
         check("demo panel caught (K=0)",
-              in_video(r"moves from \*\*(\d+)% to \d+%\*\*"), round(caught_lo), 0.5)
+              in_video(r"fraud you catch\. \*\*(\d+)%\*\* to \*\*\d+%\*\*"),
+              round(caught_lo), 0.5)
         check("demo panel caught (K=200)",
-              in_video(r"moves from \*\*\d+% to (\d+)%\*\*"), round(caught_hi), 0.5)
+              in_video(r"fraud you catch\. \*\*\d+%\*\* to \*\*(\d+)%\*\*"),
+              round(caught_hi), 0.5)
 
         # These notes spell their counts out in words, and the
         # digit-hunting checks above slid straight past them: it still said a
@@ -1179,7 +1183,8 @@ if "rebuilt" in dir() and rebuilt is not None:
         # it. That happened once already, the first time this closing section
         # was reworded, so a miss is now recorded as a failure rather than
         # being silently skipped.
-        _vc = re.search(r"([A-Za-z][A-Za-z \-]*?hundred[A-Za-z \-]*?) of them", VIDEO_FLAT)
+        _vc = re.search(r"([A-Za-z][A-Za-z \-]*?hundred[A-Za-z \-]*?) of them "
+                        r"re-derived", VIDEO_FLAT)
         _rc = re.search(r">\s*(\d+) of them from `results/`", README)
         if _vc and _rc:
             checks.append(("the talk notes and README quote the same claim count",
@@ -1197,15 +1202,15 @@ if "rebuilt" in dir() and rebuilt is not None:
         _dx = PRIVATE / "Demo video script.docx"
         if _dx.exists():
             with zipfile.ZipFile(_dx) as _z:
-                _dt = re.sub(r"<[^>]+>", " ",
-                             _z.read("word/document.xml").decode("utf8"))
+                _dxml = _z.read("word/document.xml").decode("utf8")
+            _dt = re.sub(r"<[^>]+>", " ", _dxml)
             _dt = re.sub(r"\s+", " ", _dt)
             # Anchored to start on a number word. Without that, stripping the
             # tags butts the on-screen command up against the spoken line and
             # the capture ran from "pytest" into the number.
             _NW = r"(?:a|one|two|three|four|five|six|seven|eight|nine|ten)"
-            _dc = re.search(rf"\b({_NW}[A-Za-z \-]*?hundred[A-Za-z \-]*?) of them",
-                            _dt, re.I)
+            _dc = re.search(rf"\b({_NW}[A-Za-z \-]*?hundred[A-Za-z \-]*?) of them "
+                            r"re-derived", _dt, re.I)
             checks.append(("the presentation document matches the README's claim count",
                            _dc is not None and _rc is not None
                            and spoken(_dc.group(1)) == int(_rc.group(1)),
@@ -1225,6 +1230,28 @@ if "rebuilt" in dir() and rebuilt is not None:
             # of E4's four comparisons (the others are 6.9, 8.0 and 8.3). Its own
             # "do not say" list forbids exactly that kind of selective quote, so
             # it now speaks the range and the count, tied to the README row.
+            # The document is generated from these notes, so it should say
+            # exactly what they say. Comparing the spoken text as a whole
+            # catches a hand-edit that the per-number checks would miss, which
+            # is how four section titles ended up duplicated once.
+            _spoken_md = " ".join(
+                re.sub(r"[*`]", "", q) for q in
+                re.findall(r'^"(.+?)"$',
+                           VIDEO[VIDEO.index("## 3. The script"):
+                                 VIDEO.index("## 4. Audio")], re.M | re.S))
+            _spoken_md = re.sub(r"\s+", " ", _spoken_md).strip()
+            _spoken_dx = " ".join(
+                re.sub(r"<[^>]+>", "", _p)
+                for _p in re.findall(r"<w:p[ >].*?</w:p>", _dxml, re.S)
+                if '<w:sz w:val="34"/>' in _p)
+            _spoken_dx = re.sub(r"\s+", " ", _spoken_dx.replace("&apos;", "'")
+                                .replace("&amp;", "&")).strip()
+            checks.append(("the presentation document says what the notes say",
+                           _spoken_md == _spoken_dx,
+                           f"notes hold {len(_spoken_md)} characters of speech, "
+                           f"the document {len(_spoken_dx)}; first difference at "
+                           f"{next((i for i, (a, b) in enumerate(zip(_spoken_md, _spoken_dx)) if a != b), min(len(_spoken_md), len(_spoken_dx)))}"))
+
             # The notes quote the cell the demo displays (100 frauds, alpha
             # 0.05) and then the floor, so the spoken words are "twelve point
             # four" and "six point nine". Build those from the README's own
@@ -1292,16 +1319,15 @@ if "rebuilt" in dir() and rebuilt is not None:
         # number written out in words -- had no check at all. These tie the
         # spelled-out ones to the same sources the digits use.
         _ceil = re.search(r"\| 100 \| ([\d.]+)% \| \*\*([\d.]+)%\*\* \|", README)
-        _vcl = re.search(r"At a hundred confirmed frauds it tops out at "
-                         r"\*\*([a-z\- ]+) percent\*\*; the ([a-z\- ]+) your "
-                         r"regulator wanted", VIDEO_FLAT)
+        _vcl = re.search(r"It tops out at \*\*([a-z\- ]+) percent\*\*\. "
+                         r"The ([a-z\- ]+) your regulator wanted", VIDEO_FLAT)
         checks.append(("the talk notes state the certifiable ceiling at 100 frauds",
                        _ceil is not None and _vcl is not None
                        and spoken(_vcl.group(1)) == round(float(_ceil.group(1)))
                        and spoken(_vcl.group(2)) == round(float(_ceil.group(2))),
                        f"script says {_vcl and _vcl.group(1, 2)}, README table says "
                        f"{_ceil and _ceil.group(1, 2)}"))
-        _vcr = re.search(r"Same hundred frauds, \*\*([a-z\- ]+)\*\*", VIDEO_FLAT)
+        _vcr = re.search(r"Same hundred frauds\. \*\*([A-Za-z\- ]+)\*\*", VIDEO_FLAT)
         checks.append(("the talk notes restate what cross certifies at 100 frauds",
                        _vcr is not None and _ceil is not None
                        and spoken(_vcr.group(1)) == round(float(_ceil.group(2))),
@@ -1323,7 +1349,7 @@ if "rebuilt" in dir() and rebuilt is not None:
                            f"lightgbm_cross={_gf.get('lightgbm_cross')}"))
 
         # The routed-transaction count, spelled out against the README's digits.
-        _vrt = re.search(r"\"([A-Z][a-z]+ hundred) real held-out transactions",
+        _vrt = re.search(r"\b([A-Za-z]+ hundred) real held-out transactions",
                          VIDEO_FLAT)
         _rrt = re.search(r"route (\d+) real", README)
         checks.append(("the talk notes state the routed transaction count",
