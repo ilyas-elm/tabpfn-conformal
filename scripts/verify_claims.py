@@ -904,7 +904,7 @@ else:
                    f"pytest collected nothing (exit {out.returncode}); "
                    "the package is probably not installed in this interpreter"))
 
-# ---- 5n. P5, settled on fair hardware -------------------------------------
+# ---- 5n. P5, settled on one machine ----------------------------------------
 # Every number the README and limitations.md quote about the T4 run is
 # recomputed here from the 24 committed rows, so none of them is typed.
 _kag = REPO / "results" / "kaggle_wallclock.json"
@@ -1225,30 +1225,45 @@ if "rebuilt" in dir() and rebuilt is not None:
             # of E4's four comparisons (the others are 6.9, 8.0 and 8.3). Its own
             # "do not say" list forbids exactly that kind of selective quote, so
             # it now speaks the range and the count, tied to the README row.
-            _vr = re.search(r"Between \*\*(\w+) and (\w+) percent\*\* tighter, "
-                            r"in four comparisons out of four", VIDEO_FLAT)
+            # The notes quote the cell the demo displays (100 frauds, alpha
+            # 0.05) and then the floor, so the spoken words are "twelve point
+            # four" and "six point nine". Build those from the README's own
+            # range rather than hard-coding them.
+            _ONES = ("zero one two three four five six seven eight nine ten "
+                     "eleven twelve thirteen fourteen fifteen").split()
+
+            def _say(x):
+                whole, frac = f"{x:.1f}".split(".")
+                return f"{_ONES[int(whole)]} point {_ONES[int(frac)]}"
+
+            _vr = re.search(r"\*\*([A-Za-z ]+?) percent\*\* narrower here, and narrower "
+                            r"in all four comparisons, never by less than ([A-Za-z ]+?)\.",
+                            VIDEO_FLAT)
             _rr = re.search(r"narrower prediction sets than LightGBM\*\* at an "
                             r"identical targeted level \| ([\d.]+)\u2013([\d.]+)% "
                             r"narrower, (\d+) of (\d+) comparisons", README)
             checks.append(("the talk notes match the README's narrower range",
                            _vr is not None and _rr is not None
-                           and spoken(_vr.group(1)) == round(float(_rr.group(1)))
-                           and spoken(_vr.group(2)) == round(float(_rr.group(2)))
+                           and _vr.group(1).strip().lower() == _say(float(_rr.group(2)))
+                           and _vr.group(2).strip().lower() == _say(float(_rr.group(1)))
                            and _rr.group(3) == _rr.group(4),
-                           f"script says {_vr and _vr.group(1, 2)}, README says "
+                           f"notes say {_vr and _vr.group(1, 2)}, README range is "
                            f"{_rr and _rr.group(1, 2)} over "
                            f"{_rr and (_rr.group(3) + ' of ' + _rr.group(4))}"))
-            _dr = re.search(r"Between (\w+) and (\w+) percent tighter, in four "
-                            r"comparisons out of four", _dt)
+            _dr = re.search(r"([A-Za-z ]+?) percent narrower here, and narrower in all "
+                            r"four comparisons, never by less than ([A-Za-z ]+?)\.", _dt)
             checks.append(("the presentation document matches the narrower range",
                            _dr is not None and _vr is not None
-                           and _dr.group(1, 2) == _vr.group(1, 2),
-                           f"docx says {_dr and _dr.group(1, 2)}, script says "
+                           and (_dr.group(1).strip().lower(), _dr.group(2).strip())
+                           == (_vr.group(1).strip().lower(), _vr.group(2).strip()),
+                           f"document says {_dr and _dr.group(1, 2)}, notes say "
                            f"{_vr and _vr.group(1, 2)}"))
 
         # The stated word count is what the 3:25 runtime is derived from, so it
         # drifts every time a line is reworded. Count the quoted blocks instead.
-        _m_wc = re.search(r"\*\*3:25 at 140 words a minute\.\*\* (\d+) spoken "
+        _m_rt = re.search(r"\*\*(\d):(\d\d) at 140 words a minute\.\*\* (\d+) spoken "
+                          r"words plus about (\d+) seconds", VIDEO_FLAT)
+        _m_wc = re.search(r"\*\*\d:\d\d at 140 words a minute\.\*\* (\d+) spoken "
                           r"words", VIDEO_FLAT)
         try:
             _vb = VIDEO[VIDEO.index("## 3. The script"):VIDEO.index("## 4. Audio")]
@@ -1261,6 +1276,16 @@ if "rebuilt" in dir() and rebuilt is not None:
                        and int(_m_wc.group(1)) == _spoken_n,
                        f"script says {_m_wc and _m_wc.group(1)}, "
                        f"its quoted lines hold {_spoken_n}"))
+        # and the runtime has to follow from the words and the stated pauses,
+        # or the timestamps above each section stop meaning anything
+        if _m_rt and _spoken_n:
+            _stated = int(_m_rt.group(1)) * 60 + int(_m_rt.group(2))
+            _derived = _spoken_n / 140 * 60 + int(_m_rt.group(4))
+            checks.append(("the stated runtime follows from the words and pauses",
+                           abs(_stated - _derived) <= 4,
+                           f"notes say {_m_rt.group(1)}:{_m_rt.group(2)} = {_stated}s; "
+                           f"{_spoken_n} words at 140 wpm plus {_m_rt.group(4)}s "
+                           f"is {_derived:.0f}s"))
 
         # A sweep of the spoken script found that only its digit-form numbers
         # were checked. Every number spelled out for reading -- which is every
@@ -2107,7 +2132,7 @@ if _ck.exists():
                 check(f"limitations: multiplier at K={_kk3}", float(_lk.group(_gi)),
                       float(np.mean([r["ratio"] for r in _hit2])), 0.05)
 
-# 10c. The split-to-cross wall-clock multipliers on fair hardware.
+# 10c. The split-to-cross wall-clock multipliers from the one-machine run.
 if _kag.exists():
     _lm = anchored_in("limitations: split-to-cross multipliers",
                       r"costs TabPFN ([\d.]+)\u00d7 against LightGBM's ([\d.]+)\u00d7", _LIM)
@@ -2567,8 +2592,14 @@ if _wc_src.exists():
     # re.I: the first version of this pattern was lower-case only and missed
     # "Both models on one Tesla T4" at the start of a sentence, which is how
     # five of the six documents wrote it.
+    # Widened after the first pass missed "equal hardware", "the same
+    # accelerator" and "one machine with one GPU" -- the same false claim in
+    # four other phrasings, one of them in code that prints it at runtime.
     _bad = [n for n, t in _hw_docs.items()
-            if re.search(r"both (models )?on one Tesla T4", t, re.I)]
+            if re.search(r"both (models )?on one Tesla T4|on equal hardware|"
+                         r"on the same accelerator|both models on one accelerator|"
+                         r"one machine with one GPU|both models on identical hardware",
+                         t, re.I)]
     checks.append(("no document claims both models ran on the GPU",
                    _lgb_gpu or not _bad,
                    f"LGBMClassifier is built without a device argument, so "

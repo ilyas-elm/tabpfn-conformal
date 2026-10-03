@@ -18,8 +18,10 @@ wall-clock, and API tokens.
 against a remote API (network latency, queueing) while LightGBM runs on this
 laptop's CPU. That is not a like-for-like comparison and must not be presented as
 one. The honest number is the *gradient fits* column, which is hardware-independent.
-A fair wall-clock comparison needs both models on identical hardware -- tier T2 in
-the project plan, section 8, a Kaggle GPU running local TabPFN weights.
+A wall-clock comparison worth reporting needs both models on one machine with no
+network inside the measurement -- tier T2 in the project plan, section 8, a Kaggle
+GPU running local TabPFN weights. That removes the network, not the difference in
+accelerator: LightGBM runs on that machine's CPU.
 
     python experiments/api/e4_baselines.py --dry-run
     python experiments/api/e4_baselines.py --pilot

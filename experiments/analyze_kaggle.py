@@ -29,10 +29,11 @@ def main() -> int:
     blob = json.loads(RESULTS.read_text())
     dev, rows = blob["device"], blob["rows"]
     where = dev.get("gpu") or dev.get("device", "unknown")
-    print(f"{len(rows)} rows, both models on {where}\n")
+    print(f"{len(rows)} rows, TabPFN on {where}, LightGBM on this machine's CPU\n")
     if dev.get("device") != "cuda":
-        print("This run was on CPU. It does not settle P5: the point is to put "
-              "both models on the same accelerator.\n")
+        print("This run had no GPU. It does not settle P5: the point is to time "
+              "TabPFN on a GPU against LightGBM on the same machine's CPU, "
+              "with no network in either.\n")
 
     agg = defaultdict(lambda: defaultdict(list))
     for r in rows:

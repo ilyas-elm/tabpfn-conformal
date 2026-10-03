@@ -17,8 +17,9 @@ Every wall-clock number in E4 is tagged `wallclock_comparable: false`. TabPFN ra
 remotely on Prior Labs' GPUs; LightGBM ran on this laptop's CPU. That is not a
 race, the TabPFN figure is mostly network round-trip, not inference.
 
-`wallclock.py` puts **both models on one machine with one GPU**, using TabPFN's
-downloadable weights so nothing goes over the network mid-measurement. The
+`wallclock.py` puts **both models on one machine**, TabPFN on its GPU using the
+downloadable weights and LightGBM on its CPU, so nothing goes over the network
+mid-measurement. That removes the network, not the difference in accelerator. The
 protocol is E4's, unchanged.
 
 ## What you need
