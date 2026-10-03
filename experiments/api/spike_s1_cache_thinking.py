@@ -43,7 +43,7 @@ OUT = REPO / "results" / "spike_s1.json"
 N_TRAIN, N_TEST, N_FEATURES = 200, 50, 8
 BAF_FEATURES = 30
 
-# (label, n_context, n_scored, operation) for the experiments in the cahier.
+# (label, n_context, n_scored, operation) for the experiments in the project plan.
 PLANNED = [
     ("E1 split conformal, 10k pool", 5_000, 5_000, "predict"),
     ("E1 cross-conformal, 10k pool, per fold", 8_000, 2_000, "predict"),

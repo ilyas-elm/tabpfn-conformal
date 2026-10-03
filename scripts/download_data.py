@@ -3,7 +3,7 @@
 BAF (Jesus et al., NeurIPS 2022, Feedzai) is distributed through Kaggle only.
 This script downloads it, then *checks* the shape, the fraud rate and the month
 column rather than assuming them, and prints what it actually found. If the
-numbers drift from what the cahier records, you want to know here and not
+numbers drift from what the project plan records, you want to know here and not
 halfway through E1.
 
 Usage:

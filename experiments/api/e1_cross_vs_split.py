@@ -11,7 +11,7 @@ statistical claim:
           set width than split conformal, because it spends none of the
           scarce positives on calibration.
 
-If P1 fails, the cahier says the headline moves to E2. That decision is made
+If P1 fails, the project plan says the headline moves to E2. That decision is made
 from this script's output, not from hope.
 
 Protocol

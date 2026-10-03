@@ -280,7 +280,7 @@ than it is.
 
 **⚙ The daily cap is 5,000,000 tokens, separate from the 20M monthly.** E4 hit it
 at 4.99M and the remaining nine TabPFN configurations failed with HTTP 429. Not a
-bug and fully recoverable, the run resumes, but the cahier tracked the monthly
+bug and fully recoverable, the run resumes, but the project plan tracked the monthly
 budget and not the daily one. Both need watching.
 
 **⚙ The SIGALRM watchdog does not work on this client.** `tabpfn-client` uses

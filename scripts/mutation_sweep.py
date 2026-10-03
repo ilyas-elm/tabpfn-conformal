@@ -110,8 +110,8 @@ def _sub(path: str, old: str, new: str):
 def _docx(path: str, old: str, new: str):
     """Edit the text inside a .docx, which is a zip of XML parts.
 
-    The recording script is read on camera, so a stale number in it is spoken
-    aloud. It is the one copy no check opened, and it sat at "Three hundred and
+    These notes restate published numbers, so a stale one here disagrees with
+    the README. It is the one copy no check opened, and it sat at "Three hundred and
     sixty" while the script said four hundred and five.
     """
     def go() -> bool:
@@ -303,43 +303,43 @@ CASES: list[tuple[str, object]] = [
     ("BRIEFING claim count (prose) agrees with the README",
      _resub("private/BRIEFING.md", r"recomputes \d+ published numbers",
             "recomputes 360 published numbers")),
-    # The exact artefact that was wrong: the docx read on camera.
-    ("the recording docx speaks the README's claim count",
+    # The exact artefact that was wrong.
+    ("the presentation document matches the README's claim count",
      _redocx("private/Demo video script.docx",
              # [\w-]+ not \w+: the count became "twenty-three" and the hyphen
              # ended the match, so the case went unreachable.
              r"Four hundred and [\w-]+ of them", "Three hundred and sixty of them")),
-    ("the recording docx speaks the collected test count",
+    ("the presentation document matches the collected test count",
      _docx("private/Demo video script.docx", "A hundred and thirty-two tests",
            "A hundred and thirty tests")),
     # The script had quoted the best of E4's four comparisons as if typical.
-    ("the script speaks the README's narrower range",
+    ("the talk notes match the README's narrower range",
      _sub("private/VIDEO.md", "**seven and twelve percent**",
           "**seven and fifteen percent**")),
-    ("the recording docx speaks the script's narrower range",
+    ("the presentation document matches the narrower range",
      _docx("private/Demo video script.docx", "seven and twelve percent",
            "six and twelve percent")),
-    ("the script states its own spoken word count",
+    ("the talk notes state their own word count",
      _sub("private/VIDEO.md", "424 spoken words", "419 spoken words")),
     # A sweep of the spoken script found that only its digit-form numbers were
     # checked; every number spelled out for reading aloud had nothing on it.
     # Each anchor below is the one in section 3, not a planning-table copy: the
     # first attempt at the slowdown case mutated a notes table on line 31 and
     # read as an unguarded claim.
-    ("the script speaks the certifiable ceiling at 100 frauds",
+    ("the talk notes state the certifiable ceiling at 100 frauds",
      _sub("private/VIDEO.md", "**ninety-eight percent**", "**ninety-six percent**")),
-    ("the script restates what cross certifies at 100 frauds",
+    ("the talk notes restate what cross certifies at 100 frauds",
      _sub("private/VIDEO.md", "Same hundred frauds, **ninety-nine**",
           "Same hundred frauds, **ninety-seven**")),
-    ("the script speaks the gradient-fit counts",
+    ("the talk notes state the gradient-fit counts",
      _sub("private/VIDEO.md", "Zero against six.", "Zero against eight.")),
-    ("the script speaks the routed transaction count",
+    ("the talk notes state the routed transaction count",
      _sub("private/VIDEO.md", "Four hundred real held-out transactions",
           "Five hundred real held-out transactions")),
-    ("the script speaks the prediction scoreboard",
+    ("the talk notes state the prediction scoreboard",
      _sub("private/VIDEO.md", "**Four turned out wrong**",
           "**Three turned out wrong**")),
-    ("the script speaks a slowdown inside the measured range",
+    ("the talk notes state a slowdown inside the measured range",
      _sub("private/VIDEO.md", "TabPFN is about **sixty times slower**",
           "TabPFN is about **forty times slower**")),
     ("BRIEFING has a table row for every experiment",
