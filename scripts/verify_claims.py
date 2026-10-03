@@ -1319,14 +1319,21 @@ if "rebuilt" in dir() and rebuilt is not None:
         # number written out in words -- had no check at all. These tie the
         # spelled-out ones to the same sources the digits use.
         _ceil = re.search(r"\| 100 \| ([\d.]+)% \| \*\*([\d.]+)%\*\* \|", README)
-        _vcl = re.search(r"It tops out at \*\*([a-z\- ]+) percent\*\*\. "
-                         r"The ([a-z\- ]+) your regulator wanted", VIDEO_FLAT)
+        # The split ceiling and the regulator's number are now spoken in two
+        # separate beats, with an on-screen action between them, so they are
+        # matched separately rather than as one sentence.
+        _vcl = re.search(r"It tops out at \*\*([a-z\- ]+) percent\*\*", VIDEO_FLAT)
         checks.append(("the talk notes state the certifiable ceiling at 100 frauds",
                        _ceil is not None and _vcl is not None
-                       and spoken(_vcl.group(1)) == round(float(_ceil.group(1)))
-                       and spoken(_vcl.group(2)) == round(float(_ceil.group(2))),
-                       f"script says {_vcl and _vcl.group(1, 2)}, README table says "
-                       f"{_ceil and _ceil.group(1, 2)}"))
+                       and spoken(_vcl.group(1)) == round(float(_ceil.group(1))),
+                       f"notes say {_vcl and _vcl.group(1)!r}, README table says "
+                       f"{_ceil and _ceil.group(1)}"))
+        _vcw = re.search(r"The ([a-z\- ]+) your regulator wanted", VIDEO_FLAT)
+        checks.append(("the regulator's number is the one cross can certify",
+                       _vcw is not None and _ceil is not None
+                       and spoken(_vcw.group(1)) == round(float(_ceil.group(2))),
+                       f"notes say {_vcw and _vcw.group(1)!r}, cross certifies "
+                       f"{_ceil and _ceil.group(2)}"))
         _vcr = re.search(r"Same hundred frauds\. \*\*([A-Za-z\- ]+)\*\*", VIDEO_FLAT)
         checks.append(("the talk notes restate what cross certifies at 100 frauds",
                        _vcr is not None and _ceil is not None
